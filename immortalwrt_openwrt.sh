@@ -5,140 +5,255 @@ curl -sL $GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases | grep -oP '"browser_
 curl -sL api.github.com/repos/hong0980/OpenWrt-Cache/releases | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' >xc
 [[ $VERSION ]] || VERSION=plus
 [[ $PARTSIZE ]] || PARTSIZE=900
-mkdir firmware output
+mkdir firmware output 2>/dev/null
 
 color() {
-	case $1 in
-		cy) echo -e "\033[1;33m$2\033[0m" ;;
-		cr) echo -e "\033[1;31m$2\033[0m" ;;
-		cg) echo -e "\033[1;32m$2\033[0m" ;;
-		cb) echo -e "\033[1;34m$2\033[0m" ;;
-	esac
+    case $1 in
+        cy) echo -e "\033[1;33m$2\033[0m" ;;
+        cr) echo -e "\033[1;31m$2\033[0m" ;;
+        cg) echo -e "\033[1;32m$2\033[0m" ;;
+        cb) echo -e "\033[1;34m$2\033[0m" ;;
+    esac
 }
 
 status() {
-	CHECK=$?
-	END_TIME=$(date '+%H:%M:%S')
-	_date=" ==>用时 $[$(date +%s -d "$END_TIME") - $(date +%s -d "$BEGIN_TIME")] 秒"
-	[[ $_date =~ [0-9]+ ]] || _date=""
-	if [ $CHECK = 0 ]; then
-		printf "%35s %s %s %s %s %s %s\n" \
-		`echo -e "[ $(color cg ✔)\033[0;39m ]${_date}"`
-	else
-		printf "%35s %s %s %s %s %s %s\n" \
-		`echo -e "[ $(color cr ✕)\033[0;39m ]${_date}"`
-	fi
+    CHECK=$?
+    END_TIME=$(date '+%H:%M:%S')
+    _date=" ==>用时 $[$(date +%s -d "$END_TIME") - $(date +%s -d "$BEGIN_TIME")] 秒"
+    [[ $_date =~ [0-9]+ ]] || _date=""
+    if [ $CHECK = 0 ]; then
+        printf "%35s %s %s %s %s %s %s\n" \
+        `echo -e "[ $(color cg ✔)\033[0;39m ]${_date}"`
+    else
+        printf "%35s %s %s %s %s %s %s\n" \
+        `echo -e "[ $(color cr ✕)\033[0;39m ]${_date}"`
+    fi
 }
 
 git_apply() {
-	for z in $@; do
-		[[ $z =~ \# ]] || wget -qO- $z | git apply --reject --ignore-whitespace
-	done
+    for z in $@; do
+        [[ $z =~ \# ]] || wget -qO- $z | git apply --reject --ignore-whitespace
+    done
 }
 
 _packages() {
-	for z in $@; do
-		[[ $z =~ ^# ]] || echo "CONFIG_PACKAGE_$z=y" >>.config
-	done
+    for z in $@; do
+        [[ $z =~ ^# ]] || echo "CONFIG_PACKAGE_$z=y" >>.config
+    done
 }
 
 _delpackage() {
-	for z in $@; do
-		[[ $z =~ ^# ]] || sed -i -E "s/(CONFIG_PACKAGE_.*$z)=y/# \1 is not set/" .config
-	done
+    for z in $@; do
+        [[ $z =~ ^# ]] || sed -i -E "s/(CONFIG_PACKAGE_.*$z)=y/# \1 is not set/" .config
+    done
+}
+_pushd() {
+	if ! pushd "$@" &> /dev/null; then
+		printf '\n%b\n' "该目录不存在。"
+	fi
+}
+
+_popd() {
+	if ! popd &> /dev/null; then
+		printf '%b\n' "该目录不存在。"
+	fi
 }
 
 _printf() {
-	awk '{printf "%s %-40s %s %s %s\n" ,$1,$2,$3,$4,$5}'
+    awk '{printf "%s %-40s %s %s %s\n" ,$1,$2,$3,$4,$5}'
 }
 
-svn_co() {
-	g=$(find package/ feeds/ target/ -maxdepth 5 -type d -name ${2##*/} 2>/dev/null)
-	if [[ -d $g ]]; then
-		k="$g"
-		mv -f $g ../
-	else
-		k="package/A/${2##*/}"
-	fi
-	if svn export --force $1 $2 $k 1>/dev/null 2>&1; then
-	# $1="-rxxx" $2="url" $k="path"
-		if [[ $k = $g ]]; then
-			echo -e "$(color cg 替换) ${2##*/} [ $(color cg ✔) ]" | _printf
-		else
-			echo -e "$(color cb 添加) ${2##*/} [ $(color cb ✔) ]" | _printf
-		fi
-	else
-		echo -e "$(color cr 拉取) ${2##*/} [ $(color cr ✕) ]" | _printf
-		[[ -d ../${g##*/} ]] && (mv -f ../${g##*/} ${g%/*}/ && \
-			echo -e "$(color cy 回退) ${g##*/} [ $(color cy ✔) ]" | _printf)
-	fi
-	unset -v k g
+clone_repo() {
+    local repo_url branch target_dir source_dir current_dir destination_dir
+    if [[ "$1" == */* ]]; then
+        repo_url="$1"
+        shift
+    else
+        branch="-b $1"
+        repo_url="$2"
+        shift 2
+    fi
+
+    if ! git clone -q $branch --depth 1 "https://github.com/$repo_url" gitemp; then
+        echo -e "$(color cr 拉取) https://github.com/$repo_url [ $(color cr ✕) ]" | _printf
+        return 0
+    fi
+
+    for target_dir in "$@"; do
+        if [ "$target_dir" = 'golang' -a -d "gitemp/lang/golang" ]; then
+            mv -f feeds/packages/lang/golang ../
+            mv -f gitemp/lang/golang feeds/packages/lang/golang && \
+            echo -e "$(color cg 替换) $target_dir [ $(color cg ✔) ]" | _printf
+            [ -d gitemp ] && rm -rf gitemp
+            continue
+        fi
+        source_dir=$(find gitemp -maxdepth 5 -type d -name "$target_dir" -print -quit)
+        current_dir=$(find package/ feeds/ target/ -maxdepth 5 -type d -name "$target_dir" -print -quit)
+        destination_dir="${current_dir:-package/A/$target_dir}"
+        if [[ -d $current_dir && $destination_dir != $current_dir ]]; then
+            mv -f "$current_dir" ../
+        fi
+
+        if [[ -d $source_dir ]]; then
+            if mv -f "$source_dir" "$destination_dir"; then
+                if [[ $destination_dir = $current_dir ]]; then
+                    echo -e "$(color cg 替换) $target_dir [ $(color cg ✔) ]" | _printf
+                else
+                    echo -e "$(color cb 添加) $target_dir [ $(color cb ✔) ]" | _printf
+                fi
+            fi
+        fi
+    done
+
+    [ -d gitemp ] && rm -rf gitemp
 }
 
 clone_url() {
-	for x in $@; do
-		name="${x##*/}"
-		if [[ "$(grep "^https" <<<$x | egrep -v "helloworld$|build$|openwrt-passwall-packages$")" ]]; then
-			g=$(find package/ target/ feeds/ -maxdepth 5 -type d -name "$name" 2>/dev/null | grep "/${name}$" | head -n 1)
-			if [[ -d $g ]]; then
-				mv -f $g ../ && k="$g"
-			else
-				k="package/A/$name"
-			fi
+    for x in $@; do
+        name="${x##*/}"
+        if [[ "$(grep "^https" <<<$x | egrep -v "helloworld$|build$|openwrt-passwall-packages$")" ]]; then
+            g=$(find package/ target/ feeds/ -maxdepth 5 -type d -name "$name" 2>/dev/null | grep "/${name}$" | head -n 1)
+            if [[ -d $g ]]; then
+                mv -f $g ../ && k="$g"
+            else
+                k="package/A/$name"
+            fi
 
-			if [[ "$(egrep "trunk|branches" <<<$x)" ]]; then
-				svn export $x $k 1>/dev/null 2>&1 && f="1"
-			else
-				git clone -q $x $k && f="1"
-			fi
+            git clone -q $x $k && f="1"
 
-			if [[ -n $f ]]; then
-				if [[ $k = $g ]]; then
-					echo -e "$(color cg 替换) $name [ $(color cg ✔) ]" | _printf
-				else
-					echo -e "$(color cb 添加) $name [ $(color cb ✔) ]" | _printf
-				fi
+            if [[ -n $f ]]; then
+                if [[ $k = $g ]]; then
+                    echo -e "$(color cg 替换) $name [ $(color cg ✔) ]" | _printf
+                else
+                    echo -e "$(color cb 添加) $name [ $(color cb ✔) ]" | _printf
+                fi
+            else
+                echo -e "$(color cr 拉取) $name [ $(color cr ✕) ]" | _printf
+                if [[ $k = $g ]]; then
+                    mv -f ../${g##*/} ${g%/*}/ && \
+                    echo -e "$(color cy 回退) ${g##*/} [ $(color cy ✔) ]" | _printf
+                fi
+            fi
+            unset -v f k g
+        else
+            for w in $(grep "^https" <<<$x); do
+                git clone -q $w ../${w##*/} && {
+                    [[ ${w##*/} =~ packages ]] && {
+                        _pushd ../${w##*/}
+                        git reset -q --hard f76133e
+                        _popd
+                    }
+                    for z in `ls -l ../${w##*/} | awk '/^d/{print $NF}' | grep -Ev 'dump$|dtest$'`; do
+                        g=$(find package/ feeds/ target/ -maxdepth 5 -type d -name $z 2>/dev/null | head -n 1)
+                        if [[ -d $g ]]; then
+                            rm -rf $g && k="$g"
+                        else
+                            k="package/A"
+                        fi
+                        if mv -f ../${w##*/}/$z $k; then
+                            if [[ $k = $g ]]; then
+                                echo -e "$(color cg 替换) $z [ $(color cg ✔) ]" | _printf
+                            else
+                                echo -e "$(color cb 添加) $z [ $(color cb ✔) ]" | _printf
+                            fi
+                        fi
+                        unset -v k g
+                    done
+                } && rm -rf ../${w##*/}
+            done
+        fi
+    done
+}
+
+config (){
+	case "$TARGET_DEVICE" in
+		"x86_64")
+			cat >.config<<-EOF
+			CONFIG_TARGET_x86=y
+			CONFIG_TARGET_x86_64=y
+			CONFIG_TARGET_x86_64_DEVICE_generic=y
+			CONFIG_TARGET_ROOTFS_PARTSIZE=$PARTSIZE
+			CONFIG_BUILD_NLS=y
+			CONFIG_BUILD_PATENTED=y
+			CONFIG_TARGET_IMAGES_GZIP=y
+			CONFIG_GRUB_IMAGES=y
+			# CONFIG_GRUB_EFI_IMAGES is not set
+			# CONFIG_VMDK_IMAGES is not set
+			EOF
+			;;
+		"r1-plus-lts"|"r1-plus"|"r4s"|"r2c"|"r2s")
+			cat >.config<<-EOF
+			CONFIG_TARGET_rockchip=y
+			CONFIG_TARGET_rockchip_armv8=y
+			CONFIG_TARGET_ROOTFS_PARTSIZE=$PARTSIZE
+			CONFIG_BUILD_NLS=y
+			CONFIG_BUILD_PATENTED=y
+			CONFIG_DRIVER_11AC_SUPPORT=y
+			CONFIG_DRIVER_11N_SUPPORT=y
+			CONFIG_DRIVER_11W_SUPPORT=y
+			EOF
+			case "$TARGET_DEVICE" in
+			"r1-plus-lts"|"r1-plus")
+			echo "CONFIG_TARGET_rockchip_armv8_DEVICE_xunlong_orangepi-$TARGET_DEVICE=y" >>.config ;;
+			"r4s"|"r2c"|"r2s")
+			echo "CONFIG_TARGET_rockchip_armv8_DEVICE_friendlyarm_nanopi-$TARGET_DEVICE=y" >>.config ;;
+			esac
+			;;
+		"newifi-d2")
+			cat >.config<<-EOF
+			CONFIG_TARGET_ramips=y
+			CONFIG_TARGET_ramips_mt7621=y
+			CONFIG_TARGET_ramips_mt7621_DEVICE_d-team_newifi-d2=y
+			EOF
+			;;
+		"phicomm_k2p")
+			cat >.config<<-EOF
+			CONFIG_TARGET_ramips=y
+			CONFIG_TARGET_ramips_mt7621=y
+			CONFIG_TARGET_ramips_mt7621_DEVICE_phicomm_k2p=y
+			EOF
+			;;
+		"asus_rt-n16")
+			if [[ "${REPO_BRANCH#*-}" = "18.06" ]]; then
+				cat >.config<<-EOF
+				CONFIG_TARGET_brcm47xx=y
+				CONFIG_TARGET_brcm47xx_mips74k=y
+				CONFIG_TARGET_brcm47xx_mips74k_DEVICE_asus_rt-n16=y
+				EOF
 			else
-				echo -e "$(color cr 拉取) $name [ $(color cr ✕) ]" | _printf
-				if [[ $k = $g ]]; then
-					mv -f ../${g##*/} ${g%/*}/ && \
-					echo -e "$(color cy 回退) ${g##*/} [ $(color cy ✔) ]" | _printf
-				fi
+				cat >.config<<-EOF
+				CONFIG_TARGET_bcm47xx=y
+				CONFIG_TARGET_bcm47xx_mips74k=y
+				CONFIG_TARGET_bcm47xx_mips74k_DEVICE_asus_rt-n16=y
+				EOF
 			fi
-			unset -v f k g
-		else
-			for w in $(grep "^https" <<<$x); do
-				git clone -q $w ../${w##*/} && {
-					for z in `ls -l ../${w##*/} | awk '/^d/{print $NF}' | grep -Ev 'dump$|dtest$'`; do
-						g=$(find package/ feeds/ target/ -maxdepth 5 -type d -name $z 2>/dev/null | head -n 1)
-						if [[ -d $g ]]; then
-							rm -rf $g && k="$g"
-						else
-							k="package/A"
-						fi
-						if mv -f ../${w##*/}/$z $k; then
-							if [[ $k = $g ]]; then
-								echo -e "$(color cg 替换) $z [ $(color cg ✔) ]" | _printf
-							else
-								echo -e "$(color cb 添加) $z [ $(color cb ✔) ]" | _printf
-							fi
-						fi
-						unset -v k g
-					done
-				} && rm -rf ../${w##*/}
-			done
-		fi
-	done
+			;;
+		"armvirt-64-default")
+			cat >.config<<-EOF
+			CONFIG_TARGET_armvirt=y
+			CONFIG_TARGET_armvirt_64=y
+			CONFIG_TARGET_armvirt_64_Default=y
+			EOF
+			;;
+	esac
+}
+
+min() {
+    echo VERSION="" >>$GITHUB_ENV
+    echo "FETCH_CACHE=true" >>$GITHUB_ENV
+    sed -i 's/luci-app-[^ ]* //g' {include/target.mk,$(find target/ -name Makefile)}
+    echo -e "$(color cy '更新配置....')\c"; BEGIN_TIME=$(date '+%H:%M:%S')
+    make defconfig 1>/dev/null 2>&1
+    status
 }
 
 REPO_URL="https://github.com/immortalwrt/immortalwrt"
 echo -e "$(color cy '拉取源码....')\c"; BEGIN_TIME=$(date '+%H:%M:%S')
 [[ $REPO_BRANCH ]] && cmd="-b $REPO_BRANCH"
-git clone -q $cmd $REPO_URL $REPO_FLODER --single-branch
+git clone -q $cmd $REPO_URL $REPO_FLODER --single-branch # --depth 1
 status
 [[ -d $REPO_FLODER ]] && cd $REPO_FLODER || exit
 
-# [ "$TARGET_DEVICE" = r1-plus-lts -a "$REPO_BRANCH" = master ] && git reset --hard b5193291bdde00e91c58e59029d5c68b0bc605db
 case "$TARGET_DEVICE" in
 	"x86_64") export NAME="x86_64";;
 	"asus_rt-n16") export NAME="bcm47xx_mips74k";;
@@ -165,12 +280,12 @@ if (grep -q "$CACHE_NAME-cache.tzst" ../xa || grep -q "$CACHE_NAME-cache.tzst" .
 				cp *.tzst ../output
 				echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
 			fi
-			sed -i 's/ $(tool.*stamp-compile)//g' Makefile
+			sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
 		}
 		[ -d staging_dir ]; status
 	}
 else
-	VERSION=''
+	# VERSION=
 	echo "CACHE_ACTIONS=true" >>$GITHUB_ENV
 fi
 
@@ -179,77 +294,11 @@ echo -e "$(color cy '更新软件....')\c"; BEGIN_TIME=$(date '+%H:%M:%S')
 ./scripts/feeds install -a 1>/dev/null 2>&1
 status
 
-: >.config
-case "$TARGET_DEVICE" in
-	"x86_64")
-		cat >.config<<-EOF
-		CONFIG_TARGET_x86=y
-		CONFIG_TARGET_x86_64=y
-		CONFIG_TARGET_x86_64_DEVICE_generic=y
-		CONFIG_TARGET_ROOTFS_PARTSIZE=$PARTSIZE
-		CONFIG_BUILD_NLS=y
-		CONFIG_BUILD_PATENTED=y
-		CONFIG_TARGET_IMAGES_GZIP=y
-		CONFIG_GRUB_IMAGES=y
-		# CONFIG_GRUB_EFI_IMAGES is not set
-		# CONFIG_VMDK_IMAGES is not set
-		EOF
-		;;
-	"r1-plus-lts"|"r1-plus"|"r4s"|"r2c"|"r2s")
-		cat<<-EOF >.config
-		CONFIG_TARGET_rockchip=y
-		CONFIG_TARGET_rockchip_armv8=y
-		CONFIG_TARGET_ROOTFS_PARTSIZE=$PARTSIZE
-		CONFIG_BUILD_NLS=y
-		CONFIG_BUILD_PATENTED=y
-		CONFIG_DRIVER_11AC_SUPPORT=y
-		CONFIG_DRIVER_11N_SUPPORT=y
-		CONFIG_DRIVER_11W_SUPPORT=y
-		EOF
-		case "$TARGET_DEVICE" in
-		"r1-plus-lts"|"r1-plus")
-		echo "CONFIG_TARGET_rockchip_armv8_DEVICE_xunlong_orangepi-$TARGET_DEVICE=y" >>.config ;;
-		"r4s"|"r2c"|"r2s")
-		echo "CONFIG_TARGET_rockchip_armv8_DEVICE_friendlyarm_nanopi-$TARGET_DEVICE=y" >>.config ;;
-		esac
-		;;
-	"newifi-d2")
-		cat >.config<<-EOF
-		CONFIG_TARGET_ramips=y
-		CONFIG_TARGET_ramips_mt7621=y
-		CONFIG_TARGET_ramips_mt7621_DEVICE_d-team_newifi-d2=y
-		EOF
-		;;
-	"phicomm_k2p")
-		cat >.config<<-EOF
-		CONFIG_TARGET_ramips=y
-		CONFIG_TARGET_ramips_mt7621=y
-		CONFIG_TARGET_ramips_mt7621_DEVICE_phicomm_k2p=y
-		EOF
-		;;
-	"asus_rt-n16")
-		if [[ "${REPO_BRANCH#*-}" = "18.06" ]]; then
-			cat >.config<<-EOF
-			CONFIG_TARGET_brcm47xx=y
-			CONFIG_TARGET_brcm47xx_mips74k=y
-			CONFIG_TARGET_brcm47xx_mips74k_DEVICE_asus_rt-n16=y
-			EOF
-		else
-			cat >.config<<-EOF
-			CONFIG_TARGET_bcm47xx=y
-			CONFIG_TARGET_bcm47xx_mips74k=y
-			CONFIG_TARGET_bcm47xx_mips74k_DEVICE_asus_rt-n16=y
-			EOF
-		fi
-		;;
-	"armvirt-64-default")
-		cat >.config<<-EOF
-		CONFIG_TARGET_armvirt=y
-		CONFIG_TARGET_armvirt_64=y
-		CONFIG_TARGET_armvirt_64_Default=y
-		EOF
-		;;
-esac
+config
+# if [ x"$VERSION" = x ]; then
+# 	min
+# 	exit 0
+# fi
 
 cat >>.config <<-EOF
 	CONFIG_KERNEL_BUILD_USER="win3gp"
@@ -287,6 +336,9 @@ cat >>.config <<-EOF
 	## CONFIG_GRUB_EFI_IMAGES is not set
 	CONFIG_PACKAGE_default-settings-chn=y
 	CONFIG_DEFAULT_SETTINGS_OPTIMIZE_FOR_CHINESE=y
+	# CONFIG_LUCI_SRCDIET is not set #缩小 Lua 源代码
+	# CONFIG_LUCI_JSMIN is not set  #缩小 JavaScript 源代码
+	# CONFIG_LUCI_CSSTIDY is not set #缩小 CSS 文件
 EOF
 
 config_generate="package/base-files/files/bin/config_generate"
@@ -309,6 +361,40 @@ clone_url "
 	https://github.com/fw876/helloworld
 	https://github.com/xiaorouji/openwrt-passwall-packages
 "
+
+grep -q 'nft-tproxy' package/kernel/linux/modules/netfilter.mk || {
+	cat <<-\EOF >>package/kernel/linux/modules/netfilter.mk
+	define KernelPackage/nft-tproxy
+		SUBMENU:=$(NF_MENU)
+		TITLE:=Netfilter nf_tables tproxy support
+		DEPENDS:=+kmod-nft-core +kmod-nf-tproxy +kmod-nf-conntrack
+		FILES:=$(foreach mod,$(NFT_TPROXY-m),$(LINUX_DIR)/net/$(mod).ko)
+		AUTOLOAD:=$(call AutoProbe,$(notdir $(NFT_TPROXY-m)))
+		KCONFIG:=$(KCONFIG_NFT_TPROXY)
+	endef
+
+	$(eval $(call KernelPackage,nft-tproxy))
+
+	define KernelPackage/nf-tproxy
+		SUBMENU:=$(NF_MENU)
+		TITLE:=Netfilter tproxy support
+		KCONFIG:= $(KCONFIG_NF_TPROXY)
+		FILES:=$(foreach mod,$(NF_TPROXY-m),$(LINUX_DIR)/net/$(mod).ko)
+		AUTOLOAD:=$(call AutoProbe,$(notdir $(NF_TPROXY-m)))
+	endef
+
+	$(eval $(call KernelPackage,nf-tproxy))
+	EOF
+}
+
+([[ "$REPO_BRANCH" =~ 21.02 ]] || [[ "$REPO_BRANCH" =~ 18.06 ]]) && \
+clone_repo coolsnowwolf/packages golang
+clone_repo vernesong/OpenClash luci-app-openclash
+clone_repo xiaorouji/openwrt-passwall luci-app-passwall
+clone_repo xiaorouji/openwrt-passwall2 luci-app-passwall2
+clone_repo coolsnowwolf/packages qtbase qttools qBittorrent qBittorrent-static
+clone_repo kiddin9/openwrt-packages luci-app-adguardhome adguardhome luci-app-bypass
+
 [ "$VERSION" = plus -a "$TARGET_DEVICE" != phicomm_k2p -a "$TARGET_DEVICE" != newifi-d2 -a "$TARGET_DEVICE" != asus_rt-n16 ] && {
 	_packages "
 	attr axel bash blkid bsdtar btrfs-progs cfdisk chattr collectd-mod-ping
@@ -325,7 +411,7 @@ clone_url "
 	kmod-usb-net-rtl8152 kmod-usb-ohci kmod-usb-serial-option kmod-usb-storage kmod-usb-uhci
 	kmod-usb-storage-extras kmod-usb-storage-uas kmod-usb-wdm kmod-usb2 kmod-usb3
 	luci-app-aria2
-	#luci-app-bypass
+	luci-app-bypass
 	luci-app-cifs-mount
 	luci-app-commands
 	luci-app-hd-idle
@@ -366,30 +452,15 @@ clone_url "
 	clone_url "
 		https://github.com/destan19/OpenAppFilter
 		https://github.com/messense/aliyundrive-webdav
-		#https://github.com/jerrykuku/luci-app-vssr
 		https://github.com/jerrykuku/lua-maxminddb
 		https://github.com/sirpdboy/luci-app-cupsd
-		#https://github.com/ntlf9t/luci-app-easymesh
 		https://github.com/yaof2/luci-app-ikoolproxy
 		https://github.com/zzsj0928/luci-app-pushbot
-		https://github.com/coolsnowwolf/packages/trunk/libs/qtbase
-		https://github.com/coolsnowwolf/packages/trunk/libs/qttools
-		https://github.com/coolsnowwolf/packages/trunk/net/qBittorrent
-		https://github.com/coolsnowwolf/packages/trunk/net/qBittorrent-static
-		https://github.com/vernesong/OpenClash/trunk/luci-app-openclash
-		https://github.com/xiaorouji/openwrt-passwall/trunk/luci-app-passwall
-		https://github.com/xiaorouji/openwrt-passwall2/trunk/luci-app-passwall2
-		https://github.com/coolsnowwolf/luci/trunk/applications/luci-app-adbyby-plus
 		https://github.com/kuoruan/luci-app-frpc
-		#https://github.com/immortalwrt/packages/trunk/net/adguardhome
-		#https://github.com/kiddin9/openwrt-packages/trunk/luci-app-adguardhome
-		#https://github.com/kiddin9/openwrt-packages/trunk/luci-app-bypass
-		https://github.com/coolsnowwolf/packages/trunk/admin/netdata
-		#https://github.com/sirpdboy/luci-app-netdata
-		#https://github.com/linkease/nas-packages-luci/trunk/luci/luci-app-ddnsto
 	"
-	([[ "$REPO_BRANCH" =~ 21.02 ]] || [[ "$REPO_BRANCH" =~ 18.06 ]]) && clone_url "https://github.com/coolsnowwolf/packages/trunk/lang/golang"
+
 	rm -rf feeds/*/*/{luci-app-appfilter,open-app-filter}
+
 	[[ -e feeds/luci/applications/luci-app-unblockneteasemusic/root/etc/init.d/unblockneteasemusic ]] && \
 	sed -i '/log_check/s/^/#/' feeds/luci/applications/luci-app-unblockneteasemusic/root/etc/init.d/unblockneteasemusic
 	# https://github.com/immortalwrt/luci/branches/openwrt-21.02/applications/luci-app-ttyd ## 分支
@@ -427,18 +498,18 @@ clone_url "
 	[[ "$REPO_BRANCH" =~ 2.*0 ]] && {
 		sed -i 's/^ping/-- ping/g' package/*/*/*/*/*/bridge.lua
 		# sed -i 's/services/nas/' feeds/luci/*/*/*/*/*/*/menu.d/*transmission.json
-		clone_url "
-		https://github.com/x-wrt/com.x-wrt/trunk/luci-app-simplenetwork
-		https://github.com/brvphoenix/wrtbwmon/trunk/wrtbwmon
-		https://github.com/brvphoenix/luci-app-wrtbwmon/trunk/luci-app-wrtbwmon
-		"
+		# clone_url "
+		# https://github.com/x-wrt/com.x-wrt/trunk/luci-app-simplenetwork
+		# https://github.com/brvphoenix/wrtbwmon/trunk/wrtbwmon
+		# https://github.com/brvphoenix/luci-app-wrtbwmon/trunk/luci-app-wrtbwmon
+		# "
 	} || {
 		_packages "luci-app-argon-config"
-		clone_url "
-		https://github.com/liuran001/openwrt-packages/trunk/luci-theme-argon
-		https://github.com/liuran001/openwrt-packages/trunk/luci-app-argon-config
-		https://github.com/brvphoenix/wrtbwmon
-		https://github.com/firker/luci-app-wrtbwmon-zh/trunk/luci-app-wrtbwmon-zh"
+		# clone_url "
+		# https://github.com/liuran001/openwrt-packages/trunk/luci-theme-argon
+		# https://github.com/liuran001/openwrt-packages/trunk/luci-app-argon-config
+		# https://github.com/brvphoenix/wrtbwmon
+		# https://github.com/firker/luci-app-wrtbwmon-zh/trunk/luci-app-wrtbwmon-zh"
 		sed -i "s/argonv3/argon/" feeds/luci/applications/luci-app-argon-config/Makefile
 		sed -i 's/option enabled.*/option enabled 1/' feeds/*/*/*/*/upnpd.config
 		sed -i 's/option dports.*/option enabled 2/' feeds/*/*/*/*/upnpd.config
@@ -457,7 +528,7 @@ clone_url "
 	[[ -d $xb ]] && sed -i 's/default y/default n/g' $xb/Makefile
 	#https://github.com/userdocs/qbittorrent-nox-static/releases
 	xc=$(find package/A/ feeds/ -type d -name "qBittorrent-static" 2>/dev/null)
-	[[ -d $xc ]] && sed -i 's/PKG_VERSION:=.*/PKG_VERSION:=4.6.1_v2.0.9/;s/userdocs/hong0980/;s/ARCH)-qbittorrent/ARCH)-qt6-qbittorrent/' $xc/Makefile
+	[[ -d $xc ]] && sed -i 's/PKG_VERSION:=.*/PKG_VERSION:=4.6.3_v2.0.9/;s/userdocs/hong0980/;s/ARCH)-qbittorrent/ARCH)-qt6-qbittorrent/' $xc/Makefile
 	xd=$(find package/A/ feeds/luci/applications/ -type d -name "luci-app-turboacc" 2>/dev/null)
 	[[ -d $xd ]] && sed -i '/hw_flow/s/1/0/;/sfe_flow/s/1/0/;/sfe_bridge/s/1/0/' $xd/root/etc/config/turboacc
 	xe=$(find package/A/ feeds/luci/applications/ -type d -name "luci-app-ikoolproxy" 2>/dev/null)
@@ -598,7 +669,7 @@ case "$TARGET_DEVICE" in
 	[[ -n $IP ]] && \
 	sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate || \
 	sed -i '/n) ipad/s/".*"/"192.168.2.110"/' $config_generate
-	clone_url "https://github.com/ophub/luci-app-amlogic/trunk/luci-app-amlogic"
+	# clone_url "https://github.com/ophub/luci-app-amlogic/trunk/luci-app-amlogic"
 	[[ $VERSION = plus ]] && {
 		_packages "attr bash blkid brcmfmac-firmware-43430-sdio brcmfmac-firmware-43455-sdio
 		bsdtar btrfs-progs cfdisk chattr curl dosfstools e2fsprogs f2fs-tools f2fsck fdisk
@@ -619,9 +690,9 @@ case "$TARGET_DEVICE" in
 	;;
 esac
 sed -i 's|\.\./\.\./luci.mk|$(TOPDIR)/feeds/luci/luci.mk|' package/A/*/Makefile 2>/dev/null
-sed -i 's|\.\./\.\./lang/golang|$(TOPDIR)/feeds/packages/lang/golang|' package/A/*/Makefile 2>/dev/null
+
 for p in $(find package/A/ feeds/luci/applications/ -type d -name "po" 2>/dev/null); do
-	if [[ "${REPO_BRANCH#*-}" =~ ^2 ]]; then
+	if [[ "$REPO_BRANCH" =~ openwrt-2 || "$REPO_BRANCH" =~ master ]]; then
 		if [[ ! -d $p/zh_Hans && -d $p/zh-cn ]]; then
 			ln -s zh-cn $p/zh_Hans 2>/dev/null
 			# printf "%-13s %-33s %s %s %s\n" \
@@ -636,17 +707,12 @@ for p in $(find package/A/ feeds/luci/applications/ -type d -name "po" 2>/dev/nu
 	fi
 done
 
+[[ "$REPO_BRANCH" =~ master ]] && sed -i '/deluge/d' .config
 sed -i '/bridge/d' .config
-[[ -z "$VERSION" ]] && {
-	echo "FETCH_CACHE=true" >>$GITHUB_ENV
-	echo "UPLOAD_RELEASE=true" >>$GITHUB_ENV
-	sed -i 's/luci-app-*//g' .config
-	sed -i 's/luci-app-[^ ]* //g' {include/target.mk,$(find target/ -name Makefile)}
-}
 echo -e "$(color cy '更新配置....')\c"; BEGIN_TIME=$(date '+%H:%M:%S')
 make defconfig 1>/dev/null 2>&1
 status
-grep 'Orange' .config
+
 LINUX_VERSION=$(grep 'CONFIG_LINUX.*=y' .config | sed -r 's/CONFIG_LINUX_(.*)=y/\1/' | tr '_' '.')
 echo -e "$(color cy 当前机型) $(color cb $SOURCE_NAME-${REPO_BRANCH#*-}-$LINUX_VERSION-${DEVICE_NAME}${VERSION:+-$VERSION})"
 sed -i "/IMG_PREFIX:/ {s/=/=$SOURCE_NAME-${REPO_BRANCH#*-}-$LINUX_VERSION-\$(shell TZ=UTC-8 date +%m%d-%H%M)-/}" include/image.mk

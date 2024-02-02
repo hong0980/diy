@@ -5,11 +5,11 @@ curl -sL https://raw.githubusercontent.com/klever1988/nanopi-openwrt/zstd-bin/zs
 # curl -sL api.github.com/repos/hong0980/Actions-OpenWrt/releases | awk -F'"' '/browser_download_url/{print $4}' | grep 'cache' >xa
 curl -sL api.github.com/repos/hong0980/OpenWrt-Cache/releases | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' >xc
 curl -sL api.github.com/repos/hong0980/Actions-OpenWrt/releases | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' >xa
-[ -d output ] || mkdir firmware output
+mkdir firmware output 2>/dev/null
 
 if [[ $cache_Release = 'true' ]]; then
 	count=0
-	while read -r line && [ $count -lt 3 ]; do
+	while read -r line && [ $count -lt 4 ]; do
 		filename="${line##*/}"
 		if ! grep -q "$filename" xc 2>/dev/null && wget -qO "output/$filename" "$line"; then
 		    echo "$filename 已经下载完成"
@@ -25,7 +25,7 @@ if [[ $cache_Release = 'true' ]]; then
 	exit 0
 fi
 
-if [[ $FETCH_CACHE = 'true' ]]; then
+if [[ $CACHE_ACTIONS = 'true' ]]; then
 	echo "打包cache"
 	REPO_FLODER=${REPO_FLODER:-openwrt}
 	hx=`ls $REPO_FLODER/bin/targets/*/*/*toolchain* 2>/dev/null | sed "s/openwrt/$CACHE_NAME/g" 2>/dev/null`
@@ -34,7 +34,7 @@ if [[ $FETCH_CACHE = 'true' ]]; then
 	[[ $xx ]] && (cp -v `find $REPO_FLODER/bin/targets/ -type f -name "*imagebuil*"` output/${xx##*/} || true)
 	cd "$REPO_FLODER"
 	[[ -d ".ccache" ]] && (ccache=".ccache"; ls -alh .ccache)
-	rm -rf dl build_dir tmp .git
+	# rm -rf dl build_dir tmp .git
 	du -h --max-depth=1 ./staging_dir
 	du -h --max-depth=1 ./ --exclude=staging_dir
 	tar -I zstdmt -cf ../output/$CACHE_NAME-cache.tzst staging_dir/host* staging_dir/tool* $ccache || \
@@ -42,6 +42,7 @@ if [[ $FETCH_CACHE = 'true' ]]; then
 	if [[ $(du -sm "../output" | cut -f1) -ge 150 ]]; then
 		ls -lh ../output
 		echo "OUTPUT_RELEASE=true" >>$GITHUB_ENV
+		sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
 	fi
 	echo "SAVE_CACHE=" >>$GITHUB_ENV
 	exit 0
@@ -95,27 +96,42 @@ _printf() {
 	awk '{printf "%s %-40s %s %s %s\n" ,$1,$2,$3,$4,$5}'
 }
 
-svn_co() {
-	g=$(find package/ feeds/ target/ -maxdepth 5 -type d -name ${2##*/} 2>/dev/null)
-	if [[ -d $g ]]; then
-		k="$g"
-		mv -f $g ../
-	else
-		k="package/A/${2##*/}"
-	fi
-	if svn export --force $1 $2 $k 1>/dev/null 2>&1; then
-	# $1="-rxxx" $2="url" $k="path"
-		if [[ $k = $g ]]; then
-			echo -e "$(color cg 替换) ${2##*/} [ $(color cg ✔) ]" | _printf
-		else
-			echo -e "$(color cb 添加) ${2##*/} [ $(color cb ✔) ]" | _printf
-		fi
-	else
-		echo -e "$(color cr 拉取) ${2##*/} [ $(color cr ✕) ]" | _printf
-		[[ -d ../${g##*/} ]] && (mv -f ../${g##*/} ${g%/*}/ && \
-			echo -e "$(color cy 回退) ${g##*/} [ $(color cy ✔) ]" | _printf)
-	fi
-	unset -v k g
+clone_repo() {
+    local repo_url branch target_dir source_dir current_dir destination_dir
+    if [[ "$1" == */* ]]; then
+        repo_url="$1"
+        shift
+    else
+        branch="-b $1"
+        repo_url="$2"
+        shift 2
+    fi
+
+    if ! git clone -q $branch --depth 1 "https://github.com/$repo_url" gitemp; then
+        echo -e "$(color cr 拉取) https://github.com/$repo_url [ $(color cr ✕) ]" | _printf
+        return 0
+    fi
+
+    for target_dir in "$@"; do
+        source_dir=$(find gitemp -maxdepth 5 -type d -name "$target_dir" -print -quit)
+        current_dir=$(find package/ feeds/ target/ -maxdepth 5 -type d -name "$target_dir" -print -quit)
+        destination_dir="${current_dir:-package/A/$target_dir}"
+        if [[ -d $current_dir && $destination_dir != $current_dir ]]; then
+            mv -f "$current_dir" ../
+        fi
+
+        if [[ -d $source_dir ]]; then
+            if mv -f "$source_dir" "$destination_dir"; then
+                if [[ $destination_dir = $current_dir ]]; then
+                    echo -e "$(color cg 替换) $target_dir [ $(color cg ✔) ]" | _printf
+                else
+                    echo -e "$(color cb 添加) $target_dir [ $(color cb ✔) ]" | _printf
+                fi
+            fi
+        fi
+    done
+
+    rm -rf gitemp
 }
 
 clone_url() {
@@ -130,11 +146,7 @@ clone_url() {
 				k="package/A/$name"
 			fi
 
-			if [[ "$(egrep "trunk|branches" <<<$x)" ]]; then
-				svn export $x $k 1>/dev/null 2>&1 && f="1"
-			else
-				git clone -q $x $k && f="1"
-			fi
+			git clone -q $x $k && f="1"
 
 			if [[ -n $f ]]; then
 				if [[ $k = $g ]]; then
@@ -176,12 +188,87 @@ clone_url() {
 	# set +x
 }
 
+function config(){
+	case "$TARGET_DEVICE" in
+		"x86_64")
+			cat >.config<<-EOF
+			CONFIG_TARGET_x86=y
+			CONFIG_TARGET_x86_64=y
+			CONFIG_TARGET_x86_64_DEVICE_generic=y
+			CONFIG_TARGET_ROOTFS_PARTSIZE=$PARTSIZE
+			CONFIG_BUILD_NLS=y
+			CONFIG_BUILD_PATENTED=y
+			CONFIG_TARGET_IMAGES_GZIP=y
+			CONFIG_GRUB_IMAGES=y
+			# CONFIG_GRUB_EFI_IMAGES is not set
+			# CONFIG_VMDK_IMAGES is not set
+			EOF
+			;;
+		"r1-plus-lts"|"r1-plus"|"r4s"|"r2c"|"r2s")
+			cat >.config<<-EOF
+			CONFIG_TARGET_rockchip=y
+			CONFIG_TARGET_rockchip_armv8=y
+			CONFIG_TARGET_ROOTFS_PARTSIZE=$PARTSIZE
+			CONFIG_BUILD_NLS=y
+			CONFIG_BUILD_PATENTED=y
+			CONFIG_DRIVER_11AC_SUPPORT=y
+			CONFIG_DRIVER_11N_SUPPORT=y
+			CONFIG_DRIVER_11W_SUPPORT=y
+			EOF
+			case "$TARGET_DEVICE" in
+			"r1-plus-lts"|"r1-plus")
+			echo "CONFIG_TARGET_rockchip_armv8_DEVICE_xunlong_orangepi-$TARGET_DEVICE=y" >>.config ;;
+			"r4s"|"r2c"|"r2s")
+			echo "CONFIG_TARGET_rockchip_armv8_DEVICE_friendlyarm_nanopi-$TARGET_DEVICE=y" >>.config ;;
+			esac
+			;;
+		"newifi-d2")
+			cat >.config<<-EOF
+			CONFIG_TARGET_ramips=y
+			CONFIG_TARGET_ramips_mt7621=y
+			CONFIG_TARGET_ramips_mt7621_DEVICE_d-team_newifi-d2=y
+			EOF
+			;;
+		"phicomm_k2p")
+			cat >.config<<-EOF
+			CONFIG_TARGET_ramips=y
+			CONFIG_TARGET_ramips_mt7621=y
+			CONFIG_TARGET_ramips_mt7621_DEVICE_phicomm_k2p=y
+			EOF
+			;;
+		"asus_rt-n16")
+			cat >.config<<-EOF
+			CONFIG_TARGET_bcm47xx=y
+			CONFIG_TARGET_bcm47xx_mips74k=y
+			CONFIG_TARGET_bcm47xx_mips74k_DEVICE_asus_rt-n16=y
+			EOF
+			;;
+		"armvirt-64-default")
+			cat >.config<<-EOF
+			CONFIG_TARGET_armvirt=y
+			CONFIG_TARGET_armvirt_64=y
+			CONFIG_TARGET_armvirt_64_Default=y
+			EOF
+			;;
+	esac
+}
+
+function min() {
+	echo "VERSION=" >>$GITHUB_ENV
+	echo "FETCH_CACHE=true" >>$GITHUB_ENV
+	sed -i 's/luci-app-[^ ]* //g' {include/target.mk,$(find target/ -name Makefile)}
+	echo -e "$(color cy '更新配置....')\c"; BEGIN_TIME=$(date '+%H:%M:%S')
+	make defconfig 1>/dev/null 2>&1
+	grep 'js|JS' .config | less
+	status
+}
+
 REPO_URL="https://github.com/coolsnowwolf/lede"
 echo -e "$(color cy '拉取源码....')\c"; BEGIN_TIME=$(date '+%H:%M:%S')
 [[ $REPO_BRANCH ]] && cmd="-b $REPO_BRANCH"
-git clone -q $cmd $REPO_URL $REPO_FLODER --single-branch
+git clone -q $cmd $REPO_URL $REPO_FLODER
 status
-[[ -d $REPO_FLODER ]] && cd $REPO_FLODER || exit
+cd $REPO_FLODER || exit
 
 case "$TARGET_DEVICE" in
 	"x86_64") export DEVICE_NAME="x86_64";;
@@ -196,25 +283,23 @@ export TOOLS_HASH=`git log --pretty=tformat:"%h" -n1 tools toolchain`
 export CACHE_NAME="$SOURCE_NAME-$REPO_BRANCH-$TOOLS_HASH-$DEVICE_NAME"
 echo "CACHE_NAME=$CACHE_NAME" >>$GITHUB_ENV
 
-if (grep -q "$CACHE_NAME-cache.tzst" ../xa || grep -q "$CACHE_NAME-cache.tzst" ../xc); then
+if (grep -q "$CACHE_NAME" ../xa || grep -q "$CACHE_NAME" ../xc); then
 	echo -e "$(color cy '下载tz-cache')\c"; BEGIN_TIME=$(date '+%H:%M:%S')
-	grep -q "$CACHE_NAME-cache.tzst" ../xa && \
-	wget -qc -t=3 $(grep "$CACHE_NAME" ../xa) || \
-	wget -qc -t=3 $(grep "$CACHE_NAME" ../xc)
+	wget -qc -t=3 $(grep "$CACHE_NAME" ../xa) || wget -qc -t=3 $(grep "$CACHE_NAME" ../xc)
 	[ -e *.tzst ]; status
 	[ -e *.tzst ] && {
 		echo -e "$(color cy '部署tz-cache')\c"; BEGIN_TIME=$(date '+%H:%M:%S')
 		(tar -I unzstd -xf *.tzst || tar -xf *.tzst) && {
-			if ! grep -q "$CACHE_NAME-cache.tzst" ../xa; then
+			if grep -q "$CACHE_NAME" ../xc; then
 				cp *.tzst ../output
 				echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
 			fi
-			sed -i 's/ $(tool.*stamp-compile)//g' Makefile
+			sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
 		}
 		[ -d staging_dir ]; status
 	}
 else
-	VERSION=''
+	# VERSION=
 	echo "CACHE_ACTIONS=true" >>$GITHUB_ENV
 fi
 
@@ -223,69 +308,11 @@ echo -e "$(color cy '更新软件....')\c"; BEGIN_TIME=$(date '+%H:%M:%S')
 ./scripts/feeds install -a 1>/dev/null 2>&1
 status
 
-: >.config
-case "$TARGET_DEVICE" in
-	"x86_64")
-		cat >.config<<-EOF
-		CONFIG_TARGET_x86=y
-		CONFIG_TARGET_x86_64=y
-		CONFIG_TARGET_x86_64_DEVICE_generic=y
-		CONFIG_TARGET_ROOTFS_PARTSIZE=$PARTSIZE
-		CONFIG_BUILD_NLS=y
-		CONFIG_BUILD_PATENTED=y
-		CONFIG_TARGET_IMAGES_GZIP=y
-		CONFIG_GRUB_IMAGES=y
-		# CONFIG_GRUB_EFI_IMAGES is not set
-		# CONFIG_VMDK_IMAGES is not set
-		EOF
-		;;
-	"r1-plus-lts"|"r1-plus"|"r4s"|"r2c"|"r2s")
-		cat<<-EOF >.config
-		CONFIG_TARGET_rockchip=y
-		CONFIG_TARGET_rockchip_armv8=y
-		CONFIG_TARGET_ROOTFS_PARTSIZE=$PARTSIZE
-		CONFIG_BUILD_NLS=y
-		CONFIG_BUILD_PATENTED=y
-		CONFIG_DRIVER_11AC_SUPPORT=y
-		CONFIG_DRIVER_11N_SUPPORT=y
-		CONFIG_DRIVER_11W_SUPPORT=y
-		EOF
-		case "$TARGET_DEVICE" in
-		"r1-plus-lts"|"r1-plus")
-		echo "CONFIG_TARGET_rockchip_armv8_DEVICE_xunlong_orangepi-$TARGET_DEVICE=y" >>.config ;;
-		"r4s"|"r2c"|"r2s")
-		echo "CONFIG_TARGET_rockchip_armv8_DEVICE_friendlyarm_nanopi-$TARGET_DEVICE=y" >>.config ;;
-		esac
-		;;
-	"newifi-d2")
-		cat >.config<<-EOF
-		CONFIG_TARGET_ramips=y
-		CONFIG_TARGET_ramips_mt7621=y
-		CONFIG_TARGET_ramips_mt7621_DEVICE_d-team_newifi-d2=y
-		EOF
-		;;
-	"phicomm_k2p")
-		cat >.config<<-EOF
-		CONFIG_TARGET_ramips=y
-		CONFIG_TARGET_ramips_mt7621=y
-		CONFIG_TARGET_ramips_mt7621_DEVICE_phicomm_k2p=y
-		EOF
-		;;
-	"asus_rt-n16")
-		cat >.config<<-EOF
-		CONFIG_TARGET_bcm47xx=y
-		CONFIG_TARGET_bcm47xx_mips74k=y
-		CONFIG_TARGET_bcm47xx_mips74k_DEVICE_asus_rt-n16=y
-		EOF
-		;;
-	"armvirt-64-default")
-		cat >.config<<-EOF
-		CONFIG_TARGET_armvirt=y
-		CONFIG_TARGET_armvirt_64=y
-		CONFIG_TARGET_armvirt_64_Default=y
-		EOF
-		;;
-esac
+config
+# if [ x"$VERSION" = x ]; then
+# 	min
+# 	exit 0
+# fi
 
 cat >>.config <<-EOF
 	CONFIG_KERNEL_BUILD_USER="win3gp"
@@ -354,25 +381,19 @@ clone_url "
 "
 	[ "$VERSION" = plus -a "$TARGET_DEVICE" != phicomm_k2p -a "$TARGET_DEVICE" != newifi-d2 ] && {
 		clone_url "
-			https://github.com/destan19/OpenAppFilter
-			#https://github.com/jerrykuku/luci-app-vssr
 			https://github.com/jerrykuku/lua-maxminddb
 			https://github.com/zzsj0928/luci-app-pushbot
 			https://github.com/yaof2/luci-app-ikoolproxy
-			#https://github.com/project-lede/luci-app-godproxy
-			https://github.com/vernesong/OpenClash/trunk/luci-app-openclash
-			#https://github.com/immortalwrt/packages/trunk/net/qBittorrent-Enhanced-Edition
-			https://github.com/sirpdboy/luci-app-cupsd/trunk/luci-app-cupsd
-			https://github.com/sirpdboy/luci-app-cupsd/trunk/cups
-			https://github.com/immortalwrt/luci/trunk/applications/luci-app-eqos
-			https://github.com/immortalwrt/packages/trunk/net/adguardhome
-			https://github.com/kiddin9/openwrt-packages/trunk/luci-app-adguardhome
-			https://github.com/immortalwrt/packages/trunk/utils/cpulimit
-			#https://github.com/sirpdboy/luci-app-netdata
-			#https://github.com/UnblockNeteaseMusic/luci-app-unblockneteasemusic
-			https://github.com/xiaorouji/openwrt-passwall2/trunk/luci-app-passwall2
-			https://github.com/xiaorouji/openwrt-passwall/trunk/luci-app-passwall
 		"
+		clone_repo immortalwrt/luci/ luci-app-eqos
+		clone_repo vernesong/OpenClash luci-app-openclash
+		clone_repo immortalwrt/packages cpulimit btrfs-progs
+		clone_repo sirpdboy/luci-app-cupsd luci-app-cupsd cups
+		clone_repo xiaorouji/openwrt-passwall luci-app-passwall
+		clone_repo xiaorouji/openwrt-passwall2 luci-app-passwall2
+		clone_repo destan19/OpenAppFilter luci-app-oaf open-app-filter oaf
+		clone_repo kiddin9/openwrt-packages luci-app-adguardhome adguardhome luci-app-bypass lua-neturl
+		
 		[[ -e package/A/luci-app-unblockneteasemusic/root/etc/init.d/unblockneteasemusic ]] && \
 		sed -i '/log_check/s/^/#/' package/A/*/*/*/init.d/unblockneteasemusic
 		# packages_url="luci-app-bypass luci-app-filetransfer"
@@ -390,10 +411,9 @@ clone_url "
 			done
 			_packages "luci-app-argon-config luci-theme-argon"
 			clone_url "
-			https://github.com/liuran001/openwrt-packages/trunk/luci-theme-argon
-			https://github.com/liuran001/openwrt-packages/trunk/luci-app-argon-config
-			https://github.com/brvphoenix/wrtbwmon
-			https://github.com/firker/luci-app-wrtbwmon-zh/trunk/luci-app-wrtbwmon-zh"
+			https://github.com/brvphoenix/wrtbwmon"
+			clone_repo liuran001/openwrt-packages luci-theme-argon luci-app-argon-config
+			clone_repo firker/luci-app-wrtbwmon-zh luci-app-wrtbwmon-zh
 		}
 		sed -i 's/ariang/ariang +webui-aria2/g' feeds/*/*/luci-app-aria2/Makefile
 	}
@@ -417,7 +437,7 @@ clone_url "
 	[[ -d $xb ]] && sed -i 's/default y/default n/g' $xb/Makefile
 	# https://github.com/userdocs/qbittorrent-nox-static/releases
 	xc=$(find package/A/ feeds/ -type d -name "qBittorrent-static" 2>/dev/null)
-	[[ -d $xc ]] && sed -i 's/PKG_VERSION:=.*/PKG_VERSION:=4.6.1_v2.0.9/;s/userdocs/hong0980/;s/ARCH)-qbittorrent/ARCH)-qt6-qbittorrent/' $xc/Makefile
+	[[ -d $xc ]] && sed -i 's/PKG_VERSION:=.*/PKG_VERSION:=4.6.3_v2.0.9/;s/userdocs/hong0980/;s/ARCH)-qbittorrent/ARCH)-qt6-qbittorrent/' $xc/Makefile
 	xd=$(find package/A/ feeds/luci/applications/ -type d -name "luci-app-turboacc" 2>/dev/null)
 	[[ -d $xd ]] && sed -i '/hw_flow/s/1/0/;/sfe_flow/s/1/0/;/sfe_bridge/s/1/0/' $xd/root/etc/config/turboacc
 	xe=$(find package/A/ feeds/luci/applications/ -type d -name "luci-app-ikoolproxy" 2>/dev/null)
@@ -514,11 +534,7 @@ case $TARGET_DEVICE in
 	wget -qO package/base-files/files/bin/bpm git.io/bpm && chmod +x package/base-files/files/bin/bpm
 	wget -qO package/base-files/files/bin/ansi git.io/ansi && chmod +x package/base-files/files/bin/ansi
 	# sed -i '/KERNEL_PATCHVER/s/=.*/=5.4/' target/linux/rockchip/Makefile
-	clone_url "
-	#https://github.com/immortalwrt/immortalwrt/branches/openwrt-18.06-k5.4/target/linux/rockchip
-	https://github.com/immortalwrt/immortalwrt/branches/openwrt-18.06-k5.4/package/boot/uboot-rockchip
-	https://github.com/immortalwrt/immortalwrt/branches/openwrt-18.06-k5.4/package/boot/arm-trusted-firmware-rockchip-vendor
-	"
+	# clone_repo 'openwrt-18.06-k5.4' immortalwrt/immortalwrt uboot-rockchip arm-trusted-firmware-rockchip-vendor
 	sed -i "/interfaces_lan_wan/s/'eth1' 'eth0'/'eth0' 'eth1'/" target/linux/rockchip/*/*/*/*/02_network
 	# git_apply "raw.githubusercontent.com/hong0980/diy/master/files/r1-plus-lts-patches/0001-Add-pwm-fan.sh.patch"
 	;;
@@ -549,42 +565,8 @@ case $TARGET_DEVICE in
 	#luci-app-aliyundrive-fuse
 	#luci-app-aliyundrive-webdav
 	#AmuleWebUI-Reloaded ariang bash htop lscpu lsscsi lsusb nano pciutils screen webui-aria2 zstd tar pv
-	subversion-client #unixodbc git-http
+	#subversion-client #unixodbc #git-http
 
-	#USB3.0支持
-	kmod-usb-audio kmod-usb-printer
-	kmod-usb2 kmod-usb2-pci kmod-usb3
-
-	#nfs
-	kmod-fs-nfsd kmod-fs-nfs kmod-fs-nfs-v4
-
-	#3G/4G_Support
-	kmod-mii kmod-usb-acm kmod-usb-serial
-	kmod-usb-serial-option kmod-usb-serial-wwan
-
-	#Sound_Support
-	kmod-sound-core kmod-sound-hda-codec-hdmi
-	kmod-sound-hda-codec-realtek
-	kmod-sound-hda-codec-via
-	kmod-sound-hda-core kmod-sound-hda-intel
-
-	#docker
-	kmod-br-netfilter kmod-dm kmod-dummy kmod-fs-btrfs
-	kmod-ikconfig kmod-nf-conntrack-netlink kmod-nf-ipvs kmod-veth
-
-	#x86
-	acpid alsa-utils ath10k-firmware-qca9888 blkid
-	ath10k-firmware-qca988x ath10k-firmware-qca9984
-	brcmfmac-firmware-43602a1-pcie irqbalance
-	kmod-8139cp kmod-8139too kmod-alx kmod-ath10k
-	kmod-bonding kmod-drm-ttm kmod-fs-ntfs kmod-i40e
-	kmod-i40evf kmod-igbvf kmod-iwlwifi kmod-ixgbe
-	kmod-ixgbevf kmod-mlx4-core kmod-mlx5-core
-	kmod-mmc-spi kmod-pcnet32 kmod-r8125 kmod-r8168
-	kmod-rt2800-usb kmod-rtl8xxxu kmod-sdhci
-	kmod-sound-i8x0 kmod-sound-via82xx kmod-tg3
-	kmod-tulip kmod-usb-hid kmod-vmxnet3 lm-sensors-detect
-	qemu-ga smartmontools snmpd
 	"
 	sed -i '/easymesh/d' .config
 	rm -rf package/lean/rblibtorrent
@@ -640,13 +622,8 @@ for p in $(find package/A/ feeds/luci/applications/ -type d -name "po" 2>/dev/nu
 	fi
 done
 
-[[ -z "$VERSION" ]] && {
-	echo "FETCH_CACHE=true" >>$GITHUB_ENV
-	sed -i 's/luci-app-*//g' .config
-	sed -i 's/luci-app-[^ ]* //g' {include/target.mk,$(find target/ -name Makefile)}
-}
-
-clone_url "https://github.com/immortalwrt/packages/branches/openwrt-23.05/lang/rust"
+# clone_url "https://github.com/immortalwrt/packages/branches/openwrt-23.05/lang/rust"
+clone_repo openwrt-23.05 immortalwrt/packages rust
 sed -i 's|\.\./\.\./luci.mk|$(TOPDIR)/feeds/luci/luci.mk|' package/A/*/Makefile 2>/dev/null
 sed -i 's|\.\./\.\./lang/golang|$(TOPDIR)/feeds/packages/lang/golang|' package/A/*/Makefile 2>/dev/null
 sed -i '/bridge/d' .config
