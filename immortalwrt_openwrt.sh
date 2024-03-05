@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # sudo bash -c 'bash <(curl -s https://build-scripts.immortalwrt.eu.org/init_build_environment.sh)'
+qBittorrent_version=$(curl -sL api.github.com/repos/hong0980/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K\d+\.\d+\.\d+' | sort -Vr | head -n 1)
 curl -sL https://raw.githubusercontent.com/klever1988/nanopi-openwrt/zstd-bin/zstd | sudo tee /usr/bin/zstd > /dev/null
 curl -sL $GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' >xa
 curl -sL api.github.com/repos/hong0980/OpenWrt-Cache/releases | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' >xc
@@ -337,7 +338,7 @@ cat >>.config <<-EOF
 	CONFIG_PACKAGE_default-settings-chn=y
 	CONFIG_DEFAULT_SETTINGS_OPTIMIZE_FOR_CHINESE=y
 	# CONFIG_LUCI_SRCDIET is not set #缩小 Lua 源代码
-	# CONFIG_LUCI_JSMIN is not set  #缩小 JavaScript 源代码
+	## CONFIG_LUCI_JSMIN is not set  #缩小 JavaScript 源代码
 	# CONFIG_LUCI_CSSTIDY is not set #缩小 CSS 文件
 EOF
 
@@ -388,7 +389,9 @@ grep -q 'nft-tproxy' package/kernel/linux/modules/netfilter.mk || {
 }
 
 ([[ "$REPO_BRANCH" =~ 21.02 ]] || [[ "$REPO_BRANCH" =~ 18.06 ]]) && \
-clone_repo coolsnowwolf/packages golang
+clone_repo immortalwrt/packages golang
+# rm -rf feeds/packages/lang/golang
+# git clone -q https://github.com/sbwml/packages_lang_golang -b 22.x feeds/packages/lang/golang
 clone_repo vernesong/OpenClash luci-app-openclash
 clone_repo xiaorouji/openwrt-passwall luci-app-passwall
 clone_repo xiaorouji/openwrt-passwall2 luci-app-passwall2
@@ -528,7 +531,7 @@ clone_repo kiddin9/openwrt-packages luci-app-adguardhome adguardhome luci-app-by
 	[[ -d $xb ]] && sed -i 's/default y/default n/g' $xb/Makefile
 	#https://github.com/userdocs/qbittorrent-nox-static/releases
 	xc=$(find package/A/ feeds/ -type d -name "qBittorrent-static" 2>/dev/null)
-	[[ -d $xc ]] && sed -i 's/PKG_VERSION:=.*/PKG_VERSION:=4.6.3_v2.0.9/;s/userdocs/hong0980/;s/ARCH)-qbittorrent/ARCH)-qt6-qbittorrent/' $xc/Makefile
+	[[ -d $xc ]] && sed -i "s/PKG_VERSION:=.*/PKG_VERSION:=${qBittorrent_version}_v2.0.9/;s/userdocs/hong0980/;s/ARCH)-qbittorrent/ARCH)-qt6-qbittorrent/" $xc/Makefile
 	xd=$(find package/A/ feeds/luci/applications/ -type d -name "luci-app-turboacc" 2>/dev/null)
 	[[ -d $xd ]] && sed -i '/hw_flow/s/1/0/;/sfe_flow/s/1/0/;/sfe_bridge/s/1/0/' $xd/root/etc/config/turboacc
 	xe=$(find package/A/ feeds/luci/applications/ -type d -name "luci-app-ikoolproxy" 2>/dev/null)
@@ -573,7 +576,7 @@ case "$TARGET_DEVICE" in
 		#luci-app-smartdns
 		#luci-app-adbyby-plus
 		#luci-app-unblockneteasemusic
-		#htop lscpu lsscsi #nano screen zstd pv ethtool
+		#htop lscpu lsscsi #nano screen #zstd pv ethtool
 		"
 		[[ "${REPO_BRANCH#*-}" =~ ^2 ]] && sed -i '/bridge/d' .config
 		wget -qO package/base-files/files/bin/bpm git.io/bpm && chmod +x package/base-files/files/bin/bpm

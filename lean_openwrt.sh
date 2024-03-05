@@ -3,6 +3,7 @@
 curl -sL https://raw.githubusercontent.com/klever1988/nanopi-openwrt/zstd-bin/zstd | sudo tee /usr/bin/zstd > /dev/null
 # curl -sL api.github.com/repos/hong0980/OpenWrt-Cache/releases | jq -r '.[0].assets[].browser_download_url' | grep 'cache' >xc
 # curl -sL api.github.com/repos/hong0980/Actions-OpenWrt/releases | awk -F'"' '/browser_download_url/{print $4}' | grep 'cache' >xa
+qBittorrent_version=$(curl -sL api.github.com/repos/hong0980/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K\d+\.\d+\.\d+' | sort -Vr | head -n 1)
 curl -sL api.github.com/repos/hong0980/OpenWrt-Cache/releases | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' >xc
 curl -sL api.github.com/repos/hong0980/Actions-OpenWrt/releases | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' >xa
 mkdir firmware output 2>/dev/null
@@ -91,6 +92,16 @@ _delpackage() {
 		[[ $z =~ ^# ]] || sed -i -E "s/(CONFIG_PACKAGE_.*$z)=y/# \1 is not set/" .config
 	done
 }
+_pushd() {
+	if ! pushd "$@" &> /dev/null; then
+		printf '\n%b\n' "该目录不存在。"
+	fi
+}
+_popd() {
+	if ! popd &> /dev/null; then
+		printf '%b\n' "该目录不存在。"
+	fi
+}
 
 _printf() {
 	awk '{printf "%s %-40s %s %s %s\n" ,$1,$2,$3,$4,$5}'
@@ -113,6 +124,13 @@ clone_repo() {
     fi
 
     for target_dir in "$@"; do
+        if [ "$target_dir" = 'golang' -a -d "gitemp/lang/golang" ]; then
+            mv -f feeds/packages/lang/golang ../
+            mv -f gitemp/lang/golang feeds/packages/lang/golang && \
+            echo -e "$(color cg 替换) $target_dir [ $(color cg ✔) ]" | _printf
+            [ -d gitemp ] && rm -rf gitemp
+            continue
+        fi
         source_dir=$(find gitemp -maxdepth 5 -type d -name "$target_dir" -print -quit)
         current_dir=$(find package/ feeds/ target/ -maxdepth 5 -type d -name "$target_dir" -print -quit)
         destination_dir="${current_dir:-package/A/$target_dir}"
@@ -131,7 +149,7 @@ clone_repo() {
         fi
     done
 
-    rm -rf gitemp
+    [ -d gitemp ] && rm -rf gitemp
 }
 
 clone_url() {
@@ -165,6 +183,11 @@ clone_url() {
 		else
 			for w in $(grep "^https" <<<$x); do
 				git clone -q $w ../${w##*/} && {
+                    [[ ${w##*/} =~ packages ]] && {
+                        _pushd ../${w##*/}
+                        git reset -q --hard f76133e
+                        _popd
+                    }
 					for z in `ls -l ../${w##*/} | awk '/^d/{print $NF}' | grep -Ev 'dump$|dtest$'`; do
 						g=$(find package/ feeds/ target/ -maxdepth 5 -type d -name $z 2>/dev/null | head -n 1)
 						if [[ -d $g ]]; then
@@ -253,13 +276,12 @@ function config(){
 	esac
 }
 
-function min() {
-	echo "VERSION=" >>$GITHUB_ENV
+min() {
+    echo VERSION="" >>$GITHUB_ENV
 	echo "FETCH_CACHE=true" >>$GITHUB_ENV
 	sed -i 's/luci-app-[^ ]* //g' {include/target.mk,$(find target/ -name Makefile)}
 	echo -e "$(color cy '更新配置....')\c"; BEGIN_TIME=$(date '+%H:%M:%S')
 	make defconfig 1>/dev/null 2>&1
-	grep 'js|JS' .config | less
 	status
 }
 
@@ -290,7 +312,7 @@ if (grep -q "$CACHE_NAME" ../xa || grep -q "$CACHE_NAME" ../xc); then
 	[ -e *.tzst ] && {
 		echo -e "$(color cy '部署tz-cache')\c"; BEGIN_TIME=$(date '+%H:%M:%S')
 		(tar -I unzstd -xf *.tzst || tar -xf *.tzst) && {
-			if grep -q "$CACHE_NAME" ../xc; then
+			if ! grep -q "$CACHE_NAME" ../xc; then
 				cp *.tzst ../output
 				echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
 			fi
@@ -386,6 +408,9 @@ clone_url "
 			https://github.com/yaof2/luci-app-ikoolproxy
 		"
 		clone_repo immortalwrt/luci/ luci-app-eqos
+		clone_repo immortalwrt/packages golang
+		# rm -rf feeds/packages/lang/golang
+		# git clone -q https://github.com/sbwml/packages_lang_golang -b 22.x feeds/packages/lang/golang
 		clone_repo vernesong/OpenClash luci-app-openclash
 		clone_repo immortalwrt/packages cpulimit btrfs-progs
 		clone_repo sirpdboy/luci-app-cupsd luci-app-cupsd cups
@@ -437,7 +462,7 @@ clone_url "
 	[[ -d $xb ]] && sed -i 's/default y/default n/g' $xb/Makefile
 	# https://github.com/userdocs/qbittorrent-nox-static/releases
 	xc=$(find package/A/ feeds/ -type d -name "qBittorrent-static" 2>/dev/null)
-	[[ -d $xc ]] && sed -i 's/PKG_VERSION:=.*/PKG_VERSION:=4.6.3_v2.0.9/;s/userdocs/hong0980/;s/ARCH)-qbittorrent/ARCH)-qt6-qbittorrent/' $xc/Makefile
+	[[ -d $xc ]] && sed -i "s/PKG_VERSION:=.*/PKG_VERSION:=${qBittorrent_version}_v2.0.9/;s/userdocs/hong0980/;s/ARCH)-qbittorrent/ARCH)-qt6-qbittorrent/" $xc/Makefile
 	xd=$(find package/A/ feeds/luci/applications/ -type d -name "luci-app-turboacc" 2>/dev/null)
 	[[ -d $xd ]] && sed -i '/hw_flow/s/1/0/;/sfe_flow/s/1/0/;/sfe_bridge/s/1/0/' $xd/root/etc/config/turboacc
 	xe=$(find package/A/ feeds/luci/applications/ -type d -name "luci-app-ikoolproxy" 2>/dev/null)
@@ -625,7 +650,6 @@ done
 # clone_url "https://github.com/immortalwrt/packages/branches/openwrt-23.05/lang/rust"
 clone_repo openwrt-23.05 immortalwrt/packages rust
 sed -i 's|\.\./\.\./luci.mk|$(TOPDIR)/feeds/luci/luci.mk|' package/A/*/Makefile 2>/dev/null
-sed -i 's|\.\./\.\./lang/golang|$(TOPDIR)/feeds/packages/lang/golang|' package/A/*/Makefile 2>/dev/null
 sed -i '/bridge/d' .config
 echo -e "$(color cy '更新配置....')\c"; BEGIN_TIME=$(date '+%H:%M:%S')
 make defconfig 1>/dev/null 2>&1
