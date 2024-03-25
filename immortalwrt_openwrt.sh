@@ -112,7 +112,7 @@ clone_repo() {
 clone_url() {
     for x in $@; do
         name="${x##*/}"
-        if [[ "$(grep "^https" <<<$x | egrep -v "helloworld$|build$|openwrt-passwall-packages$")" ]]; then
+        if [[ "$(grep "^https" <<<$x | egrep -v "helloworld$|build$|openwrt-passwall-packages$|helloworld$")" ]]; then
             g=$(find package/ target/ feeds/ -maxdepth 5 -type d -name "$name" 2>/dev/null | grep "/${name}$" | head -n 1)
             if [[ -d $g ]]; then
                 mv -f $g ../ && k="$g"
@@ -361,6 +361,7 @@ clone_url "
 	https://github.com/hong0980/build
 	https://github.com/fw876/helloworld
 	https://github.com/xiaorouji/openwrt-passwall-packages
+	#https://github.com/sbwml/openwrt_helloworld
 "
 
 grep -q 'nft-tproxy' package/kernel/linux/modules/netfilter.mk || {
@@ -388,10 +389,12 @@ grep -q 'nft-tproxy' package/kernel/linux/modules/netfilter.mk || {
 	EOF
 }
 
-([[ "$REPO_BRANCH" =~ 21.02 ]] || [[ "$REPO_BRANCH" =~ 18.06 ]]) && \
-clone_repo immortalwrt/packages golang
-# rm -rf feeds/packages/lang/golang
-# git clone -q https://github.com/sbwml/packages_lang_golang -b 22.x feeds/packages/lang/golang
+rm -rf feeds/packages/lang/golang && \
+git clone -q https://github.com/sbwml/packages_lang_golang -b 22.x feeds/packages/lang/golang
+# ([[ "$REPO_BRANCH" =~ 21.02 ]] || [[ "$REPO_BRANCH" =~ 18.06 ]]) && {
+# 	sed -i 's/ +libopenssl-legacy//' feeds/packages/net/shadowsocksr-libev/Makefile
+# }
+
 clone_repo vernesong/OpenClash luci-app-openclash
 clone_repo xiaorouji/openwrt-passwall luci-app-passwall
 clone_repo xiaorouji/openwrt-passwall2 luci-app-passwall2
@@ -531,7 +534,7 @@ clone_repo kiddin9/openwrt-packages luci-app-adguardhome adguardhome luci-app-by
 	[[ -d $xb ]] && sed -i 's/default y/default n/g' $xb/Makefile
 	#https://github.com/userdocs/qbittorrent-nox-static/releases
 	xc=$(find package/A/ feeds/ -type d -name "qBittorrent-static" 2>/dev/null)
-	[[ -d $xc ]] && sed -i "s/PKG_VERSION:=.*/PKG_VERSION:=${qBittorrent_version}_v2.0.9/;s/userdocs/hong0980/;s/ARCH)-qbittorrent/ARCH)-qt6-qbittorrent/" $xc/Makefile
+	[[ -d $xc ]] && sed -i "s/PKG_VERSION:=.*/PKG_VERSION:=${qBittorrent_version}_v2.0.10/;s/userdocs/hong0980/;s/ARCH)-qbittorrent/ARCH)-qt6-qbittorrent/" $xc/Makefile
 	xd=$(find package/A/ feeds/luci/applications/ -type d -name "luci-app-turboacc" 2>/dev/null)
 	[[ -d $xd ]] && sed -i '/hw_flow/s/1/0/;/sfe_flow/s/1/0/;/sfe_bridge/s/1/0/' $xd/root/etc/config/turboacc
 	xe=$(find package/A/ feeds/luci/applications/ -type d -name "luci-app-ikoolproxy" 2>/dev/null)
@@ -709,7 +712,10 @@ for p in $(find package/A/ feeds/luci/applications/ -type d -name "po" 2>/dev/nu
 		fi
 	fi
 done
-
+[[ "$REPO_BRANCH" =~ 21.02 ]] && {
+    wget -qO include/kernel-5.4 https://raw.githubusercontent.com/coolsnowwolf/lede/master/include/kernel-5.4
+    sed -i '/passwall/d' .config
+}
 [[ "$REPO_BRANCH" =~ master ]] && sed -i '/deluge/d' .config
 sed -i '/bridge/d' .config
 echo -e "$(color cy '更新配置....')\c"; BEGIN_TIME=$(date '+%H:%M:%S')

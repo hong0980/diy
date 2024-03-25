@@ -462,7 +462,7 @@ clone_url "
 	[[ -d $xb ]] && sed -i 's/default y/default n/g' $xb/Makefile
 	# https://github.com/userdocs/qbittorrent-nox-static/releases
 	xc=$(find package/A/ feeds/ -type d -name "qBittorrent-static" 2>/dev/null)
-	[[ -d $xc ]] && sed -i "s/PKG_VERSION:=.*/PKG_VERSION:=${qBittorrent_version}_v2.0.9/;s/userdocs/hong0980/;s/ARCH)-qbittorrent/ARCH)-qt6-qbittorrent/" $xc/Makefile
+	[[ -d $xc ]] && sed -i "s/PKG_VERSION:=.*/PKG_VERSION:=${qBittorrent_version}_v2.0.10/;s/userdocs/hong0980/;s/ARCH)-qbittorrent/ARCH)-qt6-qbittorrent/" $xc/Makefile
 	xd=$(find package/A/ feeds/luci/applications/ -type d -name "luci-app-turboacc" 2>/dev/null)
 	[[ -d $xd ]] && sed -i '/hw_flow/s/1/0/;/sfe_flow/s/1/0/;/sfe_bridge/s/1/0/' $xd/root/etc/config/turboacc
 	xe=$(find package/A/ feeds/luci/applications/ -type d -name "luci-app-ikoolproxy" 2>/dev/null)
