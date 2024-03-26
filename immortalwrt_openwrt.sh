@@ -374,9 +374,6 @@ grep -q 'nft-tproxy' package/kernel/linux/modules/netfilter.mk || {
 	EOF
 }
 
-rm -rf feeds/packages/lang/golang && \
-git clone -q https://github.com/sbwml/packages_lang_golang -b 22.x feeds/packages/lang/golang
-
 clone_repo vernesong/OpenClash luci-app-openclash
 clone_repo xiaorouji/openwrt-passwall luci-app-passwall
 clone_repo xiaorouji/openwrt-passwall2 luci-app-passwall2
@@ -677,6 +674,16 @@ case "$TARGET_DEVICE" in
     }
     ;;
 esac
+
+[[ "$REPO_BRANCH" =~ 21.02 ]] && {
+    wget -qO include/kernel-5.4 https://raw.githubusercontent.com/coolsnowwolf/lede/master/include/kernel-5.4
+    clone_repo sbwml/openwrt_helloworld shadowsocks-rust chinadns-ng
+    # sed -i 's/ +libopenssl-legacy//' feeds/packages/net/shadowsocks.*/Makefile
+}
+
+rm -rf feeds/packages/lang/golang && \
+git clone -q https://github.com/sbwml/packages_lang_golang -b 22.x feeds/packages/lang/golang
+
 sed -i 's|\.\./\.\./luci.mk|$(TOPDIR)/feeds/luci/luci.mk|' package/A/*/Makefile 2>/dev/null
 
 for p in $(find package/A/ feeds/luci/applications/ -type d -name "po" 2>/dev/null); do
@@ -694,11 +701,6 @@ for p in $(find package/A/ feeds/luci/applications/ -type d -name "po" 2>/dev/nu
         fi
     fi
 done
-[[ "$REPO_BRANCH" =~ 21.02 ]] && {
-    wget -qO include/kernel-5.4 https://raw.githubusercontent.com/coolsnowwolf/lede/master/include/kernel-5.4
-    clone_repo sbwml/openwrt_helloworld shadowsocks-rust chinadns-ng
-    # sed -i 's/ +libopenssl-legacy//' feeds/packages/net/shadowsocks.*/Makefile
-}
 [[ "$REPO_BRANCH" =~ master ]] && sed -i '/deluge/d' .config
 sed -i '/bridge/d' .config
 echo -e "$(color cy '更新配置....')\c"; BEGIN_TIME=$(date '+%H:%M:%S')
