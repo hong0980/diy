@@ -378,7 +378,7 @@ clone_repo vernesong/OpenClash luci-app-openclash
 clone_repo xiaorouji/openwrt-passwall luci-app-passwall
 clone_repo xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_repo coolsnowwolf/packages qtbase qttools qBittorrent qBittorrent-static
-clone_repo kiddin9/openwrt-packages luci-app-adguardhome adguardhome luci-app-bypass
+clone_repo kiddin9/openwrt-packages luci-app-bypass luci-app-store luci-app-alist luci-lib-taskd luci-lib-xterm taskd alist
 
 [ "$VERSION" = plus -a "$TARGET_DEVICE" != phicomm_k2p -a "$TARGET_DEVICE" != newifi-d2 -a "$TARGET_DEVICE" != asus_rt-n16 ] && {
     _packages "
@@ -409,6 +409,9 @@ clone_repo kiddin9/openwrt-packages luci-app-adguardhome adguardhome luci-app-by
     luci-app-usb-printer
     luci-app-vssr
     luci-app-wol
+    luci-app-bandwidthd
+    luci-app-store
+    luci-app-alist
     luci-app-weburl
     luci-app-wrtbwmon
     luci-theme-material
@@ -442,6 +445,7 @@ clone_repo kiddin9/openwrt-packages luci-app-adguardhome adguardhome luci-app-by
         https://github.com/yaof2/luci-app-ikoolproxy
         https://github.com/zzsj0928/luci-app-pushbot
         https://github.com/kuoruan/luci-app-frpc
+        https://github.com/AlexZhuo/luci-app-bandwidthd
     "
 
     rm -rf feeds/*/*/{luci-app-appfilter,open-app-filter}
@@ -551,6 +555,7 @@ case "$TARGET_DEVICE" in
         luci-app-uhttpd
         luci-app-qbittorrent
         luci-app-passwall2
+        luci-app-netdata
         luci-app-cpufreq
         #luci-app-adguardhome
         #luci-app-amule
@@ -676,6 +681,7 @@ case "$TARGET_DEVICE" in
 esac
 
 [[ "$REPO_BRANCH" =~ 21.02 ]] && {
+	[[ $TARGET_DEVICE =~ ^r\d+.* ]] && \
     wget -qO include/kernel-5.4 https://raw.githubusercontent.com/coolsnowwolf/lede/master/include/kernel-5.4
     clone_repo sbwml/openwrt_helloworld shadowsocks-rust chinadns-ng
     # sed -i 's/ +libopenssl-legacy//' feeds/packages/net/shadowsocks.*/Makefile
