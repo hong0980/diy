@@ -378,7 +378,7 @@ clone_repo vernesong/OpenClash luci-app-openclash
 clone_repo xiaorouji/openwrt-passwall luci-app-passwall
 clone_repo xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_repo coolsnowwolf/packages qtbase qttools qBittorrent qBittorrent-static
-clone_repo kiddin9/openwrt-packages luci-app-bypass luci-app-store luci-app-alist luci-lib-taskd luci-lib-xterm taskd alist
+clone_repo kiddin9/openwrt-packages luci-app-bypass luci-app-store luci-lib-taskd luci-lib-xterm taskd
 
 [ "$VERSION" = plus -a "$TARGET_DEVICE" != phicomm_k2p -a "$TARGET_DEVICE" != newifi-d2 -a "$TARGET_DEVICE" != asus_rt-n16 ] && {
     _packages "
