@@ -6,8 +6,6 @@ curl -sL https://raw.githubusercontent.com/klever1988/nanopi-openwrt/zstd-bin/zs
 curl -sL $GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' >xa
 curl -sL api.github.com/repos/hong0980/OpenWrt-Cache/releases | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' >xc
 
-mkdir firmware output 2>/dev/null
-
 color() {
     case $1 in
         cy) echo -e "\033[1;33m$2\033[0m" ;;
@@ -45,6 +43,12 @@ move_directory() {
     [ -d "$1" ] && mv -f "$1" "$2"
 }
 
+create_directory() {
+    for dir in "$@"; do
+        mkdir -p "$dir" 2>/dev/null || return 1
+    done
+}
+
 _packages() {
     for z in $@; do
         [[ $z =~ ^# ]] || echo "CONFIG_PACKAGE_$z=y" >>.config
@@ -56,6 +60,7 @@ _delpackage() {
         [[ $z =~ ^# ]] || sed -i -E "s/(CONFIG_PACKAGE_.*$z)=y/# \1 is not set/" .config
     done
 }
+
 _pushd() {
     if ! pushd "$@" &> /dev/null; then
         printf '\n%b\n' "该目录不存在。"
@@ -252,6 +257,7 @@ min() {
     status
 }
 
+create_directory "firmware" "output"
 REPO_URL="https://github.com/immortalwrt/immortalwrt"
 echo -e "$(color cy '拉取源码....')\c"; BEGIN_TIME=$(date '+%H:%M:%S')
 [ "$REPO_BRANCH" -a "$REPO_BRANCH" != "master" ] && cmd="-b $REPO_BRANCH --single-branch"
@@ -562,11 +568,12 @@ case "$TARGET_DEVICE" in
 esac
 
 [[ "$REPO_BRANCH" =~ 21.02|18.06 ]] && {
+    create_directory "package/utils/ucode" "package/network/config/firewall4" "package/network/utils/fullconenat-nft"
     # [[ $TARGET_DEVICE =~ ^r ]] && \
     # sed -i "s|VERSION.*|VERSION-5.4 = .273|; s|HASH.*|HASH-5.4.273 = 8ba0cfd3faa7222542b30791def49f426d7b50a07217366ead655a5687534743|" include/kernel-5.4
     clone_dir immortalwrt/packages nghttp3 ngtcp2 bash
     clone_dir openwrt-23.05 immortalwrt/immortalwrt busybox ppp automount openssl \
-        dnsmasq nftables libnftnl sonfilter opkg fullconenat \
+        dnsmasq nftables libnftnl sonfilter opkg fullconenat ucode firewall4 fullconenat-nft \
         #fstools odhcp6c iptables ipset dropbear usbmode
     clone_dir openwrt-23.05 immortalwrt/packages samba4 nginx-util htop pciutils libwebsockets gawk mwan3 \
         lua-openssl smartdns bluez curl #miniupnpc miniupnpd
