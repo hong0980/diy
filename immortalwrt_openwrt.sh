@@ -573,11 +573,12 @@ esac
     # sed -i "s|VERSION.*|VERSION-5.4 = .273|; s|HASH.*|HASH-5.4.273 = 8ba0cfd3faa7222542b30791def49f426d7b50a07217366ead655a5687534743|" include/kernel-5.4
     clone_dir immortalwrt/packages nghttp3 ngtcp2 bash
     clone_dir openwrt-23.05 immortalwrt/immortalwrt busybox ppp automount openssl \
-        dnsmasq nftables libnftnl sonfilter opkg fullconenat ucode firewall4 fullconenat-nft \
+        dnsmasq nftables libnftnl sonfilter opkg fullconenat \
         #fstools odhcp6c iptables ipset dropbear usbmode
     clone_dir openwrt-23.05 immortalwrt/packages samba4 nginx-util htop pciutils libwebsockets gawk mwan3 \
         lua-openssl smartdns bluez curl #miniupnpc miniupnpd
     clone_dir openwrt-23.05 immortalwrt/luci luci-app-syncdial luci-app-mwan3
+    clone_dir coolsnowwolf/lede ucode firewall4 fullconenat-nft
 	cat <<-\EOF >>package/kernel/linux/modules/netfilter.mk
 	define KernelPackage/nft-tproxy
 	  SUBMENU:=$(NF_MENU)
