@@ -6,8 +6,6 @@ curl -sL https://raw.githubusercontent.com/klever1988/nanopi-openwrt/zstd-bin/zs
 curl -sL $GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' >xa
 curl -sL api.github.com/repos/hong0980/OpenWrt-Cache/releases | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' >xc
 
-mkdir firmware output 2>/dev/null
-
 color() {
     case $1 in
         cy) echo -e "\033[1;33m$2\033[0m" ;;
@@ -31,18 +29,18 @@ status() {
     fi
 }
 
-git_apply() {
-    for z in $@; do
-        [[ $z =~ \# ]] || wget -qO- $z | git apply --reject --ignore-whitespace
-    done
-}
-
 _find() {
     find $1 -maxdepth 5 -type d -name "$2" -print -quit 2>/dev/null
 }
 
 move_directory() {
     [ -d "$1" ] && mv -f "$1" "$2"
+}
+
+create_directory() {
+    for dir in "$@"; do
+        mkdir -p "$dir" 2>/dev/null || return 1
+    done
 }
 
 _packages() {
@@ -56,24 +54,31 @@ _delpackage() {
         [[ $z =~ ^# ]] || sed -i -E "s/(CONFIG_PACKAGE_.*$z)=y/# \1 is not set/" .config
     done
 }
-_pushd() {
-    if ! pushd "$@" &> /dev/null; then
-        printf '\n%b\n' "该目录不存在。"
-    fi
+
+safe_pushd() {
+    pushd "$1" &> /dev/null || echo -e "$(color cr \"${1} 该目录不存在。\")\c"
 }
 
-_popd() {
-    if ! popd &> /dev/null; then
-        printf '%b\n' "该目录不存在。"
-    fi
+safe_popd() {
+    popd &> /dev/null || echo -e "$(color cr '该目录不存在。')\c"
 }
 
 _printf() {
     awk '{printf "%s %-40s %s %s %s\n" ,$1,$2,$3,$4,$5}'
 }
 
+git_apply() {
+    local url=$1 path=$2
+    [[ $url =~ ^# ]] && return
+    [[ $path =~ ^http ]] && return 1 || safe_pushd "$path"
+    wget -qO- "$url" | git apply --ignore-whitespace > /dev/null 2>&1 \
+    && echo -e "$(color cy '补丁 ') $(color cb ${url##*/}) $(color cg ' 执行成功。')\c" \
+    || echo -e "$(color cy '补丁 ') $(color cb ${url##*/}) $(color cr ' 执行出错。')\c"
+    [[ -n $path ]] && safe_popd
+}
+
 clone_dir() {
-    local repo_url branch
+    local repo_url branch temp_dir=$(mktemp -d)
     if [[ "$1" == */* ]]; then
         repo_url="$1"
         shift
@@ -82,7 +87,6 @@ clone_dir() {
         repo_url="$2"
         shift 2
     fi
-    local temp_dir=$(mktemp -d)
 
     git clone -q $branch --depth 1 "https://github.com/$repo_url" $temp_dir 2>/dev/null || {
         echo -e "$(color cr 拉取) https://github.com/$repo_url [ $(color cr ✕) ]" | _printf
@@ -243,15 +247,7 @@ config (){
 	esac
 }
 
-min() {
-    echo VERSION="" >>$GITHUB_ENV
-    echo "FETCH_CACHE=true" >>$GITHUB_ENV
-    sed -i 's/luci-app-[^ ]* //g' {include/target.mk,$(find target/ -type f -name Makefile)}
-    echo -e "$(color cy '更新配置....')\c"; BEGIN_TIME=$(date '+%H:%M:%S')
-    make defconfig 1>/dev/null 2>&1
-    status
-}
-
+create_directory "firmware" "output"
 REPO_URL="https://github.com/immortalwrt/immortalwrt"
 echo -e "$(color cy '拉取源码....')\c"; BEGIN_TIME=$(date '+%H:%M:%S')
 [ "$REPO_BRANCH" -a "$REPO_BRANCH" != "master" ] && cmd="-b $REPO_BRANCH --single-branch"
@@ -347,19 +343,20 @@ sed -i "\$i uci -q set luci.main.mediaurlbase=\"/luci-static/bootstrap\" && uci 
 # git diff ./ >> ../output/t.patch || true
 clone_url "
     https://github.com/hong0980/build
-    #https://github.com/sbwml/openwrt_helloworld
     https://github.com/xiaorouji/openwrt-passwall-packages
     https://github.com/fw876/helloworld
 "
 
-clone_dir vernesong/OpenClash luci-app-openclash
-clone_dir sbwml/openwrt_helloworld shadowsocks-rust
-clone_dir xiaorouji/openwrt-passwall luci-app-passwall
-clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
+# clone_dir vernesong/OpenClash luci-app-openclash
+# clone_dir xiaorouji/openwrt-passwall luci-app-passwall
+# clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir coolsnowwolf/packages qtbase qttools qBittorrent qBittorrent-static
 clone_dir master UnblockNeteaseMusic/luci-app-unblockneteasemusic luci-app-unblockneteasemusic
 clone_dir kiddin9/kwrt-packages luci-lib-taskd luci-lib-xterm lua-maxminddb \
     luci-app-bypass luci-app-store luci-app-pushbot taskd
+clone_dir sbwml/openwrt_helloworld shadowsocks-rust luci-app-openclash luci-app-passwall luci-app-passwall2
+git_apply https://raw.githubusercontent.com/sbwml/openwrt_helloworld/refs/heads/v5/patch-luci-app-ssr-plus.patch feeds/luci/applications
+git_apply https://raw.githubusercontent.com/sbwml/openwrt_helloworld/refs/heads/v5/patch-luci-app-passwall.patch feeds/luci/applications
 
 [[ "$TARGET_DEVICE" =~ phicomm|newifi|asus ]] || {
     _packages "
@@ -562,15 +559,17 @@ case "$TARGET_DEVICE" in
 esac
 
 [[ "$REPO_BRANCH" =~ 21.02|18.06 ]] && {
+    create_directory "package/utils/ucode" "package/network/config/firewall4" "package/network/utils/fullconenat-nft"
     # [[ $TARGET_DEVICE =~ ^r ]] && \
     # sed -i "s|VERSION.*|VERSION-5.4 = .273|; s|HASH.*|HASH-5.4.273 = 8ba0cfd3faa7222542b30791def49f426d7b50a07217366ead655a5687534743|" include/kernel-5.4
     clone_dir immortalwrt/packages nghttp3 ngtcp2 bash
     clone_dir openwrt-23.05 immortalwrt/immortalwrt busybox ppp automount openssl \
-        dnsmasq nftables libnftnl sonfilter opkg fullconenat \
+        dnsmasq nftables libnftnl sonfilter opkg fullconenat fullconenat-nft \
         #fstools odhcp6c iptables ipset dropbear usbmode
     clone_dir openwrt-23.05 immortalwrt/packages samba4 nginx-util htop pciutils libwebsockets gawk mwan3 \
         lua-openssl smartdns bluez curl #miniupnpc miniupnpd
     clone_dir openwrt-23.05 immortalwrt/luci luci-app-syncdial luci-app-mwan3
+    clone_dir coolsnowwolf/lede ucode firewall4
 	cat <<-\EOF >>package/kernel/linux/modules/netfilter.mk
 	define KernelPackage/nft-tproxy
 	  SUBMENU:=$(NF_MENU)
