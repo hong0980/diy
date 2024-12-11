@@ -8,24 +8,25 @@ curl -sL api.github.com/repos/hong0980/OpenWrt-Cache/releases | grep -oP '"brows
 
 color() {
     case $1 in
-        cy) echo -e "\033[1;33m$2\033[0m" ;;
-        cr) echo -e "\033[1;31m$2\033[0m" ;;
-        cg) echo -e "\033[1;32m$2\033[0m" ;;
-        cb) echo -e "\033[1;34m$2\033[0m" ;;
+        cr) echo -e "\e[1;31m$2\e[0m" ;;
+        cg) echo -e "\e[1;32m$2\e[0m" ;;
+        cy) echo -e "\e[1;33m$2\e[0m" ;;
+        cb) echo -e "\e[1;34m$2\e[0m" ;;
+        cm) echo -e "\e[1;35m$2\e[0m" ;;
+        cc) echo -e "\e[1;36m$2\e[0m" ;;
     esac
 }
 
 status() {
-    CHECK=$?
-    END_TIME=$(date '+%H:%M:%S')
-    _date=" ==>用时 $[$(date +%s -d "$END_TIME") - $(date +%s -d "$BEGIN_TIME")] 秒"
+    local check=$? end_time=$(date '+%H:%M:%S')
+    _date=" ==>用时 $[$(date +%s -d "$end_time") - $(date +%s -d "$begin_time")] 秒"
     [[ $_date =~ [0-9]+ ]] || _date=""
-    if [ $CHECK = 0 ]; then
+    if [[ $check = 0 ]]; then
         printf "%35s %s %s %s %s %s %s\n" \
-        `echo -e "[ $(color cg ✔)\033[0;39m ]${_date}"`
+        `echo -e "[ $(color cg ✔)\e[1;39m ]${_date}"`
     else
         printf "%35s %s %s %s %s %s %s\n" \
-        `echo -e "[ $(color cr ✕)\033[0;39m ]${_date}"`
+        `echo -e "[ $(color cr ✕)\e[1;39m ]${_date}"`
     fi
 }
 
@@ -33,12 +34,8 @@ _find() {
     find $1 -maxdepth 5 -type d -name "$2" -print -quit 2>/dev/null
 }
 
-move_directory() {
-    [ -d "$1" ] && mv -f "$1" "$2"
-}
-
 create_directory() {
-    for dir in "$@"; do
+    for dir in $@; do
         mkdir -p "$dir" 2>/dev/null || return 1
     done
 }
@@ -64,7 +61,8 @@ safe_popd() {
 }
 
 _printf() {
-    awk '{printf "%s %-40s %s %s %s\n" ,$1,$2,$3,$4,$5}'
+    IFS=' ' read -r param1 param2 param3 param4 param5 <<< "$1"
+    printf "%s %-40s %s %s %s\n" "$param1" "$param2" "$param3" "$param4" "$param5"
 }
 
 git_apply() {
@@ -72,12 +70,13 @@ git_apply() {
     [[ $url =~ ^# ]] && return
     [[ $path =~ ^http ]] && return 1 || safe_pushd "$path"
     wget -qO- "$url" | git apply --ignore-whitespace > /dev/null 2>&1 \
-    && echo -e "$(color cy '补丁 ') $(color cb ${url##*/}) $(color cg ' 执行成功。')\c" \
-    || echo -e "$(color cy '补丁 ') $(color cb ${url##*/}) $(color cr ' 执行出错。')\c"
+    && echo -e "$(color cy '补丁 ') $(color cb ${url##*/}) $(color cg ' 执行成功。')" \
+    || echo -e "$(color cy '补丁 ') $(color cb ${url##*/}) $(color cr ' 执行出错。')"
     [[ -n $path ]] && safe_popd
 }
 
 clone_dir() {
+    [[ -z $2 ]] && return
     local repo_url branch temp_dir=$(mktemp -d)
     if [[ "$1" == */* ]]; then
         repo_url="$1"
@@ -89,7 +88,7 @@ clone_dir() {
     fi
 
     git clone -q $branch --depth 1 "https://github.com/$repo_url" $temp_dir 2>/dev/null || {
-        echo -e "$(color cr 拉取) https://github.com/$repo_url [ $(color cr ✕) ]" | _printf
+        _printf "$(color cr 拉取) https://github.com/$repo_url [ $(color cr ✕) ]"
         return 0
     }
 
@@ -101,7 +100,7 @@ clone_dir() {
     for target_dir in "$@"; do
         local source_dir current_dir destination_dir
         if [[ ${repo_url##*/} == ${target_dir} ]]; then
-            mv ${temp_dir} ${target_dir}
+            mv -f ${temp_dir} ${target_dir}
             source_dir=${target_dir}
         else
             source_dir=$(_find "$temp_dir" "$target_dir")
@@ -113,9 +112,9 @@ clone_dir() {
         [[ -d "$current_dir" ]] && mv -f "$current_dir" ../
         if mv -f "$source_dir" "${destination_dir%/*}"; then
             if [[ -d "$current_dir" ]]; then
-                echo -e "$(color cg 替换) $target_dir [ $(color cg ✔) ]" | _printf
+                _printf "$(color cg 替换) $target_dir [ $(color cg ✔) ]"
             else
-                echo -e "$(color cb 添加) $target_dir [ $(color cb ✔) ]" | _printf
+                _printf "$(color cb 添加) $target_dir [ $(color cb ✔) ]"
             fi
         fi
     done
@@ -136,15 +135,15 @@ clone_url() {
 
             if git clone -q --depth 1 "$url" "$destination"; then
                 if [[ $destination = $existing_path ]]; then
-                    echo -e "$(color cg 替换) $name [ $(color cg ✔) ]" | _printf
+                    _printf "$(color cg 替换) $name [ $(color cg ✔) ]"
                 else
-                    echo -e "$(color cb 添加) $name [ $(color cb ✔) ]" | _printf
+                    _printf "$(color cb 添加) $name [ $(color cb ✔) ]"
                 fi
             else
-                echo -e "$(color cr 拉取) $name [ $(color cr ✕) ]" | _printf
+                _printf "$(color cr 拉取) $name [ $(color cr ✕) ]"
                 if [[ $destination = $existing_path ]]; then
                     mv -f ../${existing_path##*/} ${existing_path%/*}/ && \
-                    echo -e "$(color cy 回退) ${existing_path##*/} [ $(color cy ✔) ]" | _printf
+                    _printf "$(color cy 回退) ${existing_path##*/} [ $(color cy ✔) ]"
                 fi
             fi
         else
@@ -160,9 +159,9 @@ clone_url() {
                         fi
                         if mv -f $temp_dir/$sub_dir $destination; then
                             if [[ $destination = $existing_sub_path ]]; then
-                                echo -e "$(color cg 替换) $sub_dir [ $(color cg ✔) ]" | _printf
+                                _printf "$(color cg 替换) $sub_dir [ $(color cg ✔) ]"
                             else
-                                echo -e "$(color cb 添加) $sub_dir [ $(color cb ✔) ]" | _printf
+                                _printf "$(color cb 添加) $sub_dir [ $(color cb ✔) ]"
                             fi
                         fi
                     done
@@ -249,7 +248,7 @@ config (){
 
 create_directory "firmware" "output"
 REPO_URL="https://github.com/immortalwrt/immortalwrt"
-echo -e "$(color cy '拉取源码....')\c"; BEGIN_TIME=$(date '+%H:%M:%S')
+echo -e "$(color cy '拉取源码....')\c"; begin_time=$(date '+%H:%M:%S')
 [ "$REPO_BRANCH" -a "$REPO_BRANCH" != "master" ] && cmd="-b $REPO_BRANCH --single-branch"
 git clone -q $cmd $REPO_URL $REPO_FLODER # --depth 1
 status
@@ -269,12 +268,12 @@ export CACHE_NAME="$SOURCE_NAME-${REPO_BRANCH#*-}-$TOOLS_HASH-$NAME"
 echo "CACHE_NAME=$CACHE_NAME" >>$GITHUB_ENV
 
 if (grep -q "$CACHE_NAME" ../xa || grep -q "$CACHE_NAME" ../xc); then
-    echo -e "$(color cy '下载tz-cache')\c"; BEGIN_TIME=$(date '+%H:%M:%S')
+    echo -e "$(color cy '下载tz-cache')\c"; begin_time=$(date '+%H:%M:%S')
     grep -q "$CACHE_NAME" ../xa && \
     wget -qc -t=3 $(grep "$CACHE_NAME" ../xa) || wget -qc -t=3 $(grep "$CACHE_NAME" ../xc)
     [ -e *.tzst ]; status
     [ -e *.tzst ] && {
-        echo -e "$(color cy '部署tz-cache')\c"; BEGIN_TIME=$(date '+%H:%M:%S')
+        echo -e "$(color cy '部署tz-cache')\c"; begin_time=$(date '+%H:%M:%S')
         (tar -I unzstd -xf *.tzst || tar -xf *.tzst) && {
             if ! grep -q "$CACHE_NAME-cache.tzst" ../xa; then
                 cp *.tzst ../output
@@ -288,7 +287,7 @@ else
     echo "CACHE_ACTIONS=true" >>$GITHUB_ENV
 fi
 
-echo -e "$(color cy '更新软件....')\c"; BEGIN_TIME=$(date '+%H:%M:%S')
+echo -e "$(color cy '更新软件....')\c"; begin_time=$(date '+%H:%M:%S')
 ./scripts/feeds update -a 1>/dev/null 2>&1
 ./scripts/feeds install -a 1>/dev/null 2>&1
 status
@@ -347,16 +346,14 @@ clone_url "
     https://github.com/fw876/helloworld
 "
 
-# clone_dir vernesong/OpenClash luci-app-openclash
-# clone_dir xiaorouji/openwrt-passwall luci-app-passwall
-# clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
+clone_dir sbwml/openwrt_helloworld shadowsocks-rust
+clone_dir vernesong/OpenClash luci-app-openclash
+clone_dir xiaorouji/openwrt-passwall luci-app-passwall
+clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir coolsnowwolf/packages qtbase qttools qBittorrent qBittorrent-static
 clone_dir master UnblockNeteaseMusic/luci-app-unblockneteasemusic luci-app-unblockneteasemusic
 clone_dir kiddin9/kwrt-packages luci-lib-taskd luci-lib-xterm lua-maxminddb \
     luci-app-bypass luci-app-store luci-app-pushbot taskd
-clone_dir sbwml/openwrt_helloworld shadowsocks-rust luci-app-openclash luci-app-passwall luci-app-passwall2
-git_apply https://raw.githubusercontent.com/sbwml/openwrt_helloworld/refs/heads/v5/patch-luci-app-ssr-plus.patch feeds/luci/applications
-git_apply https://raw.githubusercontent.com/sbwml/openwrt_helloworld/refs/heads/v5/patch-luci-app-passwall.patch feeds/luci/applications
 
 [[ "$TARGET_DEVICE" =~ phicomm|newifi|asus ]] || {
     _packages "
@@ -481,7 +478,7 @@ case "$TARGET_DEVICE" in
         luci-app-deluge
         #luci-app-smartdns
         #luci-app-adbyby-plus
-        luci-app-unblockneteasemusic
+        #luci-app-unblockneteasemusic
         #htop lscpu lsscsi #nano screen #zstd pv ethtool
         "
         [[ "${REPO_BRANCH#*-}" =~ ^2 ]] && sed -i '/bridge/d' .config
@@ -536,7 +533,7 @@ case "$TARGET_DEVICE" in
         luci-app-deluge
         #luci-app-godproxy
         #luci-app-frpc
-        luci-app-unblockneteasemusic
+        #luci-app-unblockneteasemusic
         #AmuleWebUI-Reloaded htop lscpu lsscsi lsusb nano pciutils screen webui-aria2 zstd pv
         #subversion-client #unixodbc #git-http
         "
@@ -635,7 +632,7 @@ done
 
 [[ "$REPO_BRANCH" =~ master ]] && sed -i '/deluge/d' .config
 sed -i '/bridge\|vssr\|deluge/d' .config
-echo -e "$(color cy '更新配置....')\c"; BEGIN_TIME=$(date '+%H:%M:%S')
+echo -e "$(color cy '更新配置....')\c"; begin_time=$(date '+%H:%M:%S')
 make defconfig 1>/dev/null 2>&1
 status
 
