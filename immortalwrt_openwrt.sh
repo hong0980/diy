@@ -72,7 +72,7 @@ git_diff() {
     }
 
     for i in $@; do
-        git ls-tree -r origin/${REPO_BRANCH} -- "$i" &>/dev/null && {
+        git cat-file commit origin/${REPO_BRANCH}:"$i" &>/dev/null && {
             git diff --quiet "$i" || \
             git diff -- "$i" > $GITHUB_WORKSPACE/firmware/${REPO_BRANCH}-${i##*/}.patch            
         }
