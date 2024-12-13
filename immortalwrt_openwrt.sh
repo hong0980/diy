@@ -18,15 +18,13 @@ color() {
 }
 
 status() {
-    local check=$? end_time=$(date '+%H:%M:%S')
+    local check="$1" end_time=$(date '+%H:%M:%S')
     _date=" ==>用时 $[$(date +%s -d "$end_time") - $(date +%s -d "$begin_time")] 秒"
     [[ $_date =~ [0-9]+ ]] || _date=""
     if [[ $check = 0 ]]; then
-        printf "%35s %s %s %s %s %s %s\n" \
-        `echo -e "[ $(color cg ✔)\e[1;39m ]${_date}"`
+        printf "%35s %s %s %s %s %-6s %s\n" `echo -e "[ $(color cg ✔)\e[1;39m ]${_date}"`
     else
-        printf "%35s %s %s %s %s %s %s\n" \
-        `echo -e "[ $(color cr ✕)\e[1;39m ]${_date}"`
+        printf "%35s %s %s %s %s %-6s %s\n" `echo -e "[ $(color cr ✕)\e[1;39m ]${_date}"`
     fi
 }
 
@@ -63,6 +61,24 @@ safe_popd() {
 _printf() {
     IFS=' ' read -r param1 param2 param3 param4 param5 <<< "$1"
     printf "%s %-40s %s %s %s\n" "$param1" "$param2" "$param3" "$param4" "$param5"
+}
+
+git_diff() {
+    local path
+    [[ $1 =~ feeds ]] && path=$1
+    [[ -n $path ]] && {
+        safe_pushd "$path"
+        shift
+    }
+
+    for i in $@; do
+        git ls-tree -r origin/${REPO_BRANCH} -- "$i" &>/dev/null && {
+            git diff --quiet "$i" || \
+            git diff -- "$i" > $GITHUB_WORKSPACE/firmware/${REPO_BRANCH}-${i##*/}.patch            
+        }
+    done
+
+    [[ -n $path ]] && safe_popd
 }
 
 git_apply() {
@@ -246,12 +262,42 @@ config (){
 	esac
 }
 
+download_and_deploy_cache() {
+    if (grep -q "$CACHE_NAME" ../xa ../xc); then
+        ls ../*.tzst > /dev/null 2>&1 || {
+            echo -e "$(color cy '下载tz-cache')\c"
+            begin_time=$(date '+%H:%M:%S')
+            grep -q "$CACHE_NAME" ../xa && \
+            wget -qc -t=3 -P ../ $(grep "$CACHE_NAME" ../xa) || wget -qc -t=3 -P ../ $(grep "$CACHE_NAME" ../xc)
+            status $?
+        }
+
+        ls ../*.tzst > /dev/null 2>&1 && {
+            echo -e "$(color cy '部署tz-cache')\c"; begin_time=$(date '+%H:%M:%S')
+            (tar -I unzstd -xf ../*.tzst || tar -xf ../*.tzst) && {
+                if ! grep -q "$CACHE_NAME-cache.tzst" ../xa; then
+                    cp ../*.tzst ../output
+                    echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
+                fi
+                sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
+            }
+            [ -d staging_dir ]; status $?
+        }
+    else
+        echo "CACHE_ACTIONS=true" >>$GITHUB_ENV
+    fi
+    echo -e "$(color cy '更新软件....')\c"; begin_time=$(date '+%H:%M:%S')
+    ./scripts/feeds update -a 1>/dev/null 2>&1
+    ./scripts/feeds install -a 1>/dev/null 2>&1
+    status $?
+}
+
 create_directory "firmware" "output"
 REPO_URL="https://github.com/immortalwrt/immortalwrt"
 echo -e "$(color cy '拉取源码....')\c"; begin_time=$(date '+%H:%M:%S')
 [ "$REPO_BRANCH" -a "$REPO_BRANCH" != "master" ] && cmd="-b $REPO_BRANCH --single-branch"
 git clone -q $cmd $REPO_URL $REPO_FLODER # --depth 1
-status
+status $?
 [[ -d $REPO_FLODER ]] && cd $REPO_FLODER || exit
 
 case "$TARGET_DEVICE" in
@@ -267,31 +313,7 @@ export TOOLS_HASH=`git log --pretty=tformat:"%h" -n1 tools toolchain`
 export CACHE_NAME="$SOURCE_NAME-${REPO_BRANCH#*-}-$TOOLS_HASH-$NAME"
 echo "CACHE_NAME=$CACHE_NAME" >>$GITHUB_ENV
 
-if (grep -q "$CACHE_NAME" ../xa || grep -q "$CACHE_NAME" ../xc); then
-    echo -e "$(color cy '下载tz-cache')\c"; begin_time=$(date '+%H:%M:%S')
-    grep -q "$CACHE_NAME" ../xa && \
-    wget -qc -t=3 $(grep "$CACHE_NAME" ../xa) || wget -qc -t=3 $(grep "$CACHE_NAME" ../xc)
-    [ -e *.tzst ]; status
-    [ -e *.tzst ] && {
-        echo -e "$(color cy '部署tz-cache')\c"; begin_time=$(date '+%H:%M:%S')
-        (tar -I unzstd -xf *.tzst || tar -xf *.tzst) && {
-            if ! grep -q "$CACHE_NAME-cache.tzst" ../xa; then
-                cp *.tzst ../output
-                echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
-            fi
-            sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
-        }
-        [ -d staging_dir ]; status
-    }
-else
-    echo "CACHE_ACTIONS=true" >>$GITHUB_ENV
-fi
-
-echo -e "$(color cy '更新软件....')\c"; begin_time=$(date '+%H:%M:%S')
-./scripts/feeds update -a 1>/dev/null 2>&1
-./scripts/feeds install -a 1>/dev/null 2>&1
-status
-
+download_and_deploy_cache
 config
 
 cat >>.config <<-EOF
@@ -346,14 +368,18 @@ clone_url "
     https://github.com/fw876/helloworld
 "
 
-clone_dir sbwml/openwrt_helloworld shadowsocks-rust
 clone_dir vernesong/OpenClash luci-app-openclash
 clone_dir xiaorouji/openwrt-passwall luci-app-passwall
 clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
+clone_dir sbwml/openwrt_helloworld shadowsocks-rust #luci-app-openclash luci-app-passwall luci-app-passwall2
+# git_apply https://raw.githubusercontent.com/sbwml/openwrt_helloworld/refs/heads/v5/patch-luci-app-ssr-plus.patch feeds/luci/applications
+# git_apply https://raw.githubusercontent.com/sbwml/openwrt_helloworld/refs/heads/v5/patch-luci-app-passwall.patch feeds/luci/applications
 clone_dir coolsnowwolf/packages qtbase qttools qBittorrent qBittorrent-static
 clone_dir master UnblockNeteaseMusic/luci-app-unblockneteasemusic luci-app-unblockneteasemusic
 clone_dir kiddin9/kwrt-packages luci-lib-taskd luci-lib-xterm lua-maxminddb \
     luci-app-bypass luci-app-store luci-app-pushbot taskd
+
+git_diff "feeds/luci" "applications/luci-app-diskman" "applications/luci-app-passwall" "applications/luci-app-ssr-plus" "applications/luci-app-dockerman"
 
 [[ "$TARGET_DEVICE" =~ phicomm|newifi|asus ]] || {
     _packages "
@@ -629,12 +655,40 @@ for p in package/A/luci-app*/po feeds/luci/applications/luci-app*/po; do
 done
 
 # mv -f package/A/luci-app* feeds/luci/applications/
-
-[[ "$REPO_BRANCH" =~ master ]] && sed -i '/deluge/d' .config
+# git diff -- feeds/luci/applications/luci-app-qbittorrent > ../firmware/$REPO_BRANCH-luci-app-qbittorrent.patch
+[[ "$REPO_BRANCH" =~ master|openwrt-23.05|openwrt-24.10 ]] && sed -i '/deluge/d' .config
 sed -i '/bridge\|vssr\|deluge/d' .config
+
+[[ "$TARGET_DEVICE" = "x86_64" ]] && [[ "$REPO_BRANCH" =~ master|openwrt-23.05|openwrt-24.10 ]] && {
+    cd ../
+    rm -rf $REPO_FLODER
+    git clone -q $cmd $REPO_URL $REPO_FLODER
+    cd $REPO_FLODER
+    download_and_deploy_cache
+	cat >.config<<-EOF
+	CONFIG_TARGET_x86=y
+	CONFIG_TARGET_x86_64=y
+	CONFIG_TARGET_x86_64_DEVICE_generic=y
+	CONFIG_TARGET_ROOTFS_PARTSIZE=$PARTSIZE
+	CONFIG_TARGET_KERNEL_PARTSIZE=16
+	CONFIG_KERNEL_BUILD_USER="win3gp"
+	CONFIG_KERNEL_BUILD_DOMAIN="OpenWrt"
+	CONFIG_PACKAGE_automount=y
+	CONFIG_PACKAGE_autosamba=y
+	CONFIG_PACKAGE_luci-app-dockerman=y
+	CONFIG_PACKAGE_luci-app-diskman=y
+	CONFIG_PACKAGE_luci-app-passwall=y
+	CONFIG_PACKAGE_luci-app-ssr-plus=y
+	CONFIG_PACKAGE_luci-app-openclash=y
+	EOF
+    [[ -n $IP ]] && \
+    sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate || \
+    sed -i '/n) ipad/s/".*"/"192.168.2.150"/' $config_generate
+}
+
 echo -e "$(color cy '更新配置....')\c"; begin_time=$(date '+%H:%M:%S')
 make defconfig 1>/dev/null 2>&1
-status
+status $?
 
 LINUX_VERSION=$(grep 'CONFIG_LINUX.*=y' .config | sed -r 's/CONFIG_LINUX_(.*)=y/\1/' | tr '_' '.')
 echo -e "$(color cy 当前机型) $(color cb $SOURCE_NAME-${REPO_BRANCH#*-}-$LINUX_VERSION-${DEVICE_NAME}${VERSION:+-$VERSION})"
