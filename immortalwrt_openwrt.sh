@@ -650,10 +650,6 @@ sed -i \
     -e "s/\(\(^\| \|    \)\(PKG_HASH\|PKG_MD5SUM\|PKG_MIRROR_HASH\|HASH\):=\).*/\1skip/" \
 package/A/*/Makefile 2>/dev/null
 
-for p in package/A/luci-app*/po feeds/luci/applications/luci-app*/po; do
-    [[ -L $p/zh_Hans || -L $p/zh-cn ]] || (ln -s zh-cn $p/zh_Hans 2>/dev/null || ln -s zh_Hans $p/zh-cn 2>/dev/null)
-done
-
 # mv -f package/A/luci-app* feeds/luci/applications/
 # git diff -- feeds/luci/applications/luci-app-qbittorrent > ../firmware/$REPO_BRANCH-luci-app-qbittorrent.patch
 [[ "$REPO_BRANCH" =~ master|openwrt-23.05|openwrt-24.10 ]] && sed -i '/deluge/d' .config
@@ -685,6 +681,10 @@ sed -i '/bridge\|vssr\|deluge/d' .config
     sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate || \
     sed -i '/n) ipad/s/".*"/"192.168.2.150"/' $config_generate
 }
+
+for p in package/A/luci-app*/po feeds/luci/applications/luci-app*/po; do
+    [[ -L $p/zh_Hans || -L $p/zh-cn ]] || (ln -s zh-cn $p/zh_Hans 2>/dev/null || ln -s zh_Hans $p/zh-cn 2>/dev/null)
+done
 
 echo -e "$(color cy '更新配置....')\c"; begin_time=$(date '+%H:%M:%S')
 make defconfig 1>/dev/null 2>&1
