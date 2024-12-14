@@ -51,11 +51,11 @@ _delpackage() {
 }
 
 safe_pushd() {
-    pushd "$1" &> /dev/null || echo -e "$(color cr \"${1} 该目录不存在。\")\c"
+    pushd "$1" &> /dev/null || echo -e "$(color cr ${1} '该目录不存在。')"
 }
 
 safe_popd() {
-    popd &> /dev/null || echo -e "$(color cr '该目录不存在。')\c"
+    popd &> /dev/null || echo -e "$(color cr '该目录不存在。')"
 }
 
 _printf() {
@@ -82,12 +82,25 @@ git_diff() {
 }
 
 git_apply() {
-    local url=$1 path=$2
-    [[ $url =~ ^# ]] && return
-    [[ $path =~ ^http ]] && return 1 || safe_pushd "$path"
-    wget -qO- "$url" | git apply --ignore-whitespace > /dev/null 2>&1 \
-    && echo -e "$(color cy '补丁 ') $(color cb ${url##*/}) $(color cg ' 执行成功。')" \
-    || echo -e "$(color cy '补丁 ') $(color cb ${url##*/}) $(color cr ' 执行出错。')"
+    [[ $1 =~ ^# ]] && return
+    local patch_source=$1 path=$2
+    [[ -n $path && -d $path ]] && safe_pushd "$path" || \
+    { echo -e "$(color cr '无法进入目录'): $path"; return 1; }
+
+    if [[ -f $patch_source ]]; then
+        git apply --ignore-whitespace < "$patch_source" > /dev/null 2>&1
+    elif [[ $patch_source =~ ^http ]]; then
+        wget -qO- "$patch_source" | git apply --ignore-whitespace > /dev/null 2>&1
+    else
+        echo -e "$(color cr '错误：无效的补丁源：') $patch_source"
+        safe_popd
+        return 1
+    fi
+
+    [[ $? -eq 0 ]] && \
+        echo -e "$(color cy '补丁 ') $(color cb ${patch_source##*/}) $(color cg ' 执行成功。')" || \
+        echo -e "$(color cy '补丁 ') $(color cb ${patch_source##*/}) $(color cr ' 执行出错。')"
+
     [[ -n $path ]] && safe_popd
 }
 
@@ -676,10 +689,22 @@ sed -i '/bridge\|vssr\|deluge/d' .config
 	CONFIG_PACKAGE_luci-app-passwall=y
 	CONFIG_PACKAGE_luci-app-ssr-plus=y
 	CONFIG_PACKAGE_luci-app-openclash=y
+	CONFIG_PACKAGE_luci-app-filebrowser=y
+	CONFIG_PACKAGE_luci-app-filetransfer=y
+	CONFIG_PACKAGE_luci-app-ssr-plus=y
+	CONFIG_PACKAGE_luci-app-timedtask=y
+	CONFIG_PACKAGE_luci-app-tinynote=y
+	CONFIG_PACKAGE_luci-app-ttyd=y
+	CONFIG_PACKAGE_luci-app-upnp=y
+	CONFIG_PACKAGE_luci-app-wizard=y
 	EOF
-    [[ -n $IP ]] && \
-    sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate || \
-    sed -i '/n) ipad/s/".*"/"192.168.2.150"/' $config_generate
+    git_apply ../firmware/${REPO_BRANCH}-luci-app-diskman.patch feeds/luci
+    git_apply ../firmware/${REPO_BRANCH}-luci-app-dockerman.patch feeds/luci
+    clone_dir sbwml/openwrt_helloworld luci-app-ssr-plus
+    clone_url "https://github.com/hong0980/build"
+    sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate
+    sed -i "/DISTRIB_DESCRIPTION/ {s/'$/-$SOURCE_NAME-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/openwrt_release
+    sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk}
 }
 
 for p in package/A/luci-app*/po feeds/luci/applications/luci-app*/po; do
