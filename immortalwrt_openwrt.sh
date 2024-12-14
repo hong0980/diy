@@ -77,7 +77,6 @@ git_diff() {
 
     [[ -n $path ]] && safe_popd
     find ../firmware -type f -empty -delete
-    ls -la ../firmware
 }
 
 git_apply() {
@@ -700,12 +699,14 @@ sed -i '/bridge\|vssr\|deluge/d' .config
 	CONFIG_PACKAGE_luci-app-wizard=y
 	CONFIG_PACKAGE_luci-app-poweroff=y
 	CONFIG_PACKAGE_luci-app-passwall2=y
+	CONFIG_PACKAGE_luci-app-filebrowser=y
 	EOF
-    git_apply $GITHUB_WORKSPACE/firmware/${REPO_BRANCH}-luci-app-diskman.patch feeds/luci
-    git_apply $GITHUB_WORKSPACE/firmware/${REPO_BRANCH}-luci-app-dockerman.patch feeds/luci
+    # git_apply ../firmware/${REPO_BRANCH}-luci-app-diskman.patch feeds/luci
+    # git_apply ../firmware/${REPO_BRANCH}-luci-app-dockerman.patch feeds/luci
     clone_dir sbwml/openwrt_helloworld luci-app-ssr-plus luci-app-passwall2 shadowsocks-libev \
-    shadowsocksr-libev shadow-tls pdnsd-alt ssocks v2ray-geoview
-    clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-poweroff
+        shadowsocksr-libev shadow-tls pdnsd-alt
+    clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-poweroff \
+        luci-app-diskman luci-app-dockerman luci-app-filebrowser luci-lib-fs
     sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate
     sed -i "/DISTRIB_DESCRIPTION/ {s/'$/-$SOURCE_NAME-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/openwrt_release
     sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk}
