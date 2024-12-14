@@ -66,14 +66,14 @@ _printf() {
 git_diff() {
     local path
     [[ $1 =~ feeds ]] && path=$1
-    [[ -n $path ]] && {
+    [[ -d $path ]] && {
         safe_pushd "$path"
         shift
     }
 
-    for i in $@; do
+    for i in "$@"; do
         git cat-file commit origin/${REPO_BRANCH}:"$i" &>/dev/null && {
-            git diff --quiet "$i" || \
+            git diff --quiet "$i" && \
             git diff -- "$i" > $GITHUB_WORKSPACE/firmware/${REPO_BRANCH}-${i##*/}.patch            
         }
     done
@@ -697,6 +697,7 @@ sed -i '/bridge\|vssr\|deluge/d' .config
 	CONFIG_PACKAGE_luci-app-ttyd=y
 	CONFIG_PACKAGE_luci-app-upnp=y
 	CONFIG_PACKAGE_luci-app-wizard=y
+	CONFIG_PACKAGE_luci-app-poweroff=y
 	EOF
     git_apply ../firmware/${REPO_BRANCH}-luci-app-diskman.patch feeds/luci
     git_apply ../firmware/${REPO_BRANCH}-luci-app-dockerman.patch feeds/luci
