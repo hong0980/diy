@@ -72,13 +72,12 @@ git_diff() {
     fi
 
     for i in "$@"; do
-        # git cat-file commit origin/${REPO_BRANCH}:"$i" &>/dev/null &&
         git diff -- "$i" > $GITHUB_WORKSPACE/firmware/${REPO_BRANCH}-${i##*/}.patch
     done
 
     [[ -n $path ]] && safe_popd
-    ls -la ../firmware
     find ../firmware -type f -empty -delete
+    ls -la ../firmware
 }
 
 git_apply() {
@@ -105,6 +104,7 @@ git_apply() {
 }
 
 clone_dir() {
+    create_directory "package/A"
     [[ -z $2 ]] && return
     local repo_url branch temp_dir=$(mktemp -d)
     if [[ "$1" == */* ]]; then
@@ -151,6 +151,7 @@ clone_dir() {
 }
 
 clone_url() {
+    create_directory "package/A"
     for url in $@; do
         name="${url##*/}"
         if grep "^https" <<<"$url" | egrep -qv "openwrt_helloworld$|helloworld$|build$|openwrt-passwall-packages$"; then
@@ -700,11 +701,10 @@ sed -i '/bridge\|vssr\|deluge/d' .config
 	CONFIG_PACKAGE_luci-app-poweroff=y
 	CONFIG_PACKAGE_luci-app-passwall2=y
 	EOF
-    create_directory "feeds/luci/applications/luci-app-passwall2"
     git_apply $GITHUB_WORKSPACE/firmware/${REPO_BRANCH}-luci-app-diskman.patch feeds/luci
     git_apply $GITHUB_WORKSPACE/firmware/${REPO_BRANCH}-luci-app-dockerman.patch feeds/luci
-    clone_dir sbwml/openwrt_helloworld luci-app-passwall2
-    clone_dir fw876/helloworld luci-app-ssr-plus shadowsocks-libev shadowsocksr-libev shadow-tls
+    clone_dir sbwml/openwrt_helloworld luci-app-ssr-plus luci-app-passwall2 shadowsocks-libev \
+    shadowsocksr-libev shadow-tls pdnsd-alt ssocks v2ray-geoview
     clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-poweroff
     sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate
     sed -i "/DISTRIB_DESCRIPTION/ {s/'$/-$SOURCE_NAME-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/openwrt_release
