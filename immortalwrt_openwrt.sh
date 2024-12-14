@@ -72,13 +72,16 @@ git_diff() {
     fi
 
     for i in "$@"; do
-        echo -e "$(color cy '制作补丁：') $i"
+        echo -e "$(color cy '制作补丁：') $i\c "
+        pwd
         # git cat-file commit origin/${REPO_BRANCH}:"$i" &>/dev/null && \
         # git diff --quiet "$i" || \
-        git diff -- "$i" > $GITHUB_WORKSPACE/firmware/${REPO_BRANCH}-${i##*/}.patch
+        git diff -- "$i" > $GITHUB_WORKSPACE/firmware/${REPO_BRANCH}-${i##*/}.patch || echo -e "$(color cy '制作补丁：') $i 失败！"
     done
+    pwd
 
     [[ -n $path ]] && safe_popd
+    ls -a ../firmware
 }
 
 git_apply() {
@@ -699,7 +702,6 @@ sed -i '/bridge\|vssr\|deluge/d' .config
 	CONFIG_PACKAGE_luci-app-wizard=y
 	CONFIG_PACKAGE_luci-app-poweroff=y
 	EOF
-    create_directory "feeds/luci/applications/luci-app-ssr-plus" "feeds/luci/applications/luci-app-passwall2"
     git_apply ../firmware/${REPO_BRANCH}-luci-app-diskman.patch feeds/luci
     git_apply ../firmware/${REPO_BRANCH}-luci-app-dockerman.patch feeds/luci
     clone_dir sbwml/openwrt_helloworld luci-app-ssr-plus luci-app-passwall2 shadowsocks-libev shadow-tls
