@@ -65,17 +65,15 @@ _printf() {
 
 git_diff() {
     local path
-    [[ $1 =~ feeds ]] && path=$1
-    [[ -d $path ]] && {
-        safe_pushd "$path"
+    if [[ $1 =~ feeds && -d $1 ]]; then
+        path="$1"
         shift
-    }
+        safe_pushd "$path"
+    fi
 
     for i in "$@"; do
-        git cat-file commit origin/${REPO_BRANCH}:"$i" &>/dev/null && {
-            git diff --quiet "$i" && \
-            git diff -- "$i" > $GITHUB_WORKSPACE/firmware/${REPO_BRANCH}-${i##*/}.patch            
-        }
+        # git cat-file commit origin/${REPO_BRANCH}:"$i" &>/dev/null && \
+        git diff -- "$i" > $GITHUB_WORKSPACE/firmware/${REPO_BRANCH}-${i##*/}.patch
     done
 
     [[ -n $path ]] && safe_popd
@@ -668,7 +666,7 @@ package/A/*/Makefile 2>/dev/null
 [[ "$REPO_BRANCH" =~ master|openwrt-23.05|openwrt-24.10 ]] && sed -i '/deluge/d' .config
 sed -i '/bridge\|vssr\|deluge/d' .config
 
-[[ "$TARGET_DEVICE" = "x86_64" ]] && [[ "$REPO_BRANCH" =~ master|openwrt-23.05|openwrt-24.10 ]] && {
+[[ "$TARGET_DEVICE" = "x86_64" && "$REPO_BRANCH" =~ master|openwrt-23.05|openwrt-24.10 ]] && {
     cd ../
     rm -rf $REPO_FLODER
     git clone -q $cmd $REPO_URL $REPO_FLODER
@@ -699,10 +697,11 @@ sed -i '/bridge\|vssr\|deluge/d' .config
 	CONFIG_PACKAGE_luci-app-wizard=y
 	CONFIG_PACKAGE_luci-app-poweroff=y
 	EOF
+    create_directory feeds/luci/applications/luci-app-ssr-plus feeds/luci/applications/luci-app-passwall2
     git_apply ../firmware/${REPO_BRANCH}-luci-app-diskman.patch feeds/luci
     git_apply ../firmware/${REPO_BRANCH}-luci-app-dockerman.patch feeds/luci
-    clone_dir sbwml/openwrt_helloworld luci-app-ssr-plus
-    clone_url "https://github.com/hong0980/build"
+    clone_dir sbwml/openwrt_helloworld luci-app-ssr-plus shadowsocks-libev shadow-tls luci-app-passwall2
+    clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-poweroff
     sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate
     sed -i "/DISTRIB_DESCRIPTION/ {s/'$/-$SOURCE_NAME-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/openwrt_release
     sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk}
