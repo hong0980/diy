@@ -65,14 +65,16 @@ _printf() {
 
 git_diff() {
     local path
-    if [[ $1 =~ feeds && -d $1 ]]; then
+    if [[ $1 =~ feeds/luci|feeds/packages && -d $1 ]]; then
         path="$1"
         shift
         safe_pushd "$path"
     fi
 
     for i in "$@"; do
+        echo -e "$(color cy '制作补丁：') $i"
         # git cat-file commit origin/${REPO_BRANCH}:"$i" &>/dev/null && \
+        # git diff --quiet "$i" || \
         git diff -- "$i" > $GITHUB_WORKSPACE/firmware/${REPO_BRANCH}-${i##*/}.patch
     done
 
@@ -90,7 +92,7 @@ git_apply() {
     elif [[ $patch_source =~ ^http ]]; then
         wget -qO- "$patch_source" | git apply --ignore-whitespace > /dev/null 2>&1
     else
-        echo -e "$(color cr '错误：无效的补丁源：') $patch_source"
+        echo -e "$(color cr '无效的补丁源：') $patch_source"
         safe_popd
         return 1
     fi
@@ -375,8 +377,8 @@ sed -i "\$i uci -q set luci.main.mediaurlbase=\"/luci-static/bootstrap\" && uci 
 # git diff ./ >> ../output/t.patch || true
 clone_url "
     https://github.com/hong0980/build
-    https://github.com/xiaorouji/openwrt-passwall-packages
     https://github.com/fw876/helloworld
+    https://github.com/xiaorouji/openwrt-passwall-packages
 "
 
 clone_dir vernesong/OpenClash luci-app-openclash
@@ -697,10 +699,10 @@ sed -i '/bridge\|vssr\|deluge/d' .config
 	CONFIG_PACKAGE_luci-app-wizard=y
 	CONFIG_PACKAGE_luci-app-poweroff=y
 	EOF
-    create_directory feeds/luci/applications/luci-app-ssr-plus feeds/luci/applications/luci-app-passwall2
+    create_directory "feeds/luci/applications/luci-app-ssr-plus" "feeds/luci/applications/luci-app-passwall2"
     git_apply ../firmware/${REPO_BRANCH}-luci-app-diskman.patch feeds/luci
     git_apply ../firmware/${REPO_BRANCH}-luci-app-dockerman.patch feeds/luci
-    clone_dir sbwml/openwrt_helloworld luci-app-ssr-plus shadowsocks-libev shadow-tls luci-app-passwall2
+    clone_dir sbwml/openwrt_helloworld luci-app-ssr-plus luci-app-passwall2 shadowsocks-libev shadow-tls
     clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-poweroff
     sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate
     sed -i "/DISTRIB_DESCRIPTION/ {s/'$/-$SOURCE_NAME-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/openwrt_release
