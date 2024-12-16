@@ -680,36 +680,35 @@ sed -i '/bridge\|vssr\|deluge/d' .config
 	CONFIG_TARGET_x86_64_DEVICE_generic=y
 	CONFIG_TARGET_ROOTFS_PARTSIZE=$PARTSIZE
 	CONFIG_TARGET_KERNEL_PARTSIZE=16
+	# CONFIG_GRUB_EFI_IMAGES is not set
 	CONFIG_KERNEL_BUILD_USER="win3gp"
 	CONFIG_KERNEL_BUILD_DOMAIN="OpenWrt"
 	CONFIG_PACKAGE_automount=y
 	CONFIG_PACKAGE_autosamba=y
-	CONFIG_PACKAGE_luci-app-dockerman=y
 	CONFIG_PACKAGE_luci-app-diskman=y
-	CONFIG_PACKAGE_luci-app-passwall=y
+	CONFIG_PACKAGE_luci-app-dockerman=y
 	CONFIG_PACKAGE_luci-app-ssr-plus=y
+	CONFIG_PACKAGE_luci-app-passwall=y
+	CONFIG_PACKAGE_luci-app-passwall2=y
 	CONFIG_PACKAGE_luci-app-openclash=y
 	CONFIG_PACKAGE_luci-app-filebrowser=y
 	CONFIG_PACKAGE_luci-app-filetransfer=y
-	CONFIG_PACKAGE_luci-app-ssr-plus=y
-	CONFIG_PACKAGE_luci-app-timedtask=y
-	CONFIG_PACKAGE_luci-app-tinynote=y
+	CONFIG_PACKAGE_luci-app-uhttpd=y
 	CONFIG_PACKAGE_luci-app-ttyd=y
 	CONFIG_PACKAGE_luci-app-upnp=y
 	CONFIG_PACKAGE_luci-app-wizard=y
 	CONFIG_PACKAGE_luci-app-poweroff=y
-	CONFIG_PACKAGE_luci-app-passwall2=y
 	CONFIG_PACKAGE_luci-app-cowbping=y
+	CONFIG_PACKAGE_luci-app-tinynote=y
+	CONFIG_PACKAGE_luci-app-timedtask=y
 	CONFIG_PACKAGE_luci-app-cowb-speedlimit=y
-	CONFIG_PACKAGE_luci-app-cowb-pwdHackDeny=y
 	EOF
     # git_apply ../firmware/${REPO_BRANCH}-luci-app-diskman.patch feeds/luci
     # git_apply ../firmware/${REPO_BRANCH}-luci-app-dockerman.patch feeds/luci
     clone_dir sbwml/openwrt_helloworld luci-app-ssr-plus luci-app-passwall2 shadowsocks-libev \
         shadowsocksr-libev shadow-tls pdnsd-alt
     clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-poweroff \
-        luci-app-diskman luci-app-filebrowser luci-lib-fs luci-app-cowb-speedlimit luci-app-cowbping \
-        luci-app-cowb-pwdHackDeny #luci-app-dockerman
+        luci-app-diskman luci-app-filebrowser luci-app-cowb-speedlimit luci-app-cowbping luci-app-dockerman
     sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate
     sed -i "/DISTRIB_DESCRIPTION/ {s/'$/-$SOURCE_NAME-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/openwrt_release
     sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk}
