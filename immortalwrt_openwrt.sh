@@ -137,7 +137,7 @@ clone_dir() {
         current_dir=$(_find "package/ feeds/ target/" "$target_dir")
         destination_dir="${current_dir:-package/A/$target_dir}"
 
-        [[ -d "$current_dir" ]] && mv -f "$current_dir" ../
+        [[ -d "$current_dir" ]] && rm -rf "../$(basename "$current_dir")" && mv -f "$current_dir" ../
         if mv -f "$source_dir" "${destination_dir%/*}"; then
             if [[ -d "$current_dir" ]]; then
                 _printf "$(color cg 替换) $target_dir [ $(color cg ✔) ]"
@@ -715,8 +715,8 @@ sed -i '/bridge\|vssr\|deluge/d' .config
     clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-poweroff \
         luci-app-diskman luci-app-filebrowser luci-app-cowb-speedlimit luci-app-cowbping luci-app-dockerman
     sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate
-    sed -i "/DISTRIB_DESCRIPTION/ {s/'$/-$SOURCE_NAME-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/openwrt_release
     sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk}
+    sed -i "/DISTRIB_DESCRIPTION/ {s/'$/-$SOURCE_NAME-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/openwrt_release
 }
 
 for p in package/A/luci-app*/po feeds/luci/applications/luci-app*/po; do
