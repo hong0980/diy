@@ -705,8 +705,13 @@ sed -i '/bridge\|vssr\|deluge/d' .config
 	EOF
     # git_apply ../firmware/${REPO_BRANCH}-luci-app-diskman.patch feeds/luci
     # git_apply ../firmware/${REPO_BRANCH}-luci-app-dockerman.patch feeds/luci
-    clone_dir sbwml/openwrt_helloworld luci-app-ssr-plus luci-app-passwall2 shadowsocks-libev \
-        shadowsocksr-libev shadow-tls pdnsd-alt
+    clone_dir fw876/helloworld luci-app-ssr-plus shadowsocks-libev \
+        shadowsocksr-libev shadow-tls pdnsd-alt luci-app-ssr-plus
+    clone_dir xiaorouji/openwrt-passwall luci-app-passwall
+    clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
+    # clone_dir sbwml/openwrt_helloworld luci-app-passwall2
+    git_apply https://raw.githubusercontent.com/sbwml/openwrt_helloworld/refs/heads/v5/patch-luci-app-ssr-plus.patch package/A
+    git_apply https://raw.githubusercontent.com/sbwml/openwrt_helloworld/refs/heads/v5/patch-luci-app-passwall.patch feeds/luci/applications
     clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-poweroff \
         luci-app-diskman luci-app-filebrowser luci-app-cowb-speedlimit luci-app-cowbping luci-app-dockerman
     sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate
