@@ -81,21 +81,21 @@ git_diff() {
 
 git_apply() {
     [[ $1 =~ ^# ]] && return
-    local patch_source=$1 path=$2
+    local patch_source=$1 path=$2 x
     [[ -n $path && -d $path ]] && safe_pushd "$path" || \
     { echo -e "$(color cr '无法进入目录'): $path"; return 1; }
 
     if [[ -f $patch_source ]]; then
-        git apply --ignore-whitespace < "$patch_source" > /dev/null 2>&1
+        git apply --ignore-whitespace < "$patch_source" > /dev/null 2>&1 && x=1
     elif [[ $patch_source =~ ^http ]]; then
-        wget -qO- "$patch_source" | git apply --ignore-whitespace > /dev/null 2>&1
+        wget -qO- "$patch_source" | git apply --ignore-whitespace > /dev/null 2>&1 && x=1
     else
         echo -e "$(color cr '无效的补丁源：') $patch_source"
         safe_popd
         return 1
     fi
 
-    [[ $? -eq 0 ]] \
+    [[ $x == 1 ]] \
         && _printf "$(color cg 执行) ${patch_source##*/} [ $(color cg ✔) ]" \
         || _printf "$(color cr 执行) ${patch_source##*/} [ $(color cr ✕) ]"
 
