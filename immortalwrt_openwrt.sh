@@ -483,7 +483,6 @@ git_diff "feeds/luci" "applications/luci-app-diskman" "applications/luci-app-pas
     #https://github.com/userdocs/qbittorrent-nox-static/releases
     xc=$(_find "package/A/ feeds/" "qBittorrent-static")
     [[ -d $xc ]] && {
-        # [[ $qBittorrent_version ]] && sed -i "s/userdocs/hong0980/" $xc/Makefile
         sed -i "s/PKG_VERSION:=.*/PKG_VERSION:=${qBittorrent_version:-4.6.5}_v${libtorrent_version:-2.0.10}/" $xc/Makefile
     }
     xd=$(_find "package/A/ feeds/luci/applications/" "luci-app-turboacc")
@@ -692,6 +691,7 @@ sed -i '/bridge\|vssr\|deluge/d' .config
 	CONFIG_PACKAGE_luci-app-passwall2=y
 	CONFIG_PACKAGE_luci-app-openclash=y
 	CONFIG_PACKAGE_luci-app-filebrowser=y
+	CONFIG_PACKAGE_luci-app-qbittorrent=y
 	CONFIG_PACKAGE_luci-app-filetransfer=y
 	CONFIG_PACKAGE_luci-app-uhttpd=y
 	CONFIG_PACKAGE_luci-app-ttyd=y
@@ -701,6 +701,9 @@ sed -i '/bridge\|vssr\|deluge/d' .config
 	CONFIG_PACKAGE_luci-app-cowbping=y
 	CONFIG_PACKAGE_luci-app-tinynote=y
 	CONFIG_PACKAGE_luci-app-timedtask=y
+	CONFIG_PACKAGE_luci-app-bypass=y
+	CONFIG_PACKAGE_luci-app-store=y
+	CONFIG_PACKAGE_luci-app-pushbot=y
 	CONFIG_PACKAGE_luci-app-cowb-speedlimit=y
 	EOF
     # git_apply ../firmware/${REPO_BRANCH}-luci-app-diskman.patch feeds/luci
@@ -712,8 +715,13 @@ sed -i '/bridge\|vssr\|deluge/d' .config
     clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
     git_apply https://raw.githubusercontent.com/sbwml/openwrt_helloworld/refs/heads/v5/patch-luci-app-ssr-plus.patch package/A
     git_apply https://raw.githubusercontent.com/sbwml/openwrt_helloworld/refs/heads/v5/patch-luci-app-passwall.patch feeds/luci/applications
-    clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-poweroff \
+    clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-poweroff luci-app-qbittorrent \
         luci-app-diskman luci-app-filebrowser luci-app-cowb-speedlimit luci-app-cowbping luci-app-dockerman
+    clone_dir kiddin9/kwrt-packages luci-lib-taskd luci-lib-xterm lua-maxminddb \
+        luci-app-bypass luci-app-store luci-app-pushbot
+    [[ -d $xc ]] && {
+        sed -i "s/PKG_VERSION:=.*/PKG_VERSION:=${qBittorrent_version:-4.6.5}_v${libtorrent_version:-2.0.10}/" $xc/Makefile
+    }
     sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate
     sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk}
     sed -i "/DISTRIB_DESCRIPTION/ {s/'$/-$SOURCE_NAME-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/openwrt_release
