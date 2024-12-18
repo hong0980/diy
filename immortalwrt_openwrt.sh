@@ -718,7 +718,7 @@ sed -i '/bridge\|vssr\|deluge/d' .config
     clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-poweroff luci-app-qbittorrent \
         luci-app-diskman luci-app-filebrowser luci-app-cowb-speedlimit luci-app-cowbping luci-app-dockerman qBittorrent-static
     clone_dir kiddin9/kwrt-packages luci-lib-taskd luci-lib-xterm lua-maxminddb \
-        luci-app-bypass luci-app-store luci-app-pushbot
+        luci-app-bypass luci-app-store luci-app-pushbot taskd
     [[ -d $xc ]] && {
         sed -i "s/PKG_VERSION:=.*/PKG_VERSION:=${qBittorrent_version:-4.6.5}_v${libtorrent_version:-2.0.10}/" $xc/Makefile
     }
