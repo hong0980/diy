@@ -716,7 +716,7 @@ sed -i '/bridge\|vssr\|deluge/d' .config
     git_apply https://raw.githubusercontent.com/sbwml/openwrt_helloworld/refs/heads/v5/patch-luci-app-ssr-plus.patch package/A
     git_apply https://raw.githubusercontent.com/sbwml/openwrt_helloworld/refs/heads/v5/patch-luci-app-passwall.patch feeds/luci/applications
     clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-poweroff luci-app-qbittorrent \
-        luci-app-diskman luci-app-filebrowser luci-app-cowb-speedlimit luci-app-cowbping luci-app-dockerman
+        luci-app-diskman luci-app-filebrowser luci-app-cowb-speedlimit luci-app-cowbping luci-app-dockerman qBittorrent-static
     clone_dir kiddin9/kwrt-packages luci-lib-taskd luci-lib-xterm lua-maxminddb \
         luci-app-bypass luci-app-store luci-app-pushbot
     [[ -d $xc ]] && {
