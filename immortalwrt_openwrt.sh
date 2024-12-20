@@ -81,23 +81,23 @@ git_diff() {
 
 git_apply() {
     [[ $1 =~ ^# ]] && return
-    local patch_source=$1 path=$2 x
+    local patch_source=$1 path=$2
     [[ -n $path && -d $path ]] && safe_pushd "$path" || \
     { echo -e "$(color cr '无法进入目录'): $path"; return 1; }
 
-    if [[ -f $patch_source ]]; then
-        git apply --ignore-whitespace < "$patch_source" && x=1
-    elif [[ $patch_source =~ ^http ]]; then
-        wget -qO- "$patch_source" | git apply --ignore-whitespace && x=1
+    if [[ $patch_source =~ ^http ]]; then
+        wget -qO- "$patch_source" | git apply --ignore-whitespace \
+        && _printf "$(color cg 执行) ${patch_source##*/} [ $(color cg ✔) ]" \
+        || _printf "$(color cr 执行) ${patch_source##*/} [ $(color cr ✕) ]"
+    elif [[ -f $patch_source ]]; then
+        git apply --ignore-whitespace < "$patch_source" \
+        && _printf "$(color cg 执行) ${patch_source##*/} [ $(color cg ✔) ]" \
+        || _printf "$(color cr 执行) ${patch_source##*/} [ $(color cr ✕) ]"
     else
         echo -e "$(color cr '无效的补丁源：') $patch_source"
         safe_popd
         return 1
     fi
-
-    [[ $x == 1 ]] \
-        && _printf "$(color cg 执行) ${patch_source##*/} [ $(color cg ✔) ]" \
-        || _printf "$(color cr 执行) ${patch_source##*/} [ $(color cr ✕) ]"
 
     [[ -n $path ]] && safe_popd
 }
@@ -725,6 +725,7 @@ sed -i '/bridge\|vssr\|deluge/d' .config
     sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate
     sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk}
     sed -i "/DISTRIB_DESCRIPTION/ {s/'$/-$SOURCE_NAME-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/openwrt_release
+    sed -i "/exit 0/i uci -q set upnpd.config.enabled=\"1\" && uci -q commit upnpd\nsed -i 's/root::.*:::/root:\$1\$pn1ABFaI\$vt5cmIjlr6M7Z79Eds2lV0:16821:0:99999:7:::/g' /etc/shadow" $(find package/emortal/ -type f -regex '.*default-settings$')
 }
 
 for p in package/A/luci-app*/po feeds/luci/applications/luci-app*/po; do
