@@ -86,18 +86,18 @@ git_apply() {
     { echo -e "$(color cr '无法进入目录'): $path"; return 1; }
 
     if [[ $patch_source =~ ^http ]]; then
-        wget -qO- "$patch_source" | git apply --ignore-whitespace \
-        && _printf "$(color cg 执行) ${patch_source##*/} [ $(color cg ✔) ]" \
-        || _printf "$(color cr 执行) ${patch_source##*/} [ $(color cr ✕) ]"
+        wget -qO- "$patch_source" | git apply --ignore-whitespace > /dev/null 2>&1
     elif [[ -f $patch_source ]]; then
-        git apply --ignore-whitespace < "$patch_source" \
-        && _printf "$(color cg 执行) ${patch_source##*/} [ $(color cg ✔) ]" \
-        || _printf "$(color cr 执行) ${patch_source##*/} [ $(color cr ✕) ]"
+        git apply --ignore-whitespace < "$patch_source" > /dev/null 2>&1
     else
         echo -e "$(color cr '无效的补丁源：') $patch_source"
         safe_popd
         return 1
     fi
+
+    [[ $? -eq 0 ]] \
+        && _printf "$(color cg 执行) ${patch_source##*/} [ $(color cg ✔) ]" \
+        || _printf "$(color cr 执行) ${patch_source##*/} [ $(color cr ✕) ]"
 
     [[ -n $path ]] && safe_popd
 }
@@ -708,13 +708,7 @@ sed -i '/bridge\|vssr\|deluge/d' .config
 	EOF
     # git_apply ../firmware/${REPO_BRANCH}-luci-app-diskman.patch feeds/luci
     # git_apply ../firmware/${REPO_BRANCH}-luci-app-dockerman.patch feeds/luci
-    # clone_dir sbwml/openwrt_helloworld luci-app-passwall2
-    clone_dir fw876/helloworld luci-app-ssr-plus shadowsocks-libev \
-        shadowsocksr-libev shadow-tls pdnsd-alt
-    clone_dir xiaorouji/openwrt-passwall luci-app-passwall
-    clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
-    git_apply https://raw.githubusercontent.com/sbwml/openwrt_helloworld/refs/heads/v5/patch-luci-app-ssr-plus.patch package/A
-    git_apply https://raw.githubusercontent.com/sbwml/openwrt_helloworld/refs/heads/v5/patch-luci-app-passwall.patch feeds/luci/applications
+    clone_dir sbwml/openwrt_helloworld luci-app-passwall2 luci-app-passwall luci-app-openclash luci-app-ssr-plus
     clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-poweroff luci-app-qbittorrent \
         luci-app-diskman luci-app-filebrowser luci-app-cowb-speedlimit luci-app-cowbping luci-app-dockerman qBittorrent-static
     clone_dir kiddin9/kwrt-packages luci-lib-taskd luci-lib-xterm lua-maxminddb \
