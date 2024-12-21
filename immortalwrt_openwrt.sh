@@ -667,18 +667,13 @@ package/A/*/Makefile 2>/dev/null
 [[ "$REPO_BRANCH" =~ master|openwrt-23.05|openwrt-24.10 ]] && sed -i '/deluge/d' .config
 sed -i '/bridge\|vssr\|deluge/d' .config
 
-[[ "$TARGET_DEVICE" = "x86_64" && "$REPO_BRANCH" =~ master|openwrt-23.05|openwrt-24.10 ]] && {
+[[ "$TARGET_DEVICE" =~ x86_64|r1-plus-lts && "$REPO_BRANCH" =~ master|openwrt-23.05|openwrt-24.10 ]] && {
     cd ../
     rm -rf $REPO_FLODER
     git clone -q $cmd $REPO_URL $REPO_FLODER
     cd $REPO_FLODER
     download_and_deploy_cache
 	cat >.config<<-EOF
-	CONFIG_TARGET_x86=y
-	CONFIG_TARGET_x86_64=y
-	CONFIG_TARGET_x86_64_DEVICE_generic=y
-	CONFIG_TARGET_ROOTFS_PARTSIZE=$PARTSIZE
-	CONFIG_TARGET_KERNEL_PARTSIZE=16
 	# CONFIG_GRUB_EFI_IMAGES is not set
 	CONFIG_KERNEL_BUILD_USER="win3gp"
 	CONFIG_KERNEL_BUILD_DOMAIN="OpenWrt"
@@ -706,6 +701,32 @@ sed -i '/bridge\|vssr\|deluge/d' .config
 	CONFIG_PACKAGE_luci-app-pushbot=y
 	CONFIG_PACKAGE_luci-app-cowb-speedlimit=y
 	EOF
+
+    case "$TARGET_DEVICE" in
+        "x86_64")
+			cat >>.config<<-EOF
+			CONFIG_TARGET_x86=y
+			CONFIG_TARGET_x86_64=y
+			CONFIG_TARGET_x86_64_DEVICE_generic=y
+			CONFIG_TARGET_ROOTFS_PARTSIZE=$PARTSIZE
+			CONFIG_TARGET_KERNEL_PARTSIZE=16
+			# CONFIG_GRUB_EFI_IMAGES is not set
+			EOF
+            ;;
+        "r1-plus-lts")
+			cat >>.config<<-EOF
+			CONFIG_TARGET_rockchip=y
+			CONFIG_TARGET_rockchip_armv8=y
+			CONFIG_TARGET_ROOTFS_PARTSIZE=$PARTSIZE
+			CONFIG_TARGET_rockchip_armv8_DEVICE_xunlong_orangepi-$TARGET_DEVICE=y
+			CONFIG_BUILD_NLS=y
+			CONFIG_BUILD_PATENTED=y
+			CONFIG_DRIVER_11AC_SUPPORT=y
+			CONFIG_DRIVER_11N_SUPPORT=y
+			CONFIG_DRIVER_11W_SUPPORT=y
+			EOF
+            ;;
+    esac
     # git_apply ../firmware/${REPO_BRANCH}-luci-app-diskman.patch feeds/luci
     # git_apply ../firmware/${REPO_BRANCH}-luci-app-dockerman.patch feeds/luci
     clone_dir sbwml/openwrt_helloworld luci-app-passwall2 luci-app-passwall luci-app-openclash luci-app-ssr-plus shadow-tls \
