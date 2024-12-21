@@ -688,7 +688,7 @@ sed -i '/bridge\|vssr\|deluge/d' .config
 	CONFIG_PACKAGE_luci-app-dockerman=y
 	CONFIG_PACKAGE_luci-app-ssr-plus=y
 	CONFIG_PACKAGE_luci-app-passwall=y
-	#CONFIG_PACKAGE_luci-app-passwall2=y
+	CONFIG_PACKAGE_luci-app-passwall2=y
 	CONFIG_PACKAGE_luci-app-openclash=y
 	CONFIG_PACKAGE_luci-app-filebrowser=y
 	CONFIG_PACKAGE_luci-app-qbittorrent=y
@@ -721,6 +721,7 @@ sed -i '/bridge\|vssr\|deluge/d' .config
     sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk}
     sed -i "/DISTRIB_DESCRIPTION/ {s/'$/-$SOURCE_NAME-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/openwrt_release
     sed -i "/exit 0/i uci -q set upnpd.config.enabled=\"1\" && uci -q commit upnpd\nsed -i 's/root::.*:::/root:\$1\$pn1ABFaI\$vt5cmIjlr6M7Z79Eds2lV0:16821:0:99999:7:::/g' /etc/shadow" $(find package/emortal/ -type f -regex '.*default-settings$')
+    [[ $REPO_BRANCH =~ master|openwrt-24.10 ]] && sed -i '/store\|passwall2/d' .config
 }
 
 for p in package/A/luci-app*/po feeds/luci/applications/luci-app*/po; do
