@@ -392,8 +392,6 @@ clone_dir master UnblockNeteaseMusic/luci-app-unblockneteasemusic luci-app-unblo
 clone_dir kiddin9/kwrt-packages luci-lib-taskd luci-lib-xterm lua-maxminddb \
     luci-app-bypass luci-app-store luci-app-pushbot taskd
 
-git_diff "feeds/luci" "applications/luci-app-diskman" "applications/luci-app-passwall" "applications/luci-app-ssr-plus" "applications/luci-app-dockerman"
-
 [[ "$TARGET_DEVICE" =~ phicomm|newifi|asus ]] || {
     _packages "
     axel lscpu lsscsi patch diffutils htop lscpu
@@ -664,10 +662,10 @@ package/A/*/Makefile 2>/dev/null
 
 # mv -f package/A/luci-app* feeds/luci/applications/
 # git diff -- feeds/luci/applications/luci-app-qbittorrent > ../firmware/$REPO_BRANCH-luci-app-qbittorrent.patch
-[[ "$REPO_BRANCH" =~ master|openwrt-23.05|openwrt-24.10 ]] && sed -i '/deluge/d' .config
+[[ "$REPO_BRANCH" =~ master|23.05|24.10 ]] && sed -i '/deluge/d' .config
 sed -i '/bridge\|vssr\|deluge/d' .config
 
-[[ "$TARGET_DEVICE" =~ x86_64|r1-plus-lts && "$REPO_BRANCH" =~ master|openwrt-23.05|openwrt-24.10 ]] && {
+[[ "$TARGET_DEVICE" =~ x86_64|r1-plus-lts && "$REPO_BRANCH" =~ master|23.05|24.10 ]] && {
     cd ../
     rm -rf $REPO_FLODER
     git clone -q $cmd $REPO_URL $REPO_FLODER
@@ -735,14 +733,16 @@ sed -i '/bridge\|vssr\|deluge/d' .config
         luci-app-diskman luci-app-filebrowser luci-app-cowb-speedlimit luci-app-cowbping luci-app-dockerman qBittorrent-static
     clone_dir kiddin9/kwrt-packages luci-lib-taskd luci-lib-xterm lua-maxminddb \
         luci-app-bypass luci-app-store luci-app-pushbot taskd
+
+    git_diff "feeds/luci" "applications/luci-app-diskman" "applications/luci-app-passwall" "applications/luci-app-ssr-plus" "applications/luci-app-dockerman"
     [[ -d $xc ]] && {
-        sed -i "s/PKG_VERSION:=.*/PKG_VERSION:=${qBittorrent_version:-4.6.5}_v${libtorrent_version:-2.0.10}/" $xc/Makefile
+        sed -i "s/PKG_VERSION:=.*/PKG_VERSION:=${qBittorrent_version:-4.6.5}_${libtorrent_version:-2.0.10}/" $xc/Makefile
     }
     sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate
     sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk}
     sed -i "/DISTRIB_DESCRIPTION/ {s/'$/-$SOURCE_NAME-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/openwrt_release
     sed -i "/exit 0/i uci -q set upnpd.config.enabled=\"1\" && uci -q commit upnpd\nsed -i 's/root::.*:::/root:\$1\$pn1ABFaI\$vt5cmIjlr6M7Z79Eds2lV0:16821:0:99999:7:::/g' /etc/shadow" $(find package/emortal/ -type f -regex '.*default-settings$')
-    [[ $REPO_BRANCH =~ master|24.10 ]] && sed -i '/store\|passwall2/d' .config
+    [[ $REPO_BRANCH =~ master|24.10 ]] && sed -i '/store\|passwall2\|deluge/d' .config
 }
 
 for p in package/A/luci-app*/po feeds/luci/applications/luci-app*/po; do
