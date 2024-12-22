@@ -736,7 +736,7 @@ sed -i '/bridge\|vssr\|deluge/d' .config
 
     git_diff "feeds/luci" "applications/luci-app-diskman" "applications/luci-app-passwall" "applications/luci-app-ssr-plus" "applications/luci-app-dockerman"
     [[ -d $xc ]] && {
-        sed -i "s/PKG_VERSION:=.*/PKG_VERSION:=${qBittorrent_version:-4.6.5}_${libtorrent_version:-2.0.10}/" $xc/Makefile
+        sed -i "s/\$(PKG_VERSION)/${qBittorrent_version:-4.6.5}_v${libtorrent_version:-2.0.10}/" $xc/Makefile
     }
     sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate
     sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk}
