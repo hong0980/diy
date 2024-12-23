@@ -716,12 +716,12 @@ sed -i '/bridge\|vssr\|deluge/d' .config
 			EOF
             ;;
     esac
-    # clone_dir sbwml/openwrt_helloworld luci-app-passwall2 luci-app-passwall luci-app-openclash luci-app-ssr-plus shadow-tls \
-    #     shadowsocks-libev shadowsocksr-libev
+    clone_dir sbwml/openwrt_helloworld luci-app-passwall2 luci-app-passwall luci-app-openclash luci-app-ssr-plus shadow-tls \
+        shadowsocks-libev shadowsocksr-libev
     clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-poweroff luci-app-filebrowser luci-app-cowbping \
-        luci-app-diskman luci-app-cowb-speedlimit qBittorrent-static luci-app-qbittorrent #luci-app-wizard luci-app-dockerman
-    # clone_dir kiddin9/kwrt-packages luci-lib-taskd luci-lib-xterm lua-maxminddb luci-lib-fs \
-    #     luci-app-bypass luci-app-store luci-app-pushbot taskd luci-app-wizard luci-app-dockerman
+        luci-app-diskman luci-app-cowb-speedlimit qBittorrent-static luci-app-qbittorrent luci-app-wizard luci-app-dockerman
+    clone_dir kiddin9/kwrt-packages luci-lib-taskd luci-lib-xterm lua-maxminddb luci-lib-fs \
+        luci-app-bypass luci-app-store luci-app-pushbot taskd #luci-app-wizard luci-app-dockerman
 
     # git_diff "feeds/luci" "applications/luci-app-diskman" "applications/luci-app-passwall" "applications/luci-app-ssr-plus" "applications/luci-app-dockerman"
     [[ -d $xc ]] && {
@@ -730,7 +730,7 @@ sed -i '/bridge\|vssr\|deluge/d' .config
     sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate
     sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk}
     sed -i "/DISTRIB_DESCRIPTION/ {s/'$/-$SOURCE_NAME-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/openwrt_release
-    sed -i "/exit 0/i uci -q set upnpd.config.enabled=\"1\" && uci -q commit upnpd\nsed -i 's/root::.*:::/root:\$1\$pn1ABFaI\$vt5cmIjlr6M7Z79Eds2lV0:16821:0:99999:7:::/g' /etc/shadow\nsed -i '/option check_signature/s/^/#/' /etc/opkg.conf && echo 'src/gz openwrt_kiddin9 https://dl.openwrt.ai/latest/packages/\$(uname -m)/kiddin9' >> /etc/opkg/distfeeds.conf" $(find package/emortal/ -type f -regex '.*default-settings$')
+    sed -i "/exit 0/i uci -q set upnpd.config.enabled=\"1\" && uci -q commit upnpd\nsed -i 's/root::.*:::/root:\$1\$pn1ABFaI\$vt5cmIjlr6M7Z79Eds2lV0:16821:0:99999:7:::/g' /etc/shadow" $(find package/emortal/ -type f -regex '.*default-settings$')
     [[ $REPO_BRANCH =~ master|24.10 ]] && sed -i '/store\|passwall2\|deluge/d' .config
 }
 
