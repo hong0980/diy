@@ -732,7 +732,7 @@ sed -i '/bridge\|vssr\|deluge/d' .config
     clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-poweroff luci-app-qbittorrent \
         luci-app-diskman luci-app-filebrowser luci-app-cowb-speedlimit luci-app-cowbping luci-app-dockerman qBittorrent-static
     clone_dir kiddin9/kwrt-packages luci-lib-taskd luci-lib-xterm lua-maxminddb \
-        luci-app-bypass luci-app-store luci-app-pushbot taskd
+        luci-app-bypass luci-app-store luci-app-pushbot taskd luci-app-wizard
 
     git_diff "feeds/luci" "applications/luci-app-diskman" "applications/luci-app-passwall" "applications/luci-app-ssr-plus" "applications/luci-app-dockerman"
     [[ -d $xc ]] && {
