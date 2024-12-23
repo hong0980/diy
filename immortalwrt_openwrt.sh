@@ -678,11 +678,6 @@ sed -i '/bridge\|vssr\|deluge/d' .config
 	CONFIG_PACKAGE_automount=y
 	CONFIG_PACKAGE_autosamba=y
 	CONFIG_PACKAGE_luci-app-diskman=y
-	CONFIG_PACKAGE_luci-app-dockerman=y
-	CONFIG_PACKAGE_luci-app-ssr-plus=y
-	CONFIG_PACKAGE_luci-app-passwall=y
-	#CONFIG_PACKAGE_luci-app-passwall2=y
-	CONFIG_PACKAGE_luci-app-openclash=y
 	CONFIG_PACKAGE_luci-app-filebrowser=y
 	CONFIG_PACKAGE_luci-app-qbittorrent=y
 	CONFIG_PACKAGE_luci-app-filetransfer=y
@@ -690,13 +685,9 @@ sed -i '/bridge\|vssr\|deluge/d' .config
 	CONFIG_PACKAGE_luci-app-ttyd=y
 	CONFIG_PACKAGE_luci-app-upnp=y
 	CONFIG_PACKAGE_luci-app-wizard=y
-	CONFIG_PACKAGE_luci-app-poweroff=y
 	CONFIG_PACKAGE_luci-app-cowbping=y
 	CONFIG_PACKAGE_luci-app-tinynote=y
 	CONFIG_PACKAGE_luci-app-timedtask=y
-	CONFIG_PACKAGE_luci-app-bypass=y
-	CONFIG_PACKAGE_luci-app-store=y
-	CONFIG_PACKAGE_luci-app-pushbot=y
 	CONFIG_PACKAGE_luci-app-cowb-speedlimit=y
 	EOF
 
@@ -725,23 +716,21 @@ sed -i '/bridge\|vssr\|deluge/d' .config
 			EOF
             ;;
     esac
-    # git_apply ../firmware/${REPO_BRANCH}-luci-app-diskman.patch feeds/luci
-    # git_apply ../firmware/${REPO_BRANCH}-luci-app-dockerman.patch feeds/luci
-    clone_dir sbwml/openwrt_helloworld luci-app-passwall2 luci-app-passwall luci-app-openclash luci-app-ssr-plus shadow-tls \
-        shadowsocks-libev shadowsocksr-libev
-    clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-poweroff luci-app-qbittorrent \
-        luci-app-diskman luci-app-filebrowser luci-app-cowb-speedlimit luci-app-cowbping luci-app-dockerman qBittorrent-static
-    clone_dir kiddin9/kwrt-packages luci-lib-taskd luci-lib-xterm lua-maxminddb \
-        luci-app-bypass luci-app-store luci-app-pushbot taskd luci-app-wizard luci-app-dockerman
+    # clone_dir sbwml/openwrt_helloworld luci-app-passwall2 luci-app-passwall luci-app-openclash luci-app-ssr-plus shadow-tls \
+    #     shadowsocks-libev shadowsocksr-libev
+    clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-poweroff luci-app-filebrowser luci-app-cowbping \
+        luci-app-diskman luci-app-cowb-speedlimit qBittorrent-static luci-app-qbittorrent #luci-app-wizard luci-app-dockerman
+    # clone_dir kiddin9/kwrt-packages luci-lib-taskd luci-lib-xterm lua-maxminddb luci-lib-fs \
+    #     luci-app-bypass luci-app-store luci-app-pushbot taskd luci-app-wizard luci-app-dockerman
 
-    git_diff "feeds/luci" "applications/luci-app-diskman" "applications/luci-app-passwall" "applications/luci-app-ssr-plus" "applications/luci-app-dockerman"
+    # git_diff "feeds/luci" "applications/luci-app-diskman" "applications/luci-app-passwall" "applications/luci-app-ssr-plus" "applications/luci-app-dockerman"
     [[ -d $xc ]] && {
         sed -i "s/\$(PKG_VERSION)/${qBittorrent_version:-4.6.5}_v${libtorrent_version:-2.0.10}/" $xc/Makefile
     }
     sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate
     sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk}
     sed -i "/DISTRIB_DESCRIPTION/ {s/'$/-$SOURCE_NAME-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/openwrt_release
-    sed -i "/exit 0/i uci -q set upnpd.config.enabled=\"1\" && uci -q commit upnpd\nsed -i 's/root::.*:::/root:\$1\$pn1ABFaI\$vt5cmIjlr6M7Z79Eds2lV0:16821:0:99999:7:::/g' /etc/shadow" $(find package/emortal/ -type f -regex '.*default-settings$')
+    sed -i "/exit 0/i uci -q set upnpd.config.enabled=\"1\" && uci -q commit upnpd\nsed -i 's/root::.*:::/root:\$1\$pn1ABFaI\$vt5cmIjlr6M7Z79Eds2lV0:16821:0:99999:7:::/g' /etc/shadow\nsed -i '/option check_signature/s/^/#/' /etc/opkg.conf && echo 'src/gz openwrt_kiddin9 https://dl.openwrt.ai/latest/packages/\$(uname -m)/kiddin9' >> /etc/opkg/distfeeds.conf" $(find package/emortal/ -type f -regex '.*default-settings$')
     [[ $REPO_BRANCH =~ master|24.10 ]] && sed -i '/store\|passwall2\|deluge/d' .config
 }
 
