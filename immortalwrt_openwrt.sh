@@ -685,10 +685,19 @@ sed -i '/bridge\|vssr\|deluge/d' .config
 	CONFIG_PACKAGE_luci-app-ttyd=y
 	CONFIG_PACKAGE_luci-app-upnp=y
 	CONFIG_PACKAGE_luci-app-wizard=y
+	CONFIG_PACKAGE_luci-app-poweroff=y
 	CONFIG_PACKAGE_luci-app-cowbping=y
 	CONFIG_PACKAGE_luci-app-tinynote=y
 	CONFIG_PACKAGE_luci-app-timedtask=y
 	CONFIG_PACKAGE_luci-app-cowb-speedlimit=y
+	CONFIG_PACKAGE_luci-app-bypass=y
+	CONFIG_PACKAGE_luci-app-store=y
+	CONFIG_PACKAGE_luci-app-pushbot=y
+	CONFIG_PACKAGE_luci-app-dockerman=y
+	CONFIG_PACKAGE_luci-app-ssr-plus=y
+	CONFIG_PACKAGE_luci-app-passwall=y
+	#CONFIG_PACKAGE_luci-app-passwall2=y
+	CONFIG_PACKAGE_luci-app-openclash=y
 	EOF
 
     case "$TARGET_DEVICE" in
@@ -716,12 +725,16 @@ sed -i '/bridge\|vssr\|deluge/d' .config
 			EOF
             ;;
     esac
-    clone_dir sbwml/openwrt_helloworld luci-app-passwall2 luci-app-passwall luci-app-openclash luci-app-ssr-plus shadow-tls \
-        shadowsocks-libev shadowsocksr-libev
+    clone_dir vernesong/OpenClash luci-app-openclash
+	clone_dir xiaorouji/openwrt-passwall luci-app-passwall
+	clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
+    clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev
+    # clone_dir sbwml/openwrt_helloworld luci-app-passwall2 luci-app-passwall luci-app-openclash luci-app-ssr-plus shadow-tls \
+    #     shadowsocks-libev shadowsocksr-libev
     clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-poweroff luci-app-filebrowser luci-app-cowbping \
         luci-app-diskman luci-app-cowb-speedlimit qBittorrent-static luci-app-qbittorrent luci-app-wizard luci-app-dockerman
-    clone_dir kiddin9/kwrt-packages luci-lib-taskd luci-lib-xterm lua-maxminddb luci-lib-fs \
-        luci-app-bypass luci-app-store luci-app-pushbot taskd #luci-app-wizard luci-app-dockerman
+    clone_dir kiddin9/kwrt-packages luci-lib-taskd luci-lib-xterm lua-maxminddb luci-app-store \
+        luci-app-bypass luci-app-pushbot taskd #luci-app-wizard luci-app-dockerman luci-lib-fs
 
     # git_diff "feeds/luci" "applications/luci-app-diskman" "applications/luci-app-passwall" "applications/luci-app-ssr-plus" "applications/luci-app-dockerman"
     [[ -d $xc ]] && {
