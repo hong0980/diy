@@ -305,6 +305,7 @@ download_and_deploy_cache() {
     status $?
 }
 
+REPO=${REPO:-immortalwrt}
 create_directory "firmware" "output"
 REPO_URL="https://github.com/$REPO/$REPO"
 echo -e "$(color cy '拉取源码....')\c"; begin_time=$(date '+%H:%M:%S')
@@ -730,6 +731,7 @@ sed -i '/bridge\|vssr\|deluge/d' .config
             ;;
     esac
     if [[ $REPO =~ immortalwrt ]]; then
+        clone_dir vernesong/OpenClash luci-app-openclash
         clone_dir xiaorouji/openwrt-passwall luci-app-passwall
         clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
         clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev
@@ -743,8 +745,7 @@ sed -i '/bridge\|vssr\|deluge/d' .config
     fi
 
     clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-poweroff luci-app-filebrowser luci-app-cowbping \
-        luci-app-diskman luci-app-cowb-speedlimit qBittorrent-static luci-app-qbittorrent luci-app-wizard luci-app-dockerman
-    clone_dir vernesong/OpenClash luci-app-openclash
+        luci-app-diskman luci-app-cowb-speedlimit qBittorrent-static luci-app-qbittorrent luci-app-wizard #luci-app-dockerman
     clone_dir kiddin9/kwrt-packages luci-lib-taskd luci-lib-xterm lua-maxminddb luci-app-store \
         luci-app-bypass luci-app-pushbot taskd #luci-app-wizard luci-app-dockerman luci-lib-fs
 
