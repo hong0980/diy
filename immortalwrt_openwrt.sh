@@ -306,9 +306,9 @@ download_and_deploy_cache() {
 }
 
 create_directory "firmware" "output"
-REPO_URL="https://github.com/immortalwrt/immortalwrt"
+REPO_URL="https://github.com/$REPO/$REPO"
 echo -e "$(color cy '拉取源码....')\c"; begin_time=$(date '+%H:%M:%S')
-[ "$REPO_BRANCH" -a "$REPO_BRANCH" != "master" ] && cmd="-b $REPO_BRANCH --single-branch"
+[ "$REPO_BRANCH" ] && cmd="-b $REPO_BRANCH --single-branch"
 git clone -q $cmd $REPO_URL $REPO_FLODER # --depth 1
 status $?
 [[ -d $REPO_FLODER ]] && cd $REPO_FLODER || exit
@@ -321,9 +321,8 @@ case "$TARGET_DEVICE" in
     "r1-plus-lts"|"r1-plus"|"r4s"|"r2c"|"r2s") export NAME="rockchip_armv8";;
 esac
 
-SOURCE_NAME=$(basename $(dirname $REPO_URL))
 export TOOLS_HASH=`git log --pretty=tformat:"%h" -n1 tools toolchain`
-export CACHE_NAME="$SOURCE_NAME-${REPO_BRANCH#*-}-$TOOLS_HASH-$NAME"
+export CACHE_NAME="${REPO_URL##*/}-${REPO_BRANCH#*-}-$TOOLS_HASH-$NAME"
 echo "CACHE_NAME=$CACHE_NAME" >>$GITHUB_ENV
 
 download_and_deploy_cache
@@ -368,11 +367,13 @@ EOF
 config_generate="package/base-files/files/bin/config_generate"
 color cy "自定义设置.... "
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
-sed -i "/DISTRIB_DESCRIPTION/ {s/'$/-$SOURCE_NAME-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/openwrt_release
+sed -i "/DISTRIB_DESCRIPTION/ {s/'$/-${REPO_URL##*/}-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/openwrt_release
 sed -i "/VERSION_NUMBER/ s/if.*/if \$(VERSION_NUMBER),\$(VERSION_NUMBER),${REPO_BRANCH#*-}-SNAPSHOT)/" include/version.mk
-sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk}
-sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
-sed -i "\$i uci -q set luci.main.mediaurlbase=\"/luci-static/bootstrap\" && uci -q commit luci\nuci -q set upnpd.config.enabled=\"1\" && uci -q commit upnpd\nsed -i 's/root::.*:::/root:\$1\$pn1ABFaI\$vt5cmIjlr6M7Z79Eds2lV0:16821:0:99999:7:::/g' /etc/shadow" $(find package/emortal/ -type f -regex '.*default-settings$')
+sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
+sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config || true
+settings=$(find package/ -type f -regex '.*default-settings$')
+[[ -f $settings ]] && \
+sed -i "\$i uci -q set luci.main.mediaurlbase=\"/luci-static/bootstrap\" && uci -q commit luci\nuci -q set upnpd.config.enabled=\"1\" && uci -q commit upnpd\nsed -i 's/root::.*:::/root:\$1\$pn1ABFaI\$vt5cmIjlr6M7Z79Eds2lV0:16821:0:99999:7:::/g' /etc/shadow" 
 
 # git diff ./ >> ../output/t.patch || true
 clone_url "
@@ -672,9 +673,12 @@ sed -i '/bridge\|vssr\|deluge/d' .config
     cd $REPO_FLODER
     download_and_deploy_cache
 	cat >.config<<-EOF
+	CONFIG_PACKAGE_default-settings=y
+	CONFIG_PACKAGE_default-settings-chn=y
 	# CONFIG_GRUB_EFI_IMAGES is not set
 	CONFIG_KERNEL_BUILD_USER="win3gp"
 	CONFIG_KERNEL_BUILD_DOMAIN="OpenWrt"
+	CONFIG_PACKAGE_autocore=y
 	CONFIG_PACKAGE_automount=y
 	CONFIG_PACKAGE_autosamba=y
 	CONFIG_PACKAGE_luci-app-diskman=y
@@ -725,14 +729,22 @@ sed -i '/bridge\|vssr\|deluge/d' .config
 			EOF
             ;;
     esac
-    clone_dir vernesong/OpenClash luci-app-openclash
-	clone_dir xiaorouji/openwrt-passwall luci-app-passwall
-	clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
-    clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev
-    # clone_dir sbwml/openwrt_helloworld luci-app-passwall2 luci-app-passwall luci-app-openclash luci-app-ssr-plus shadow-tls \
-    #     shadowsocks-libev shadowsocksr-libev
+    if [[ $REPO =~ immortalwrt ]]; then
+        clone_dir xiaorouji/openwrt-passwall luci-app-passwall
+        clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
+        clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev
+        # clone_dir sbwml/openwrt_helloworld luci-app-passwall2 luci-app-passwall luci-app-openclash luci-app-ssr-plus shadow-tls \
+        #     shadowsocks-libev shadowsocksr-libev
+    else
+    	clone_dir openwrt-24.10 immortalwrt/immortalwrt emortal bcm27xx-utils
+        clone_url "https://github.com/sbwml/openwrt_helloworld"
+        echo '# CONFIG_PACKAGE_dnsmasq is not set' >> .config
+        [[ $REPO_BRANCH =~ 23.05 ]] && clone_dir openwrt/packages openwrt-24.10 golang
+    fi
+
     clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-poweroff luci-app-filebrowser luci-app-cowbping \
         luci-app-diskman luci-app-cowb-speedlimit qBittorrent-static luci-app-qbittorrent luci-app-wizard luci-app-dockerman
+    clone_dir vernesong/OpenClash luci-app-openclash
     clone_dir kiddin9/kwrt-packages luci-lib-taskd luci-lib-xterm lua-maxminddb luci-app-store \
         luci-app-bypass luci-app-pushbot taskd #luci-app-wizard luci-app-dockerman luci-lib-fs
 
@@ -741,9 +753,10 @@ sed -i '/bridge\|vssr\|deluge/d' .config
         sed -i "s/\$(PKG_VERSION)/${qBittorrent_version:-4.6.5}_v${libtorrent_version:-2.0.10}/" $xc/Makefile
     }
     sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate
-    sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk}
-    sed -i "/DISTRIB_DESCRIPTION/ {s/'$/-$SOURCE_NAME-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/openwrt_release
-    sed -i "/exit 0/i uci -q set upnpd.config.enabled=\"1\" && uci -q commit upnpd\nsed -i 's/root::.*:::/root:\$1\$pn1ABFaI\$vt5cmIjlr6M7Z79Eds2lV0:16821:0:99999:7:::/g' /etc/shadow" $(find package/emortal/ -type f -regex '.*default-settings$')
+    sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
+    sed -i "/DISTRIB_DESCRIPTION/ {s/'$/-${REPO_URL##*/}-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/openwrt_release || true
+    [[ -f $settings ]] && \
+    sed -i "/exit 0/i uci -q set upnpd.config.enabled=\"1\" && uci -q commit upnpd\nsed -i 's/root::.*:::/root:\$1\$pn1ABFaI\$vt5cmIjlr6M7Z79Eds2lV0:16821:0:99999:7:::/g' /etc/shadow" $(find package/ -type f -regex '.*default-settings$') || true
     [[ $REPO_BRANCH =~ master|24.10 ]] && sed -i '/store\|passwall2\|deluge/d' .config
 }
 
@@ -756,8 +769,8 @@ make defconfig 1>/dev/null 2>&1
 status $?
 
 LINUX_VERSION=$(grep 'CONFIG_LINUX.*=y' .config | sed -r 's/CONFIG_LINUX_(.*)=y/\1/' | tr '_' '.')
-echo -e "$(color cy 当前机型) $(color cb $SOURCE_NAME-${REPO_BRANCH#*-}-$LINUX_VERSION-${DEVICE_NAME}${VERSION:+-$VERSION})"
-sed -i "/IMG_PREFIX:/ {s/=/=$SOURCE_NAME-${REPO_BRANCH#*-}-$LINUX_VERSION-\$(shell TZ=UTC-8 date +%m%d-%H%M)-/}" include/image.mk
+echo -e "$(color cy 当前机型) $(color cb ${REPO_URL##*/}-${REPO_BRANCH#*-}-$LINUX_VERSION-${DEVICE_NAME}${VERSION:+-$VERSION})"
+sed -i "/IMG_PREFIX:/ {s/=/=${REPO_URL##*/}-${REPO_BRANCH#*-}-$LINUX_VERSION-\$(shell TZ=UTC-8 date +%m%d-%H%M)-/}" include/image.mk
 # sed -i -E 's/# (CONFIG_.*_COMPRESS_UPX) is not set/\1=y/' .config && make defconfig 1>/dev/null 2>&1
 
 # echo "SSH_ACTIONS=true" >>$GITHUB_ENV #SSH后台
