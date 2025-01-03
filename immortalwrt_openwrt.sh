@@ -46,7 +46,8 @@ _packages() {
 
 _delpackage() {
     for z in $@; do
-        [[ $z =~ ^# ]] || sed -i -E "s/(CONFIG_PACKAGE_.*$z)=y/# \1 is not set/" .config
+        [[ $z =~ ^# ]] || echo "# CONFIG_PACKAGE_$z is not set" >> .config
+        # [[ $z =~ ^# ]] || sed -iE "s/(CONFIG_PACKAGE_.*$z)=y/# \1 is not set/" .config
     done
 }
 
@@ -61,6 +62,10 @@ safe_popd() {
 _printf() {
     IFS=' ' read -r param1 param2 param3 param4 param5 <<< "$1"
     printf "%s %-40s %s %s %s\n" "$param1" "$param2" "$param3" "$param4" "$param5"
+}
+
+lan_ip() {
+    sed -i '/n) ipad/s/".*"/"'"${IP:-$1}"'"/' $config_generate
 }
 
 git_diff() {
@@ -201,7 +206,7 @@ clone_url() {
     done
 }
 
-config (){
+_config (){
 	case "$TARGET_DEVICE" in
 		"x86_64")
 			cat >.config<<-EOF
@@ -217,11 +222,9 @@ config (){
 			# CONFIG_GRUB_EFI_IMAGES is not set
 			# CONFIG_VMDK_IMAGES is not set
 			EOF
-            DEVICE_NAME="x86_64"
-            FIRMWARE_TYPE="squashfs-combined"
-            [[ -n $IP ]] && \
-            sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate || \
-            sed -i '/n) ipad/s/".*"/"192.168.2.1"/' $config_generate
+            export DEVICE_NAME="x86_64"
+            lan_ip "192.168.2.1"
+            export FIRMWARE_TYPE="squashfs-combined"
             ;;
         "r1-plus-lts"|"r1-plus"|"r4s"|"r2c"|"r2s")
 			cat >.config<<-EOF
@@ -240,11 +243,9 @@ config (){
             "r4s"|"r2c"|"r2s")
             echo "CONFIG_TARGET_rockchip_armv8_DEVICE_friendlyarm_nanopi-$TARGET_DEVICE=y" >>.config ;;
             esac
-            DEVICE_NAME="$TARGET_DEVICE"
-            FIRMWARE_TYPE="sysupgrade"
-            [[ -n $IP ]] && \
-            sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate || \
-            sed -i '/n) ipad/s/".*"/"192.168.2.1"/' $config_generate
+            lan_ip "192.168.2.1"
+            export DEVICE_NAME="$TARGET_DEVICE"
+            export FIRMWARE_TYPE="sysupgrade"
             ;;
         "newifi-d2")
 			cat >.config<<-EOF
@@ -252,11 +253,9 @@ config (){
 			CONFIG_TARGET_ramips_mt7621=y
 			CONFIG_TARGET_ramips_mt7621_DEVICE_d-team_newifi-d2=y
 			EOF
-            DEVICE_NAME="Newifi-D2"
-            FIRMWARE_TYPE="sysupgrade"
-            [[ -n $IP ]] && \
-            sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate || \
-            sed -i '/n) ipad/s/".*"/"192.168.1.1"/' $config_generate
+            lan_ip "192.168.2.1"
+            export DEVICE_NAME="Newifi-D2"
+            export FIRMWARE_TYPE="sysupgrade"
             ;;
         "phicomm_k2p")
 			cat >.config<<-EOF
@@ -264,11 +263,9 @@ config (){
 			CONFIG_TARGET_ramips_mt7621=y
 			CONFIG_TARGET_ramips_mt7621_DEVICE_phicomm_k2p=y
 			EOF
-            DEVICE_NAME="Phicomm-K2P"
-            FIRMWARE_TYPE="sysupgrade"
-            [[ -n $IP ]] && \
-            sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate || \
-            sed -i '/n) ipad/s/".*"/"192.168.1.1"/' $config_generate
+            lan_ip "192.168.1.1"
+            export DEVICE_NAME="Phicomm-K2P"
+            export FIRMWARE_TYPE="sysupgrade"
             ;;
         "asus_rt-n16")
             if [[ "${REPO_BRANCH#*-}" = "18.06" ]]; then
@@ -284,11 +281,9 @@ config (){
 				CONFIG_TARGET_bcm47xx_mips74k_DEVICE_asus_rt-n16=y
 				EOF
 			fi
-            DEVICE_NAME="Asus-RT-N16"
-            FIRMWARE_TYPE="n16"
-            [[ -n $IP ]] && \
-            sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate || \
-            sed -i '/n) ipad/s/".*"/"192.168.2.130"/' $config_generate
+            lan_ip "192.168.2.130"
+            export FIRMWARE_TYPE="n16"
+            export DEVICE_NAME="Asus-RT-N16"
             ;;
 		"armvirt-64-default")
 			cat >.config<<-EOF
@@ -296,11 +291,9 @@ config (){
 			CONFIG_TARGET_armvirt_64=y
 			CONFIG_TARGET_armvirt_64_Default=y
 			EOF
-            DEVICE_NAME="$TARGET_DEVICE"
-            FIRMWARE_TYPE="$TARGET_DEVICE"
-            [[ -n $IP ]] && \
-            sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate || \
-            sed -i '/n) ipad/s/".*"/"192.168.2.110"/' $config_generate
+            lan_ip "192.168.2.110"
+            export DEVICE_NAME="$TARGET_DEVICE"
+            export FIRMWARE_TYPE="$TARGET_DEVICE"
             ;;
     esac
 }
@@ -348,7 +341,7 @@ download_and_deploy_cache() {
     ./scripts/feeds update -a 1>/dev/null 2>&1
     ./scripts/feeds install -a 1>/dev/null 2>&1
     status $?
-    config
+    _config
     wget -qO package/base-files/files/etc/banner git.io/JoNK8
 }
 
@@ -356,6 +349,7 @@ create_directory "firmware" "output"
 REPO=${REPO:-immortalwrt}
 REPO_URL="https://github.com/$REPO/$REPO"
 config_generate="package/base-files/files/bin/config_generate"
+settings="package/emortal/default-settings/files/99-default-settings"
 download_and_deploy_cache
 
 if [[ "$TARGET_DEVICE" =~ x86_64|r1-plus-lts && "$REPO_BRANCH" =~ master|23.05|24.10 ]]; then
@@ -393,24 +387,23 @@ if [[ "$TARGET_DEVICE" =~ x86_64|r1-plus-lts && "$REPO_BRANCH" =~ master|23.05|2
 	CONFIG_PACKAGE_luci-app-ddnsto=y
 	CONFIG_PACKAGE_luci-app-softwarecenter=y
 	EOF
-    if [[ $REPO =~ immortalwrt ]]; then
-        clone_dir sbwml/openwrt_helloworld luci-app-passwall2 luci-app-passwall luci-app-openclash luci-app-ssr-plus shadow-tls \
-            shadowsocks-libev shadowsocksr-libev
-        clone_dir xiaorouji/openwrt-passwall luci-app-passwall
-        clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
-        # clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev luci-app-openclash
-    else
+    if [[ $REPO =~ openwrt ]]; then
         clone_dir openwrt-24.10 immortalwrt/immortalwrt emortal bcm27xx-utils
-        clone_url "https://github.com/sbwml/openwrt_helloworld"
-        clone_dir xiaorouji/openwrt-passwall luci-app-passwall
-        clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
-        echo '# CONFIG_PACKAGE_dnsmasq is not set' >> .config
+        _delpackage "dnsmasq"
         [[ $REPO_BRANCH =~ 23.05 ]] && clone_dir openwrt/packages openwrt-24.10 golang
     fi
 
+    clone_url "
+        https://github.com/fw876/helloworld
+        https://github.com/xiaorouji/openwrt-passwall-packages
+    "
+    clone_dir sbwml/openwrt_helloworld shadow-tls shadowsocks-libev shadowsocksr-libev
+    clone_dir vernesong/OpenClash luci-app-openclash
+    clone_dir xiaorouji/openwrt-passwall luci-app-passwall
+    clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
     clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-poweroff luci-app-filebrowser luci-app-cowbping \
         luci-app-diskman luci-app-cowb-speedlimit qBittorrent-static luci-app-qbittorrent luci-app-wizard luci-app-dockerman \
-        luci-app-pwdHackDeny luci-app-softwarecenter luci-app-ddnsto
+        luci-app-pwdHackDeny luci-app-softwarecenter luci-app-ddnsto luci-lib-docker
     clone_dir kiddin9/kwrt-packages luci-lib-taskd luci-lib-xterm lua-maxminddb luci-app-store \
         luci-app-bypass luci-app-pushbot taskd
 
@@ -418,9 +411,8 @@ if [[ "$TARGET_DEVICE" =~ x86_64|r1-plus-lts && "$REPO_BRANCH" =~ master|23.05|2
     
     sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
     sed -i "/DISTRIB_DESCRIPTION/ {s/'$/-${REPO_URL##*/}-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/openwrt_release || true
-    settings=$(find package/ -type f -regex '.*default-settings$')
     [[ -f $settings ]] && \
-    sed -i "/exit 0/i uci -q set upnpd.config.enabled=\"1\" && uci -q commit upnpd\nsed -i 's/root::.*:::/root:\$1\$pn1ABFaI\$vt5cmIjlr6M7Z79Eds2lV0:16821:0:99999:7:::/g' /etc/shadow" $settings
+    sed -i "\$i uci -q set luci.main.mediaurlbase=\"/luci-static/bootstrap\" && uci -q set upnpd.config.enabled=\"1\" && uci -q commit upnpd\nsed -i 's/root::.*:::/root:\$1\$pn1ABFaI\$vt5cmIjlr6M7Z79Eds2lV0:16821:0:99999:7:::/g' /etc/shadow" $settings
     [[ $REPO_BRANCH =~ master|24.10 ]] && sed -i '/store\|deluge/d' .config
 else
 	cat >>.config <<-EOF
@@ -463,7 +455,6 @@ else
     sed -i "/VERSION_NUMBER/ s/if.*/if \$(VERSION_NUMBER),\$(VERSION_NUMBER),${REPO_BRANCH#*-}-SNAPSHOT)/" include/version.mk
     sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
     sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config || true
-    settings=$(find package/ -type f -regex '.*default-settings$')
     [[ -f $settings ]] && \
     sed -i "\$i uci -q set luci.main.mediaurlbase=\"/luci-static/bootstrap\" && uci -q commit luci\nuci -q set upnpd.config.enabled=\"1\" && uci -q commit upnpd\nsed -i 's/root::.*:::/root:\$1\$pn1ABFaI\$vt5cmIjlr6M7Z79Eds2lV0:16821:0:99999:7:::/g' /etc/shadow" $settings
 
