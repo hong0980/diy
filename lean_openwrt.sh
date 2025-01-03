@@ -72,6 +72,10 @@ status() {
     fi
 }
 
+_find() {
+    find $1 -maxdepth 5 -type d -name "$2" -print -quit 2>/dev/null
+}
+
 git_apply() {
     for z in $@; do
         [[ $z =~ \# ]] || wget -qO- $z | git apply --reject --ignore-whitespace
@@ -105,6 +109,7 @@ _printf() {
 }
 
 clone_repo() {
+    mkdir -p package/A
     local repo_url branch target_dir source_dir current_dir destination_dir
     if [[ "$1" == */* ]]; then
         repo_url="$1"
@@ -121,8 +126,8 @@ clone_repo() {
     fi
 
     for target_dir in "$@"; do
-        source_dir=$(find gitemp -maxdepth 5 -type d -name "$target_dir" -print -quit)
-        current_dir=$(find package/ feeds/ target/ -maxdepth 5 -type d -name "$target_dir" -print -quit)
+        source_dir=$(_find "gitemp" "$target_dir")
+        current_dir=$(_find "package/ feeds/ target/" "$target_dir")
         destination_dir="${current_dir:-package/A/$target_dir}"
         if [[ -d $current_dir && $destination_dir != $current_dir ]]; then
             mv -f "$current_dir" ../
@@ -143,6 +148,7 @@ clone_repo() {
 }
 
 clone_url() {
+    mkdir -p package/A
     # set -x
     for x in $@; do
         name="${x##*/}"
@@ -306,14 +312,12 @@ sed -i '/#.*helloworld/ s/^#//' feeds.conf.default
 ./scripts/feeds update -a 1>/dev/null 2>&1
 ./scripts/feeds install -a 1>/dev/null 2>&1
 status
-
 config
 
 cat >>.config <<-EOF
 	CONFIG_KERNEL_BUILD_USER="win3gp"
 	CONFIG_KERNEL_BUILD_DOMAIN="OpenWrt"
 	CONFIG_PACKAGE_luci-app-accesscontrol=y
-	CONFIG_PACKAGE_luci-app-bridge=y
 	CONFIG_PACKAGE_luci-app-cowb-speedlimit=y
 	CONFIG_PACKAGE_luci-app-cowbping=y
 	CONFIG_PACKAGE_luci-app-cpulimit=y
@@ -351,27 +355,18 @@ if [[ $REPO_URL =~ "coolsnowwolf" ]]; then
             \$i sed -i 's/root::.*/root:\$1\$RysBCijW\$wIxPNkj9Ht9WhglXAXo4w0:18206:0:99999:7:::/g' /etc/shadow\n[ -f '/bin/bash' ] && sed -i '/\\\/ash$/s/ash/bash/' /etc/passwd\nuci set luci.main.mediaurlbase=/luci-static/bootstrap
             }" $(find package/ -type f -name "*default-settings" 2>/dev/null)
 fi
-# git diff ./ >> ../output/t.patch || true
-clone_url "
-    https://github.com/hong0980/build
-    https://github.com/fw876/helloworld
-    https://github.com/xiaorouji/openwrt-passwall-packages
-"
-[ "$TARGET_DEVICE" != phicomm_k2p -a "$TARGET_DEVICE" != newifi-d2 ] && {
-    clone_url "
-        https://github.com/zzsj0928/luci-app-pushbot
-        https://github.com/yaof2/luci-app-ikoolproxy
-        https://github.com/destan19/OpenAppFilter
-    "
-    clone_repo sbwml/openwrt_helloworld xray-core v2ray-core v2ray-geodata sing-box
-    clone_repo vernesong/OpenClash luci-app-openclash
-    clone_repo sirpdboy/luci-app-cupsd luci-app-cupsd cups
-    clone_repo xiaorouji/openwrt-passwall luci-app-passwall
-    clone_repo xiaorouji/openwrt-passwall2 luci-app-passwall2
-    clone_repo kiddin9/kwrt-packages luci-app-bypass
 
-}
-xc=$(find package/A/ feeds/ -type d -name "qBittorrent-static" 2>/dev/null)
+clone_url "https://github.com/destan19/OpenAppFilter"
+# clone_url "https://github.com/xiaorouji/openwrt-passwall-packages"
+clone_repo vernesong/OpenClash luci-app-openclash
+clone_repo xiaorouji/openwrt-passwall luci-app-passwall
+clone_repo xiaorouji/openwrt-passwall2 luci-app-passwall2
+clone_repo sbwml/openwrt_helloworld luci-app-homeproxy shadowsocks-rust trojan-plus geoview
+clone_repo hong0980/build qBittorrent-static luci-app-cowb-speedlimit luci-app-cowbping luci-app-diskman luci-app-ddnsto luci-app-dockerman luci-app-filebrowser luci-app-poweroff luci-app-pwdHackDeny luci-app-qbittorrent luci-app-softwarecenter luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docke
+clone_repo kiddin9/kwrt-packages luci-lib-taskd taskd luci-lib-xterm lua-maxminddb luci-app-store \
+    luci-app-bypass luci-app-pushbot
+
+xc=$(_find "package/A/ feeds/" "qBittorrent-static")
 [[ -d $xc ]] && [[ $qBittorrent_version ]] && \
     sed -i "s/PKG_VERSION:=.*/PKG_VERSION:=${qBittorrent_version:-4.6.5}_v${libtorrent_version:-2.0.10}/" $xc/Makefile
 
@@ -474,8 +469,6 @@ sed -i 's|\.\./\.\./luci.mk|$(TOPDIR)/feeds/luci/luci.mk|' package/A/*/Makefile 
 for p in package/A/luci-app*/po feeds/luci/applications/luci-app*/po; do
     [[ -L $p/zh_Hans || -L $p/zh-cn ]] || (ln -s zh-cn $p/zh_Hans 2>/dev/null || ln -s zh_Hans $p/zh-cn 2>/dev/null)
 done
-
-sed -i '/config PACKAGE_\$(PKG_NAME)_INCLUDE_SingBox/,$ { /default y/ { s/default y/default n/; :loop; n; b loop } }' package/A/luci-app-pass*/Makefile
 
 sed -i '/bridged/d; /deluge/d; /transmission/d' .config
 echo -e "$(color cy '更新配置....')\c"; BEGIN_TIME=$(date '+%H:%M:%S')
