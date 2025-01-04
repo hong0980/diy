@@ -72,6 +72,10 @@ status() {
     fi
 }
 
+_find() {
+    find $1 -maxdepth 5 -type d -name "$2" -print -quit 2>/dev/null
+}
+
 git_apply() {
     for z in $@; do
         [[ $z =~ \# ]] || wget -qO- $z | git apply --reject --ignore-whitespace
@@ -104,8 +108,14 @@ _printf() {
     awk '{printf "%s %-40s %s %s %s\n" ,$1,$2,$3,$4,$5}'
 }
 
+lan_ip() {
+    sed -i "/192.168.1.1/${IP:-$1}/" package/base-files/*/bin/config_generate
+}
+
 clone_repo() {
+    mkdir -p "package/A"
     local repo_url branch target_dir source_dir current_dir destination_dir
+    temp_dir=$(mktemp -d)
     if [[ "$1" == */* ]]; then
         repo_url="$1"
         shift
@@ -115,14 +125,14 @@ clone_repo() {
         shift 2
     fi
 
-    if ! git clone -q $branch --depth 1 "https://github.com/$repo_url" gitemp; then
+    if ! git clone -q $branch --depth 1 "https://github.com/$repo_url" $temp_dir; then
         echo -e "$(color cr 拉取) https://github.com/$repo_url [ $(color cr ✕) ]" | _printf
         return 0
     fi
 
     for target_dir in "$@"; do
-        source_dir=$(find gitemp -maxdepth 5 -type d -name "$target_dir" -print -quit)
-        current_dir=$(find package/ feeds/ target/ -maxdepth 5 -type d -name "$target_dir" -print -quit)
+        source_dir=$(_find "$temp_dir" "$target_dir")
+        current_dir=$(_find "package/ feeds/ target/" "$target_dir")
         destination_dir="${current_dir:-package/A/$target_dir}"
         if [[ -d $current_dir && $destination_dir != $current_dir ]]; then
             mv -f "$current_dir" ../
@@ -139,15 +149,16 @@ clone_repo() {
         fi
     done
 
-    [ -d gitemp ] && rm -rf gitemp
+    [[ -d $temp_dir ]] && rm -rf $temp_dir
 }
 
 clone_url() {
+    mkdir -p "package/A"
     # set -x
     for x in $@; do
         name="${x##*/}"
         if [[ "$(grep "^https" <<<$x | egrep -v "helloworld$|build$|openwrt-passwall-packages$")" ]]; then
-            g=$(find package/ target/ feeds/ -maxdepth 5 -type d -name "$name" 2>/dev/null | grep "/${name}$" | head -n 1)
+            g=$(_find "package/ target/ feeds/" "$name" | grep "/${name}$" | head -n 1)
             if [[ -d $g ]]; then
                 mv -f $g ../ && k="$g"
             else
@@ -175,7 +186,7 @@ clone_url() {
                 git clone -q $w ../${w##*/} && {
                     for z in `ls -l ../${w##*/} | awk '/^d/{print $NF}' | grep -Ev 'dump$|dtest$'`; do
                     	# [[ $z =~ transmission ]] && continue
-                        g=$(find package/ feeds/ target/ -maxdepth 5 -type d -name $z 2>/dev/null | head -n 1)
+                        g=$(find "package/ feeds/ target/" "$z" | head -n 1)
                         if [[ -d $g ]]; then
                             rm -rf $g && k="$g"
                         else
@@ -302,10 +313,10 @@ else
 fi
 
 echo -e "$(color cy '更新软件....')\c"; BEGIN_TIME=$(date '+%H:%M:%S')
+sed -i '/#.*helloworld/ s/^#//' feeds.conf.default
 ./scripts/feeds update -a 1>/dev/null 2>&1
 ./scripts/feeds install -a 1>/dev/null 2>&1
 status
-
 config
 
 cat >>.config <<-EOF
@@ -334,7 +345,6 @@ cat >>.config <<-EOF
 	CONFIG_PACKAGE_luci-app-tinynote=y
 	EOF
 
-config_generate="package/base-files/*/bin/config_generate"
 color cy "自定义设置.... "
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
 if [[ $REPO_URL =~ "coolsnowwolf" ]]; then
@@ -350,59 +360,55 @@ if [[ $REPO_URL =~ "coolsnowwolf" ]]; then
             }" $(find package/ -type f -name "*default-settings" 2>/dev/null)
 fi
 # git diff ./ >> ../output/t.patch || true
-clone_url "
-    https://github.com/hong0980/build
-    https://github.com/fw876/helloworld
-    https://github.com/xiaorouji/openwrt-passwall-packages
-"
-[ "$TARGET_DEVICE" != phicomm_k2p -a "$TARGET_DEVICE" != newifi-d2 ] && {
-    clone_url "
-        https://github.com/zzsj0928/luci-app-pushbot
-        https://github.com/yaof2/luci-app-ikoolproxy
-        https://github.com/destan19/OpenAppFilter
-    "
+clone_repo sbwml/openwrt_helloworld shadow-tls shadowsocks-libev shadowsocksr-libev
+clone_repo vernesong/OpenClash luci-app-openclash
+clone_repo xiaorouji/openwrt-passwall luci-app-passwall
+clone_repo xiaorouji/openwrt-passwall2 luci-app-passwall2
+clone_repo hong0980/build luci-app-timedtask luci-app-tinynote luci-app-poweroff luci-app-filebrowser luci-app-cowbping \
+    luci-app-diskman luci-app-cowb-speedlimit qBittorrent-static luci-app-qbittorrent luci-app-wizard luci-app-dockerman \
+    luci-app-pwdHackDeny luci-app-softwarecenter luci-app-ddnsto luci-lib-docker
+clone_repo kiddin9/kwrt-packages luci-lib-taskd luci-lib-xterm lua-maxminddb luci-app-store \
+    luci-app-bypass luci-app-pushbot taskd
 
-    clone_repo sbwml/openwrt_helloworld xray-core v2ray-core v2ray-geodata sing-box
-    clone_repo vernesong/OpenClash luci-app-openclash
-    clone_repo sirpdboy/luci-app-cupsd luci-app-cupsd cups
-    clone_repo xiaorouji/openwrt-passwall luci-app-passwall
-    clone_repo xiaorouji/openwrt-passwall2 luci-app-passwall2
-    clone_repo kiddin9/kwrt-packages luci-app-adguardhome adguardhome luci-app-bypass lua-neturl cpulimit lua-maxminddb
-}
-xb=$(find package/A/ feeds/luci/applications/ -type d -name "luci-app-bypass" 2>/dev/null)
-[[ -d $xb ]] && sed -i 's/default y/default n/g' $xb/Makefile
 # https://github.com/userdocs/qbittorrent-nox-static/releases
-xc=$(find package/A/ feeds/ -type d -name "qBittorrent-static" 2>/dev/null)
+xc=$(_find "package/A/ feeds/" "qBittorrent-static")
 [[ -d $xc ]] && [[ $qBittorrent_version ]] && \
     sed -i "s/PKG_VERSION:=.*/PKG_VERSION:=${qBittorrent_version:-4.6.5}_v${libtorrent_version:-2.0.10}/" $xc/Makefile
-xd=$(find package/A/ feeds/luci/applications/ -type d -name "luci-app-turboacc" 2>/dev/null)
-[[ -d $xd ]] && sed -i '/hw_flow/s/1/0/;/sfe_flow/s/1/0/;/sfe_bridge/s/1/0/' $xd/root/etc/config/turboacc
-xe=$(find package/A/ feeds/luci/applications/ -type d -name "luci-app-ikoolproxy" 2>/dev/null)
-[[ -d $xe ]] && sed -i '/echo .*root/ s/echo /[ $time =~ [0-9]+ ] \&\& echo /' $xe/root/etc/init.d/koolproxy
-# xf=$(find package/A/ feeds/luci/applications/ -type d -name "luci-app-store" 2>/dev/null)
-# [[ -d $xf ]] && sed -i 's/ +luci-lib-ipkg//' $xf/Makefile
-xg=$(find package/A/ feeds/luci/applications/ -type d -name "luci-app-pushbot" 2>/dev/null)
-[[ -d $xg ]] && {
-    sed -i "s|-c pushbot|/usr/bin/pushbot/pushbot|" $xg/luasrc/controller/pushbot.lua
-    sed -i '/start()/a[ "$(uci get pushbot.@pushbot[0].pushbot_enable)" -eq "0" ] && return 0' $xg/root/etc/init.d/pushbot
-}
 
 case $TARGET_DEVICE in
+"x86_64")
+    FIRMWARE_TYPE="squashfs-combined"
+    # lan_ip "192.168.2.150"
+    #[[ $SOURCE_NAME =~ "coolsnowwolf" ]] && sed -i 's/5.15/5.4/g' target/linux/x86/Makefile
+    _packages "
+    luci-app-adbyby-plus
+    #luci-app-amule
+    luci-app-deluge
+    luci-app-passwall2
+    luci-app-dockerman
+    luci-app-netdata
+    #luci-app-kodexplorer
+    luci-app-poweroff
+    luci-app-qbittorrent
+    luci-app-smartdns
+    #luci-app-unblockmusic
+    #luci-app-aliyundrive-fuse
+    #luci-app-aliyundrive-webdav
+    #AmuleWebUI-Reloaded ariang bash htop lscpu lsscsi lsusb nano pciutils screen webui-aria2 zstd tar pv
+    #subversion-client #unixodbc #git-http
+    "
+    ;;
 "newifi-d2")
     FIRMWARE_TYPE="sysupgrade"
     _packages "luci-app-easymesh"
     _delpackage "ikoolproxy openclash transmission softwarecenter aria2 vssr adguardhome"
-    [[ -n $IP ]] && \
-    sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate || \
-    sed -i '/n) ipad/s/".*"/"192.168.2.1"/' $config_generate
+    lan_ip "192.168.2.1"
     ;;
 "phicomm_k2p")
     FIRMWARE_TYPE="sysupgrade"
     _packages "luci-app-easymesh"
     _delpackage "samba4 luci-app-usb-printer luci-app-cifs-mount diskman cupsd autosamba automount"
-    [[ -n $IP ]] && \
-    sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate || \
-    sed -i '/n) ipad/s/".*"/"192.168.2.1"/' $config_generate
+    lan_ip "192.168.2.1"
     ;;
 "r1-plus-lts"|"r4s"|"r2c"|"r2s")
     FIRMWARE_TYPE="sysupgrade"
@@ -425,11 +431,7 @@ case $TARGET_DEVICE in
     htop lscpu lsscsi lsusb #nano pciutils screen zstd pv
     #AmuleWebUI-Reloaded #subversion-client unixodbc #git-http
     "
-    [[ -n $IP ]] && \
-    sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate || \
-    sed -i '/n) ipad/s/".*"/"192.168.2.1"/' $config_generate
-    wget -qO package/base-files/files/bin/bpm git.io/bpm && chmod +x package/base-files/files/bin/bpm
-    wget -qO package/base-files/files/bin/ansi git.io/ansi && chmod +x package/base-files/files/bin/ansi
+    lan_ip "192.168.2.1"
     # sed -i '/KERNEL_PATCHVER/s/=.*/=5.4/' target/linux/rockchip/Makefile
     # clone_repo 'openwrt-18.06-k5.4' immortalwrt/immortalwrt uboot-rockchip arm-trusted-firmware-rockchip-vendor
     sed -i "/interfaces_lan_wan/s/'eth1' 'eth0'/'eth0' 'eth1'/" target/linux/rockchip/*/*/*/*/02_network
@@ -437,40 +439,12 @@ case $TARGET_DEVICE in
     ;;
 "asus_rt-n16")
     FIRMWARE_TYPE="n16"
-    [[ -n $IP ]] && \
-    sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate || \
-    sed -i '/n) ipad/s/".*"/"192.168.2.130"/' $config_generate
-    ;;
-"x86_64")
-    FIRMWARE_TYPE="squashfs-combined"
-    [[ -n $IP ]] && \
-    sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate || \
-    sed -i '/n) ipad/s/".*"/"192.168.2.150"/' $config_generate
-    #[[ $SOURCE_NAME =~ "coolsnowwolf" ]] && sed -i 's/5.15/5.4/g' target/linux/x86/Makefile
-    _packages "
-    luci-app-adbyby-plus
-    #luci-app-amule
-    luci-app-deluge
-    luci-app-passwall2
-    luci-app-dockerman
-    luci-app-netdata
-    #luci-app-kodexplorer
-    luci-app-poweroff
-    luci-app-qbittorrent
-    luci-app-smartdns
-    #luci-app-unblockmusic
-    #luci-app-aliyundrive-fuse
-    #luci-app-aliyundrive-webdav
-    #AmuleWebUI-Reloaded ariang bash htop lscpu lsscsi lsusb nano pciutils screen webui-aria2 zstd tar pv
-    #subversion-client #unixodbc #git-http
-    "
+    lan_ip "192.168.2.130"
     ;;
 "armvirt-64-default")
     FIRMWARE_TYPE="$TARGET_DEVICE"
     sed -i '/easymesh/d' .config
-    [[ -n $IP ]] && \
-    sed -i '/n) ipad/s/".*"/"'"$IP"'"/' $config_generate || \
-    sed -i '/n) ipad/s/".*"/"192.168.2.110"/' $config_generate
+    lan_ip "192.168.2.110"
     # clone_url "https://github.com/tuanqing/install-program" && rm -rf package/A/install-program/tools
     _packages "attr bash blkid brcmfmac-firmware-43430-sdio brcmfmac-firmware-43455-sdio
     btrfs-progs cfdisk chattr curl dosfstools e2fsprogs f2fs-tools f2fsck fdisk getopt
