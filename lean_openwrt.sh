@@ -59,16 +59,14 @@ color() {
 }
 
 status() {
-    CHECK=$?
+    local CHECK=$?
     END_TIME=$(date '+%H:%M:%S')
     _date=" ==>用时 $[$(date +%s -d "$END_TIME") - $(date +%s -d "$BEGIN_TIME")] 秒"
     [[ $_date =~ [0-9]+ ]] || _date=""
-    if [ $CHECK = 0 ]; then
-        printf "%35s %s %s %s %s %s %s\n" \
-        `echo -e "[ $(color cg ✔)\033[0;39m ]${_date}"`
+    if [[ $CHECK -eq 0 ]]; then
+        printf "%35s %s %s %s %s %-6s %s\n" `echo -e "[ $(color cg ✔)\e[1;39m ]${_date}"`
     else
-        printf "%35s %s %s %s %s %s %s\n" \
-        `echo -e "[ $(color cr ✕)\033[0;39m ]${_date}"`
+        printf "%35s %s %s %s %s %-6s %s\n" `echo -e "[ $(color cr ✕)\e[1;39m ]${_date}"`
     fi
 }
 
@@ -90,7 +88,8 @@ _packages() {
 
 _delpackage() {
     for z in $@; do
-        [[ $z =~ ^# ]] || sed -i -E "s/(CONFIG_PACKAGE_.*$z)=y/# \1 is not set/" .config
+        [[ $z =~ ^# ]] || echo "# CONFIG_PACKAGE_$z is not set" >> .config
+        # [[ $z =~ ^# ]] || sed -iE "s/(CONFIG_PACKAGE_.*$z)=y/# \1 is not set/" .config
     done
 }
 _pushd() {
@@ -105,51 +104,54 @@ _popd() {
 }
 
 _printf() {
-    awk '{printf "%s %-40s %s %s %s\n" ,$1,$2,$3,$4,$5}'
+    IFS=' ' read -r param1 param2 param3 param4 param5 <<< "$1"
+    printf "%s %-40s %s %s %s\n" "$param1" "$param2" "$param3" "$param4" "$param5"
 }
 
 lan_ip() {
     sed -i "/192.168.1.1/${IP:-$1}/" package/base-files/*/bin/config_generate
 }
 
-clone_repo() {
-    mkdir -p "package/A"
-    local repo_url branch target_dir source_dir current_dir destination_dir
-    temp_dir=$(mktemp -d)
+clone_dir() {
+    mkdir -p  "package/A"
+    [[ -z $2 ]] && return
+    local repo_url branch temp_dir=$(mktemp -d)
     if [[ "$1" == */* ]]; then
         repo_url="$1"
         shift
     else
-        branch="-b $1"
+        branch="-b $1 --single-branch"
         repo_url="$2"
         shift 2
     fi
 
-    if ! git clone -q $branch --depth 1 "https://github.com/$repo_url" $temp_dir; then
-        echo -e "$(color cr 拉取) https://github.com/$repo_url [ $(color cr ✕) ]" | _printf
+    git clone -q $branch --depth 1 "https://github.com/$repo_url" $temp_dir 2>/dev/null || {
+        _printf "$(color cr 拉取) https://github.com/$repo_url [ $(color cr ✕) ]"
         return 0
-    fi
+    }
 
     for target_dir in "$@"; do
-        source_dir=$(_find "$temp_dir" "$target_dir")
+        local source_dir current_dir destination_dir
+        if [[ ${repo_url##*/} == ${target_dir} ]]; then
+            mv -f ${temp_dir} ${target_dir}
+            source_dir=${target_dir}
+        else
+            source_dir=$(_find "$temp_dir" "$target_dir")
+        fi
+        [[ -d "$source_dir" ]] || continue
         current_dir=$(_find "package/ feeds/ target/" "$target_dir")
         destination_dir="${current_dir:-package/A/$target_dir}"
-        if [[ -d $current_dir && $destination_dir != $current_dir ]]; then
-            mv -f "$current_dir" ../
-        fi
 
-        if [[ -d $source_dir ]]; then
-            if mv -f "$source_dir" "$destination_dir"; then
-                if [[ $destination_dir = $current_dir ]]; then
-                    echo -e "$(color cg 替换) $target_dir [ $(color cg ✔) ]" | _printf
-                else
-                    echo -e "$(color cb 添加) $target_dir [ $(color cb ✔) ]" | _printf
-                fi
+        [[ -d "$current_dir" ]] && rm -rf "../$(basename "$current_dir")" && mv -f "$current_dir" ../
+        if mv -f "$source_dir" "${destination_dir%/*}"; then
+            if [[ -d "$current_dir" ]]; then
+                _printf "$(color cg 替换) $target_dir [ $(color cg ✔) ]"
+            else
+                _printf "$(color cb 添加) $target_dir [ $(color cb ✔) ]"
             fi
         fi
     done
-
-    [[ -d $temp_dir ]] && rm -rf $temp_dir
+    rm -rf "$temp_dir"
 }
 
 clone_url() {
@@ -208,7 +210,7 @@ clone_url() {
     # set +x
 }
 
-function config(){
+_config(){
     case "$TARGET_DEVICE" in
         "x86_64")
 			cat >.config<<-EOF
@@ -317,7 +319,7 @@ sed -i '/#.*helloworld/ s/^#//' feeds.conf.default
 ./scripts/feeds update -a 1>/dev/null 2>&1
 ./scripts/feeds install -a 1>/dev/null 2>&1
 status
-config
+_config
 
 cat >>.config <<-EOF
 	CONFIG_KERNEL_BUILD_USER="win3gp"
@@ -355,19 +357,19 @@ if [[ $REPO_URL =~ "coolsnowwolf" ]]; then
     sed -i 's/option enabled.*/option enabled 1/' feeds/*/*/*/*/upnpd.config
     sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
     sed -i "{
-            /upnp|/openwrt_release|/shadow/d
+            /upnp\|openwrt_release\|shadow/d
             \$i sed -i 's/root::.*/root:\$1\$RysBCijW\$wIxPNkj9Ht9WhglXAXo4w0:18206:0:99999:7:::/g' /etc/shadow\n[ -f '/bin/bash' ] && sed -i '/\\\/ash$/s/ash/bash/' /etc/passwd\nuci set luci.main.mediaurlbase=\"/luci-static/bootstrap\"
-            }" $(find package/ -type f -name "*default-settings" 2>/dev/null)
+            }" package/lean/default-settings/files/*default-settings
 fi
 # git diff ./ >> ../output/t.patch || true
-clone_repo sbwml/openwrt_helloworld shadow-tls shadowsocks-libev shadowsocksr-libev
-clone_repo vernesong/OpenClash luci-app-openclash
-clone_repo xiaorouji/openwrt-passwall luci-app-passwall
-clone_repo xiaorouji/openwrt-passwall2 luci-app-passwall2
-clone_repo hong0980/build luci-app-timedtask luci-app-tinynote luci-app-poweroff luci-app-filebrowser luci-app-cowbping \
+clone_dir sbwml/openwrt_helloworld trojan-plus geoview
+clone_dir vernesong/OpenClash luci-app-openclash
+clone_dir xiaorouji/openwrt-passwall luci-app-passwall
+clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
+clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-poweroff luci-app-filebrowser luci-app-cowbping \
     luci-app-diskman luci-app-cowb-speedlimit qBittorrent-static luci-app-qbittorrent luci-app-wizard luci-app-dockerman \
     luci-app-pwdHackDeny luci-app-softwarecenter luci-app-ddnsto luci-lib-docker
-clone_repo kiddin9/kwrt-packages luci-lib-taskd luci-lib-xterm lua-maxminddb luci-app-store \
+clone_dir kiddin9/kwrt-packages luci-lib-taskd luci-lib-xterm lua-maxminddb luci-app-store \
     luci-app-bypass luci-app-pushbot taskd
 
 # https://github.com/userdocs/qbittorrent-nox-static/releases
@@ -433,7 +435,7 @@ case $TARGET_DEVICE in
     "
     lan_ip "192.168.2.1"
     # sed -i '/KERNEL_PATCHVER/s/=.*/=5.4/' target/linux/rockchip/Makefile
-    # clone_repo 'openwrt-18.06-k5.4' immortalwrt/immortalwrt uboot-rockchip arm-trusted-firmware-rockchip-vendor
+    # clone_dir 'openwrt-18.06-k5.4' immortalwrt/immortalwrt uboot-rockchip arm-trusted-firmware-rockchip-vendor
     sed -i "/interfaces_lan_wan/s/'eth1' 'eth0'/'eth0' 'eth1'/" target/linux/rockchip/*/*/*/*/02_network
     # git_apply "raw.githubusercontent.com/hong0980/diy/master/files/r1-plus-lts-patches/0001-Add-pwm-fan.sh.patch"
     ;;
@@ -477,7 +479,7 @@ for p in package/A/luci-app*/po feeds/luci/applications/luci-app*/po; do
     [[ -L $p/zh_Hans || -L $p/zh-cn ]] || (ln -s zh-cn $p/zh_Hans 2>/dev/null || ln -s zh_Hans $p/zh-cn 2>/dev/null)
 done
 
-sed -i '/bridged|/deluge|/transmission/d' .config
+sed -i '/bridged\|deluge\|transmission/d' .config
 echo -e "$(color cy '更新配置....')\c"; BEGIN_TIME=$(date '+%H:%M:%S')
 make defconfig 1>/dev/null 2>&1
 status
