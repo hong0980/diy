@@ -129,6 +129,7 @@ clone_dir() {
 	create_directory "package/A"
 	[[ $# -lt 1 ]] && return
 	local repo_url branch temp_dir=$(mktemp -d)
+	trap 'rm -rf "$temp_dir"' EXIT INT TERM
 	if [[ $1 == */* ]]; then
 		repo_url="$1"
 		shift
@@ -153,7 +154,7 @@ clone_dir() {
 			source_dir=$(_find "$temp_dir" "$target_dir")
 		fi
 		[[ -d "$source_dir" ]] || continue
-		current_dir=$(_find "package/ feeds/ target/" "$target_dir")
+		current_dir=$(_find "package feeds target" "$target_dir")
 		destination_dir="${current_dir:-package/A/$target_dir}"
 
 		[[ -d "$current_dir" ]] && rm -rf "../$(basename "$current_dir")" && mv -f "$current_dir" ../
@@ -165,7 +166,6 @@ clone_dir() {
 			fi
 		fi
 	done
-	[[ -d $temp_dir ]] && rm -rf "$temp_dir"
 }
 
 set_config() {

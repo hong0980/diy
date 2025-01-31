@@ -2,7 +2,8 @@
 . /etc/init.d/tc-functions
 useBusybox
 DOWNLOAD=https://download.qnap.com.cn/Storage/TS-X53II/TS-X53A_20190919-4.3.6.1070.zip
-[ -x hal_app2 ] && BOOT=`./hal_app2` || BOOT=`. /home/tc/patch/sbin/hal_app2`
+sudo chmod +x hal_app2
+[ -x hal_app2 ] && BOOT=`./hal_app2` || BOOT=`./home/tc/patch/sbin/hal_app2`
 DIR=$(pwd)
 
 main_interface() {
@@ -15,6 +16,9 @@ main_interface() {
 	echo -e "	  3.安装补丁\n"
 	echo -e "	  4.修改补丁\n"
 	echo -e "	  5.编译tcz\n"
+	echo -e "	  6.当前的磁盘信息\n"
+	echo -e "	  7.当前的磁盘和分区信息\n"
+	echo -e "	  8.建立新系统\n"
 	echo -e "	  0.退出\n"
 	echo -e "	  r.重启\n"
 	echo -e "	  p.关机\n"
@@ -22,36 +26,23 @@ main_interface() {
 	echo " ======================================="
 	read -p "请输入数字，你需要的选项: " p
 	case "$p" in
-		1)
-		upgrade_boot
+		1) upgrade_boot;;
+		2) _create_qnap_boot;;
+		3) patch_install;;
+		4) patch_extract;;
+		5) make_tcz "$DIR";;
+		6) parted -l;;
+		7)
+		command -v lsblk &>/dev/null || do_tcz util-linux
+		echo -e "\n============= 当前的磁盘 ============"
+		lsblk
 		;;
-		2)
-		_create_qnap_boot
-		;;
-		3)
-		patch_install
-		# cd patch && find .| cpio -o -H newc | gzip > /mnt/"${BOOT}1"/patch.gz && cd ../
-		;;
-		4)
-		patch_extract
-		# cd patch &&  zcat /mnt/"${BOOT}1"/patch.gz | cpio -i -H newc -d  1>/dev/null 2>&1 && cd ../
-		;;
-		5)
-		make_tcz "$DIR"
-		;;
-		p)
-		poweroff
-		;;
-		r)
-		reboot
-		;;
-		0)
-		exit 0
-		;;
-		*)
-		echo " 没有 $p 的选项"
-		;;
-esac
+		8) create_disk;;
+		p) sudo poweroff;;
+		r) sudo reboot;;
+		0) exit 0;;
+		*) echo " 没有 $p 的选项";;
+	esac
 }
 
 _create_qnap_boot() {
@@ -71,7 +62,7 @@ _create_qnap_boot() {
 	echo
 	case "$p" in
 		1)
-		if [ $DOWNLOAD ]; then
+		if [ -n $DOWNLOAD ]; then
 			if get_qnap_firmware $DOWNLOAD; then
 				echo "提取qnap固件成功。"
 				main_interface
@@ -83,61 +74,54 @@ _create_qnap_boot() {
 		fi
 		;;
 		2)
-		if [ -e T*.zip ]; then
+		if [ -f T*.zip ]; then
 			get_qnap_firmware T*.zip || rm -f T*.zip && echo 提取qnap固件成功。 && main_interface
 		else
 			echo "TC下没有找到要解包的固件"
 		fi
 		;;
-		3)
-		get_qnap_firmware /dev/sda
-		;;
+		3) get_qnap_firmware;;
 		4)
-		HWSN() {
 		echo "序列号由十位的字符和数字组成的，如Q123A45678"
 		read -p "请输入:  " p
-		}
-		HWSN
 		echo "$p" > QNAP_HWSN
-		[ `cat QNAP_HWSN | wc -c` -ne 10 ] #&& set_hwsn
+		[ `cat QNAP_HWSN | wc -c` -eq 10 ] && set_hwsn
 		;;
-		5)
-		create_qnap_boot
-		;;
-		0)
-		return
-		;;
+		5) create_qnap_boot;;
+		0) return;;
 		*)
 		clear
 		echo "请输入正确的数字 [1,2,3,4,5,6,7,8,9,0]"
 		;;
-esac
+	esac
 }
 
-_make_dir(){
-	for p in "$@"; do
+make_dir(){
+	for p in $@; do
 		[ -d "$p" ] || mkdir -p $p
 	done
-	return 0
+}
+
+mount_disk() {
+	for p in $@; do
+		make_dir /mnt/$p
+		sudo mount /dev/$p /mnt/$p
+	done
 }
 
 usb() {
-
-	USB_CHECK_TEMP="/tmp/usb_check_tmp"
-	lsusb | awk '{print $6}' > $USB_CHECK_TEMP
-	while read LINE; do	
+	lsusb | awk '{print \$6}' | while read LINE; do
 		vid=`echo $LINE | cut -f 1 -d ':'`
 		pid=`echo $LINE | cut -f 2 -d ':'`
 		idVendor=$(dirname $(grep -r $vid /sys/bus/usb/devices/*/idVendor | head -1 2>/dev/null))
 		idProduct=$(dirname $(grep -r $pid /sys/bus/usb/devices/*/idProduct | head -1 2>/dev/null))
 		echo -e "$LINE  \c"
-		if [[ $idVendor != '' ]] && [[  $idVendor == $idProduct ]] &&  [[ -d $idProduct ]];then
+		if [[ -n $idVendor && $idVendor == $idProduct && -d $idProduct ]];then
 			(echo 0 >$idProduct/authorized && echo 1 >$idProduct/authorized && echo "重置成功") || echo "复位失败"
 		else
 			echo "未找到设备"
 		fi
-	done < $USB_CHECK_TEMP
-
+	done
 }
 
 error_stop() {
@@ -148,12 +132,15 @@ error_stop() {
 
 do_tcz() {
 	[ 0 -eq `grep -c 163 /opt/tcemirror` ] && echo "http://mirrors.163.com/tinycorelinux/" > /opt/tcemirror
-	for p in "$@"; do
+	for p in $@; do
 		which $p 1>/dev/null 2>&1 || {
-			echo -e "稍等，安装 ${GREEN}$p.tcz${NORMAL} 中...\c"
-			su - tc -c "tce-load -iw $p" 1>/dev/null 2>&1
+			# echo -e "稍等，安装 ${GREEN}$p.tcz${NORMAL} 中...\c"
+			# su - tc -c "tce-load -wi compiletc" 1>/dev/null 2>&1
+			tce-load -wi $p
 			status
 		}
+		# echo "ibase=16; 1F" | bc # 十六进制数转换为十进制
+		# echo "1F" | awk '{print strtonum("0x" $1)}' #十六进制数转换为十进制
 	done
 	return 0
 }
@@ -161,11 +148,12 @@ do_tcz() {
 make_tcz() {
 	cd ${DIR}
 	[ -d tcz ] || su - tc -c "mkdir -p ${DIR}/tcz"
-	[ ! -x /usr/bin/deb2tcz.sh ] && wget -O /usr/bin/deb2tcz.sh hk1.monika.love/hong0980/diy/master/sh/deb2tcz.sh && \
-	chmod +x /usr/bin/deb2tcz.sh 
+	[ ! -x /usr/bin/deb2tcz.sh ] && sudo wget -O /usr/bin/deb2tcz.sh https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/sh/deb2tcz.sh && \
+	sudo chmod +x /usr/bin/deb2tcz.sh 
 	do_tcz compiletc git dosfstools mkisofs-tools squashfs-tools ncursesw-dev
 	export C_INCLUDE_PATH=/usr/local/include/ncursesw:/usr/local/include:/usr/include
-	##pciutils
+
+	#pciutils
 	if [ -e pciutils/pciutils.tcz ]; then
 		cp -vf pciutils/pciutils.tcz $1
 	elif [ -e laojifuli/tmp/tce/optional/pciutils.tcz ]; then
@@ -174,28 +162,33 @@ make_tcz() {
 		if git clone https://github.com/pciutils/pciutils; then
 			cd pciutils
 			make install DESTDIR=/tmp/pciutils
-			deb2tcz.sh /tmp/pciutils
+			sudo deb2tcz.sh /tmp/pciutils
 			cp -vf pciutils.tcz $1
 		fi
+		tce-load -i pciutils.tcz
 		cd ${DIR}
+		rm -rf pciutils
 	fi
 
-	##lsscsi
+	#lsscsi
 	if [ -e lsscsi*/lsscsi.tcz ]; then
 		cp -vf lsscsi*/lsscsi.tcz $1
 	elif [ -e laojifuli/tmp/tce/optional/lsscsi.tcz ]; then
 		cp -vf laojifuli/tmp/tce/optional/lsscsi.tcz $1
 	else
 		if wget http://sg.danny.cz/scsi/lsscsi-0.32.tgz; then
-			tar -xf lsscsi-0.32.tgz
-			cd lsscsi-0.32
+			tar -xf lsscsi-*.tgz
+			cd lsscsi*
 			./configure
 			make install DESTDIR=/tmp/lsscsi
-			deb2tcz.sh /tmp/lsscsi
+			sudo deb2tcz.sh /tmp/lsscsi
 			cp -vf lsscsi.tcz $1
 		fi
+		tce-load -i lsscsi.tcz
 		cd ${DIR}
+		rm -rf lsscsi*.tgz
 	fi
+
 	# [ "$(version)" = "11.1" ] && {
 	if [ -e progress/progress.tcz ]; then
 		cp -vf progress/progress.tcz $1
@@ -206,13 +199,15 @@ make_tcz() {
 		cd progress
 		# sed -i 's/ncurses/ncursesw/g' Makefile
 		make install DESTDIR=/tmp/progress
-		deb2tcz.sh /tmp/progress
+		sudo deb2tcz.sh /tmp/progress
 		cp -vf progress.tcz $1; fi
+		tce-load -i progress.tcz
 		cd ${DIR}
+		rm -rf progress
 	fi
 	# }
 
-	##pv
+	#pv
 	if [ -e pv/pv.tcz ]; then
 		cp -vf pv/pv.tcz $1
 	elif [ -e laojifuli/tmp/tce/optional/pv.tcz ]; then
@@ -223,10 +218,12 @@ make_tcz() {
 			./configure
 			make
 			make install DESTDIR=/tmp/pv
-			deb2tcz.sh /tmp/pv
+			sudo deb2tcz.sh /tmp/pv
 			cp -vf pv.tcz $1
 		fi
+		tce-load -i pv.tcz
 		cd ${DIR}
+		rm -rf pv
 	fi
 
 	if [ -e parted*/parted.tcz ]; then
@@ -234,58 +231,79 @@ make_tcz() {
 	elif [ -e laojifuli/tmp/tce/optional/parted.tcz ]; then
 		cp -vf laojifuli/tmp/tce/optional/parted.tcz $1
 	else
-		if wget https://ftp.gnu.org/gnu/parted/parted-3.4.tar.xz
-		xz -d parted-3.4.tar.xz
-		tar -xf parted-3.4.tar
-		cd parted-3.4
+		if wget https://ftp.gnu.org/gnu/parted/parted-3.6.tar.xz
+		xz -d parted*.xz
+		tar -xf parted*.tar
+		cd parted*
 		./configure --disable-device-mapper --without-readline --disable-nls
 		make install DESTDIR=/tmp/parted
-		deb2tcz.sh /tmp/parted; then
+		sudo deb2tcz.sh /tmp/parted; then
 		cp -vf parted.tcz $1
+		tce-load -i parted.tcz
 		fi
 		cd ${DIR}
+		rm -rf parted*.tar
 	fi
 }
 
 create_disk() {
-
 	_partition() {
 		local IFS=$(echo -en "\n\b")
 		umount /dev/s* 1>/dev/null 2>&1
 		echo -e "\n${GREEN}========== 1.磁盘分区 ===========${NORMAL}"
-		[ -z ${TARGET:0:8} ] && { echo -e "${YELLOW}没有找到适合建立的磁盘${NORMAL}" && exit 0; } || echo -e "系统已找到的磁盘："
-		i=0; for x in $(detect_disk); do echo "$((i+1)). $x"; i=$((i+1)); done
-		read -p "输入序列号，选择你要安装的磁盘：" g
-		x=$(detect_disk | sed -n "$g"p | awk '{print $1}' | cut -d/ -f3)
-		[ $x ] || { echo -e "\n${RED}输入错误！只需要行首的数字。重新选择！${NORMAL}" && _partition; }
-		c=$(fdisk -s /dev/"$x" | awk '{print $0/1024}'); a=/dev/$x
-		# c=$(lsblk -b | grep -w "$x" | awk '{print $4/1024/1024}') # c=$(lsscsi -S | grep "$x" | awk '{print $8/2048}')
-		[ $(echo $c | awk -v bi=2000 '{print($1>bi)?"1":"0"}') -ne "1" ] && echo -e "\n你选择的磁盘${RED} $a ${NORMAL}小于2G，重新选择！" && _partition
-		df=$(lsblk -p | grep "$x[1-6]")
-		if [ ${#df} -eq 0 ]; then
-			echo "磁盘${GREEN}$a${NORMAL}没有找到逻辑分区，可以进行进行格式化并分区操作。"
+		echo "系统已找到的磁盘："
+
+		if [ -s "$tmp_file" ]; then
+		    i=1
+		    while read line; do
+		        disk_name=$(echo "$line" | awk '{print $1}')
+		        disk_size=$(echo "$line" | awk '{print $NF}')
+		        disk_model=$(echo "$line" | awk '{for(i=2;i<=NF-1;i++) printf "%s ", $i; print ""}' | sed 's/[[:space:]]*$//')
+		        disk_list="$disk_list$disk_name $disk_model $disk_size\n"
+		        echo "$i. $disk_name $disk_model $disk_size"
+		        i=$((i + 1))
+		    done < "$tmp_file"
+
+		    read -p "请输入磁盘编号选择（例如：1, 2）：" choice
+		    if [ "$choice" -ge 1 -a "$choice" -lt "$i" ]; then
+		        selected_disk=$(echo -e "$disk_list" | sed -n "${choice}p")
+		        echo "你选择的磁盘是：$selected_disk"
+		    else
+		        echo "无效的选择，请选择一个有效的编号。"
+		        _partition  # 如果选择无效，重新调用 partition 函数
+		    fi
 		else
-			echo -e "${RED}磁盘$a存在逻辑分区，是否继续格式化操作。${NORMAL}"
+			echo -e "${YELLOW}没有找到适合建立的磁盘${NORMAL}"
+			exit 0
+		fi
+		# [ -n $x ] || { echo -e "\n${RED}输入错误！只需要行首的数字。重新选择！${NORMAL}" && _partition; }
+		disk="/dev/${selected_disk%% *}"
+		size="${selected_disk##* }"
+		# c=$(fdisk -s /dev/sdb | awk '{print $0/1024}')
+		# # c=$(lsblk -b | grep -w "$selected_disk" | awk '{print $4/1024/1024}') # c=$(lsscsi -S | grep "$selected_disk" | awk '{print $8/2048}')
+		# [ $(echo $c | awk -v bi=2000 '{print($1>bi)?"1":"0"}') -ne "1" ] && echo -e "\n你选择的磁盘${RED} $a ${NORMAL}小于2G，重新选择！" && _partition
+		df=$(lsblk -p | grep "$disk[1-6]")
+		if [ ${#df} -eq 0 ]; then
+			echo "磁盘${GREEN}$disk${NORMAL}没有找到逻辑分区，可以进行进行格式化并分区操作。"
+		else
+			echo -e "${RED}磁盘$disk存在逻辑分区，是否继续格式化操作。${NORMAL}"
 		fi
 		read -p " [ｙ]继续 | 任意键退出 " q
 		case $q in
-		y) echo "您确认了继续格式化$a操作,脚本将继续执行。"
-		;;
-		*) echo "您否定了格式化操作，不会影响磁盘数据。"
-		exit 0
-		;;
+			y) echo "您确认了继续格式化$disk操作,脚本将继续执行。";;
+			*) echo "您否定了格式化操作，不会影响磁盘数据。"; exit 0;;
 		esac
-		# parted -s $a mklabel msdos	# 格式化为gpt 动态分区
+		# parted -s $disk mklabel msdos	# 格式化为gpt 动态分区
 		# msdos 其他类型
-		# parted -s $a mkpart primary 0 100%	# 分区 全部
-		# parted -s $a mkpart entended 3G 5G	# 第一个扩展分区:从3G 到5G
-		# parted -s $a mkpart logic 5G 100%	# 第二个扩展分区:从5G到100%
+		# parted -s $disk mkpart primary 0 100%	# 分区 全部
+		# parted -s $disk mkpart entended 3G 5G	# 第一个扩展分区:从3G 到5G
+		# parted -s $disk mkpart logic 5G 100%	# 第二个扩展分区:从5G到100%
 		# logic [ˈlɒdʒɪk] #逻辑，分区
 		# 建立msdos分区，格式化所有分区 2g盘分256M+512M+512M+16M+16M+16M
 
-		time 10 分区
+		# time 10 #分区
 
-		parted -s ${a} -- mklabel msdos			\
+		parted -s ${disk} -- mklabel msdos		\
 		mkpart primary fat32   2048s 1988607s	\
 		set 1 boot on							\
 		mkpart primary ext2 1988608s 3012607s	\
@@ -295,178 +313,179 @@ create_disk() {
 		mkpart logical ext2 4073472s 4106239s	\
 		mkpart logical ext2 4108288s 4141055s	\
 		mkpart logical ext2 4141057s   -2048s
-		sync; sleep 2
+		sync
+		sleep 2
 
-		mkdosfs -n QTS_BOOT1 ${a}1			#tinycore
-		# mkfs.vfat -L QTS_BOOT1 -F ${a}1	#tinycore
-		# mkfs.vfat -n QTS_BOOT1 -F ${a}1	#slitaz busybox
-		# mkfs.fat  -n QTS_BOOT1 -F ${a}1
-		mkfs.ext2 -L QTS_BOOT_PART2 -F ${a}2
-		mkfs.ext2 -L QTS_BOOT_PART3 -F ${a}3
-		mkfs.ext2 -L QTS_BOOT_PART5 -F ${a}5
-		mkfs.ext2 -L QTS_BOOT_PART6 -F ${a}6
-		mkfs.ext2 -L QTS_BOOT_PART7 -F ${a}7
-		mkfs.ext2 -L QTS_BOOT_PART8 -F ${a}8
-		sync; sleep 2
+		mkdosfs -n QTS_BOOT1 ${disk}1
+		mkfs.ext2 -L QTS_BOOT_PART2 -F ${disk}2
+		mkfs.ext2 -L QTS_BOOT_PART3 -F ${disk}3
+		mkfs.ext2 -L QTS_BOOT_PART5 -F ${disk}5
+		mkfs.ext2 -L QTS_BOOT_PART6 -F ${disk}6
+		mkfs.ext2 -L QTS_BOOT_PART7 -F ${disk}7
+		mkfs.ext2 -L QTS_BOOT_PART8 -F ${disk}8
+		sync
+		sleep 2
 		# 热插拔磁盘
-		op=`lsblk -S | grep $x | awk '{print $2}'`
+		op=`lsblk -S | grep $disk | awk '{print $2}'`
 		ax=${op:0:1}; ay=${op:2:1}; az=${op:4:1}; au=${op:6:1}
-		echo "scsi remove-single-device $ax $ay $az $au" > /proc/scsi/scsi
-		echo "scsi add-single-device $ax $ay $az $au" > /proc/scsi/scsi
+		echo "scsi remove-single-device $ax $ay $az $au" | sudo tee /proc/scsi/scsi
+		echo "scsi add-single-device $ax $ay $az $au" | sudo tee /proc/scsi/scsi
 		# for i in /sys/class/scsi_host/host*/scan; do echo "- - -" >$i; done
+		rm -f "$tmp_file"
 	}
 
-modify_laojifuli() {
-
-mylocale() {
-	tempdir=`mktemp -d`
-	rm -rf /usr/lib/locale/locale-archive/
-	_make_dir /usr/lib/locale
-	for i in $1; do
-		dest=${i%%/*}
-		charset=${i##*/}
-		locale=${dest%%.*}
-		nice -n19 localedef -i $locale -c -f $charset $dest || echo -e "${RED}localedef失败。${NORMAL}"
-	done
-
-	cd $tempdir
-	_make_dir usr/lib/locale
-	cp -a /usr/lib/locale/locale-archive usr/lib/locale
-	cd .. && chmod 755 $tempdir
-	rm -f mylocale.tcz
-	mksquashfs $tempdir mylocale.tcz > /dev/null 2>&1
-	cp -rv /tmp/mylocale.tcz ${DIR}/tcz
-	cd $tempdir
-	_make_dir usr/share/fonts
-	[ -e usr/share/fonts/* ] || {
-	wget -t0 -T10 hk1.monika.love/hong0980/diy/master/sh/wqy-microhei.ttc -P usr/share/fonts/; }
-	cd .. && chmod 755 $tempdir
-	rm -f fonts.tcz
-	mksquashfs $tempdir fonts.tcz > /dev/null 2>&1
-	cp -rv /tmp/fonts.tcz ${DIR}/tcz
-	rm -rf $tempdir
-}
-
-	echo -e "\n${GREEN}==== 2.修改laojifuli =====${NORMAL}"
-	_mount_disk "${BOOT}1"
-	cp -vf /mnt/${BOOT}1/laojifuli.gz ./ && _make_dir laojifuli && cd laojifuli
-		if zcat ../laojifuli.gz | cpio -i -H newc -d; then
-			for p in $(ls ${DIR}/laojifuli/home/tc/ | grep -Ev "DEVBUS|pc1|hal_app1|hal_app2|--README--"); do
-			rm -rf /home/tc/laojifuli/home/tc/$p; done
-			cat > "${DIR}/laojifuli/tmp/tce/boot-config.sh" <<-\EOF
-				#!/bin/sh
-				#系统启动时执行的脚本(/opt/bootsync.sh)
-				cp /usr/local/etc/ssh/sshd.* /usr/local/etc/ssh/sshd_config
-				/usr/local/etc/init.d/openssh start
-				if [ $? == 0 ]; then
-					clear
-					echo tc:123456 | chpasswd -m
-					echo
-					echo "User: tc" 
-					echo "Password: 123456"
-					echo
-				fi
-
-				for k in /tmp/tce/sh/*; do
-					chmod +x "$k"
-					chown root "$k"
-					chgrp root "$k"
-					mv -f "$k" /usr/bin/
-				done
-				sed -i -r "s@^(G_FILENAME_ENCODING)=(.*)@\1='UTF-8'\nexport G_BROKEN_FILENAMES=1@" /etc/profile
-				echo -e "export LANG=zh_CN.UTF-8\nexport LC_ALL=zh_CN.UTF-8\nexport TZ=UTC-8" >> /etc/profile
-				echo "http://mirrors.163.com/tinycorelinux/" > /opt/tcemirror
-			EOF
-			chmod +x ${DIR}/laojifuli/tmp/tce/boot-config.sh
-
-			if [ $x ]; then
-				sed -e 's|2".* ]|2" -a "$size" = " " ]|g; s|3".* ]|3" -a "$size" = " " ]|g' ${DIR}/laojifuli/home/tc/hal_app2 -i
-				r=$(grep -E "$x[1-7]" /proc/partitions | awk '{print $3}'); b=0
-				for	c in $r; do b=$((b+1))
-					sed -r 's/(.*ame\}'"$b"'.*= )(.*)"/\1"'"$c"'"/g' ${DIR}/laojifuli/home/tc/hal_app2 -i
-				done
-			fi
-
-			for i in askexec deb2tcz.sh dpkgstatus dpm finf fsnap mntiso untcz; do
-				_make_dir ${DIR}/laojifuli/tmp/tce/sh
-				if [ -e ${DIR}/laojifuli/tmp/tce/sh/$i ] || wget -t0 -T10 hk1.monika.love/hong0980/diy/master/sh/$i \
-				-P ${DIR}/laojifuli/tmp/tce/sh; then
-				[ -e /usr/bin/$i ] || { cp -f ${DIR}/laojifuli/tmp/tce/sh/$i /usr/bin/
-				chmod +x /usr/bin/$i; }; fi
+	modify_laojifuli() {
+		mylocale() {
+			tempdir=`mktemp -d`
+			rm -rf /usr/lib/locale/locale-archive/
+			make_dir /usr/lib/locale
+			for i in $1; do
+				dest=${i%%/*}
+				charset=${i##*/}
+				locale=${dest%%.*}
+				nice -n19 localedef -i $locale -c -f $charset $dest || echo -e "${RED}localedef失败。${NORMAL}"
 			done
 
-			[ -e /usr/bin/deb2tcz.sh ] && make_tcz
+			cd $tempdir
+			make_dir usr/lib/locale
+			cp -a /usr/lib/locale/locale-archive usr/lib/locale
+			cd .. && chmod 755 $tempdir
+			rm -f mylocale.tcz
+			mksquashfs $tempdir mylocale.tcz > /dev/null 2>&1
+			cp -rv /tmp/mylocale.tcz ${DIR}/tcz
+			cd $tempdir
+			make_dir usr/share/fonts
+			[ -e usr/share/fonts/* ] || {
+			wget -t0 -T10 hk1.monika.love/hong0980/diy/master/sh/wqy-microhei.ttc -P usr/share/fonts/; }
+			cd .. && chmod 755 $tempdir
+			rm -f fonts.tcz
+			mksquashfs $tempdir fonts.tcz > /dev/null 2>&1
+			cp -rv /tmp/fonts.tcz ${DIR}/tcz
+			rm -rf $tempdir
+		}
+		echo -e "\n${GREEN}==== 2.修改laojifuli =====${NORMAL}"
+		mount_disk "${BOOT}1"
+		cp -vf /mnt/${BOOT}1/laojifuli.gz ./ && make_dir laojifuli && cd laojifuli
+			if zcat ../laojifuli.gz | cpio -i -H newc -d; then
+				for p in $(ls ${DIR}/laojifuli/home/tc/ | grep -Ev "DEVBUS|pc1|hal_app1|hal_app2|--README--"); do
+				rm -rf /home/tc/laojifuli/home/tc/$p; done
+				cat > "${DIR}/laojifuli/tmp/tce/boot-config.sh" <<-\EOF
+					#!/bin/sh
+					#系统启动时执行的脚本(/opt/bootsync.sh)
+					cp /usr/local/etc/ssh/sshd.* /usr/local/etc/ssh/sshd_config
+					/usr/local/etc/init.d/openssh start
+					if [ $? == 0 ]; then
+						clear
+						echo tc:123456 | chpasswd -m
+						echo
+						echo "User: tc"
+						echo "Password: 123456"
+						echo
+					fi
 
-			[ "$(version)" = "11.1" ] || sed -i 's|"\$MIRROR"|http://mirrors.163.com/tinycorelinux/11.x/x86/tcz/|g' /usr/bin/tce-load
-			if for p in aterm openssh fltk-1.3 flwm flwm_topside freetype tzdata wbar Xprogs Xvesa i2c-5.4.3-tinycore file \
-					getlocale rxvt pv util-linux squashfs-tools ; do
-					[ -e ${DIR}/tcz/$p.tcz ] || { echo -e "稍等，下载 ${GREEN}$p.tcz${NORMAL} 中...\c"
-					su - tc -c "tce-load -w ${DIR}/tcz/$p" 1>/dev/null 2>&1
-					status; }
-				done; then
-					cd ${DIR}/laojifuli/tmp/tce
-					rm -rf optional/* && cp -f ${DIR}/tcz/*.tcz optional/
-					ls optional/ | sort -f > onboot.lst
-					cat onboot.lst > copy2fs.lst && cat onboot.lst > xbase.lst
-					cd ${DIR}/laojifuli
+					for k in /tmp/tce/sh/*; do
+						chmod +x "$k"
+						chown root "$k"
+						chgrp root "$k"
+						mv -f "$k" /usr/bin/
+					done
+					sed -i -r "s@^(G_FILENAME_ENCODING)=(.*)@\1='UTF-8'\nexport G_BROKEN_FILENAMES=1@" /etc/profile
+					echo -e "export LANG=zh_CN.UTF-8\nexport LC_ALL=zh_CN.UTF-8\nexport TZ=UTC-8" >> /etc/profile
+					echo "http://mirrors.163.com/tinycorelinux/" > /opt/tcemirror
+				EOF
+				chmod +x ${DIR}/laojifuli/tmp/tce/boot-config.sh
+
+				if [ $x ]; then
+					sed -e 's|2".* ]|2" -a "$size" = " " ]|g; s|3".* ]|3" -a "$size" = " " ]|g' ${DIR}/laojifuli/home/tc/hal_app2 -i
+					r=$(grep -E "$x[1-7]" /proc/partitions | awk '{print $3}'); b=0
+					for	c in $r; do b=$((b+1))
+						sed -r 's/(.*ame\}'"$b"'.*= )(.*)"/\1"'"$c"'"/g' ${DIR}/laojifuli/home/tc/hal_app2 -i
+					done
+				fi
+
+				for i in askexec deb2tcz.sh dpkgstatus dpm finf fsnap mntiso untcz; do
+					make_dir ${DIR}/laojifuli/tmp/tce/sh
+					if [ -e ${DIR}/laojifuli/tmp/tce/sh/$i ] || wget -t0 -T10 hk1.monika.love/hong0980/diy/master/sh/$i \
+					-P ${DIR}/laojifuli/tmp/tce/sh; then
+					[ -e /usr/bin/$i ] || { cp -f ${DIR}/laojifuli/tmp/tce/sh/$i /usr/bin/
+					chmod +x /usr/bin/$i; }; fi
+				done
+
+				[ -e /usr/bin/deb2tcz.sh ] && make_tcz
+
+				[ "$(version)" = "11.1" ] || sed -i 's|"\$MIRROR"|http://mirrors.163.com/tinycorelinux/11.x/x86/tcz/|g' /usr/bin/tce-load
+				if for p in aterm openssh fltk-1.3 flwm flwm_topside freetype tzdata wbar Xprogs Xvesa i2c-5.4.3-tinycore file \
+						getlocale rxvt pv util-linux squashfs-tools ; do
+						[ -e ${DIR}/tcz/$p.tcz ] || { echo -e "稍等，下载 ${GREEN}$p.tcz${NORMAL} 中...\c"
+						su - tc -c "tce-load -w ${DIR}/tcz/$p" 1>/dev/null 2>&1
+						status; }
+					done; then
+						cd ${DIR}/laojifuli/tmp/tce
+						rm -rf optional/* && cp -f ${DIR}/tcz/*.tcz optional/
+						ls optional/ | sort -f > onboot.lst
+						cat onboot.lst > copy2fs.lst && cat onboot.lst > xbase.lst
+						cd ${DIR}/laojifuli
+				fi
+
+				if [ -e /tmp/tce/optional/getlocale.tcz ] || do_tcz getlocale; then
+					mylocale "zh_CN.UTF-8/UTF-8"
+				fi
+
+				[ -e laojifuli/home/tc/model_QW371_QW340_20_12.conf ] || {
+				wget hk1.monika.love/hong0980/diy/master/sh/model_QW371_QW340_20_12.conf -P ${DIR}/laojifuli/home/tc/;}
+
+				su - tc -c "cp -vf ${DIR}/${0##*/} ${DIR}/laojifuli/home/tc/ && chmod +x ${DIR}/laojifuli/home/tc/${0##*/}"
+				su - tc -c "cat ${DIR}/${0##*/} > ${DIR}/laojifuli/home/tc/create_qnap_boot && chmod +x ${DIR}/laojifuli/home/tc/create_qnap_boot"
+				cd ${DIR}/laojifuli && find .| cpio -o -H newc | gzip > ../laojifuli.gz
 			fi
+		cd  ${DIR}
+	}
 
-			if [ -e /tmp/tce/optional/getlocale.tcz ] || do_tcz getlocale; then
-				mylocale "zh_CN.UTF-8/UTF-8"
-			fi
-
-			[ -e laojifuli/home/tc/model_QW371_QW340_20_12.conf ] || {
-			wget hk1.monika.love/hong0980/diy/master/sh/model_QW371_QW340_20_12.conf -P ${DIR}/laojifuli/home/tc/;}
-
-			su - tc -c "cp -vf ${DIR}/${0##*/} ${DIR}/laojifuli/home/tc/ && chmod +x ${DIR}/laojifuli/home/tc/${0##*/}"
-			su - tc -c "cat ${DIR}/${0##*/} > ${DIR}/laojifuli/home/tc/create_qnap_boot && chmod +x ${DIR}/laojifuli/home/tc/create_qnap_boot"
-			cd ${DIR}/laojifuli && find .| cpio -o -H newc | gzip > ../laojifuli.gz
+	modify_core() {
+		echo -e "\n${GREEN}======= 3.修改core ========${NORMAL}"
+		[ -f vmlinuz ] || wget http://mirrors.163.com/tinycorelinux/15.x/x86_64/release/distribution_files/vmlinuz64
+		[ -f core.gz ] || wget http://mirrors.163.com/tinycorelinux/15.x/x86_64/release/distribution_files/corepure64.gz
+		make_dir core && cd core
+		if zcat ../corepure64 | cpio -i -H newc -d; then
+			echo "[ -x /etc/sysconfig/tcedir/boot-config.sh ] && /etc/sysconfig/tcedir/boot-config.sh" >> ${DIR}/core/etc/init.d/tc-config
+			rm -rf ../core.gz
+			find . | cpio -o -H newc | gzip > ../core.gz
+			cd ${DIR}
+		else
+			echo "解压失败"
+			exit 1
 		fi
-	cd  ${DIR}
-}
+		umount /dev/core 1>/dev/null 2>&1
+	}
 
-modify_core() {
+	install_grub() {
+		echo -e "\n${GREEN}====== 4.安装grub =======${NORMAL}"
+		if mount_disk "${x}1"
+		[ -d /mnt/${x}1 ] && rm -rf /mnt/${x}1/* || { echo "检测不到/mnt/${x}1,退出安装grub" && exit 0; }
+		grub-install --boot-directory=/mnt/${x}1/boot --target=x86_64-pc $a	# grub2 loader(BIOS)
+		grub-install --boot-directory=/mnt/${x}1/boot --target=x86_64-efi --efi-directory=/mnt/${x}1 $a
+		cp -vrf /mnt/${BOOT}1/G2ldr /mnt/${x}1/
+		cd  /home/tc && mv -vf laojifuli.gz core.gz vmlinuz /mnt/${x}1/
+		cp -rf /mnt/${BOOT}1/boot/grub/Config	/mnt/${x}1/boot/grub/
+		cp -rf /mnt/${BOOT}1/boot/grub/fonts	/mnt/${x}1/boot/grub/
+		cp -rf /mnt/${BOOT}1/boot/grub/locale	/mnt/${x}1/boot/grub/
+		cp -rf /mnt/${BOOT}1/boot/grub/themes	/mnt/${x}1/boot/grub/
+		cp -rf /mnt/${BOOT}1/boot/grub/grub.cfg	/mnt/${x}1/boot/grub/ ;then
+			rm -rf ${DIR}/lao* core*
+		fi
+	}
 
-	echo -e "\n${GREEN}======= 3.修改core ========${NORMAL}"
-	[ -f vmlinuz ] || wget http://mirrors.163.com/tinycorelinux/11.x/x86/release/distribution_files/vmlinuz
-	[ -f core.gz ] || wget http://mirrors.163.com/tinycorelinux/11.x/x86/release/distribution_files/core.gz
-	_make_dir core && cd core
-	if zcat ../core.gz | cpio -i -H newc -d; then
-		echo "[ -x /etc/sysconfig/tcedir/boot-config.sh ] && /etc/sysconfig/tcedir/boot-config.sh" >> ${DIR}/core/etc/init.d/tc-config
-		rm -rf ../core.gz
-		find . | cpio -o -H newc | gzip > ../core.gz
-		cd ${DIR}
-	else
-		echo "解压失败"
-		exit 1
-	fi
-	umount /dev/core 1>/dev/null 2>&1
-}
+	get_disks() {
+	    tmp_file=$(mktemp)
+	    lsblk -o NAME,MODEL,SIZE | tail -n +2 | while read name model size; do
+	        if echo "$name" | grep -q '^sd'; then
+	            echo "$name $model $size" >> "$tmp_file"
+	        fi
+	    done
+	    echo "$tmp_file"
+	}
 
-install_grub() {
-	echo -e "\n${GREEN}====== 4.安装grub =======${NORMAL}"
-	if _make_dir "/mnt/${x}1" && _mount_disk "${x}1"
-	[ -d /mnt/${x}1 ] && rm -rf /mnt/${x}1/* || { echo "检测不到/mnt/${x}1,退出安装grub" && exit 0; }
-	grub-install --boot-directory=/mnt/${x}1/boot --target=i386-pc $a	# grub2 loader(BIOS)
-	grub-install --boot-directory=/mnt/${x}1/boot --target=i386-efi --efi-directory=/mnt/${x}1 $a
-	cp -vrf /mnt/${BOOT}1/G2ldr /mnt/${x}1/
-	cd  /home/tc && mv -vf laojifuli.gz core.gz vmlinuz /mnt/${x}1/
-	cp -rf /mnt/${BOOT}1/boot/grub/Config	/mnt/${x}1/boot/grub/
-	cp -rf /mnt/${BOOT}1/boot/grub/fonts	/mnt/${x}1/boot/grub/
-	cp -rf /mnt/${BOOT}1/boot/grub/locale	/mnt/${x}1/boot/grub/
-	cp -rf /mnt/${BOOT}1/boot/grub/themes	/mnt/${x}1/boot/grub/
-	cp -rf /mnt/${BOOT}1/boot/grub/grub.cfg	/mnt/${x}1/boot/grub/ ;then
-		rm -rf ${DIR}/lao* core*
-	fi
-}
-
-detect_disk() {
-	lsscsi -s | grep -v "${BOOT}" | while read -r LINE; do
-	echo -e "$LINE" | awk '{printf "%-10s %-8s %-8s %-0s\n" ,$7,$8,$3,$4}'
-	done
-}
-
-	if [ "$(version)" != "11.1" ]; then
+	if [ "$(version)" == "10.1" ]; then
 		echo -e "${GREEN}1  建立新系统 \n2  升级本系统 ${NORMAL}\n输入序列号，选择你要的选项：\c"
 		read -r q
 		case $q in
@@ -483,16 +502,17 @@ detect_disk() {
 		esac
 	fi
 
-	do_tcz parted dosfstools grub2-multi mkisofs-tools squashfs-tools
-	TARGET=$(detect_disk); point=$(lsscsi -s | grep -w "${BOOT}" | awk '{printf "%-4s %-4s %-4s %-4s\n" ,$7,$8,$3,$4}')
-	echo -e "\n${GREEN}======对新磁盘建立 tinycore v11.1系统======${NORMAL}"
+	do_tcz dosfstools grub2-multi mkisofs-tools squashfs-tools util-linux
+	tmp_file=$(get_disks)
+	point=$(lsblk -o NAME,MODEL,SIZE | grep "^sd" | grep -w "${BOOT}")
+	echo -e "\n${GREEN}======对新磁盘建立 tinycore 的最新系统======${NORMAL}"
 	echo -e "${RED}新建立的磁盘或U盘容量不能小于2G${NORMAL}"
 	echo -e "系统盘：${BLUE}$point${NORMAL} "
 
 	_partition
-	modify_laojifuli
-	modify_core
-	install_grub
+	# modify_laojifuli
+	# modify_core
+	# install_grub
 	# [ $x ] && dd bs=512 count=15002048 if=/dev/$x | pv | gzip -9 > QNAP_BOOT.vmdk.gz
 }
 
@@ -600,7 +620,7 @@ upgrade_boot() {
 		cd ${DIR}
 		wget --no-check-certificate -O vmlinuz64 http://mirrors.163.com/tinycorelinux/13.x/x86_64/release/distribution_files/vmlinuz64
 		wget --no-check-certificate -O core.gz http://mirrors.163.com/tinycorelinux/13.x/x86_64/release/distribution_files/corepure64.gz
-		_make_dir core && cd core
+		make_dir core && cd core
 		if zcat ../core.gz | cpio -i -H newc -d 1>/dev/null 2>&1; then
 			cat > "etc/sysconfig/boot-config.sh" <<-\EOF
 				#!/bin/sh
