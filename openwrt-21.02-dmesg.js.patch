@@ -1,0 +1,53 @@
+diff --git a/modules/luci-mod-status/htdocs/luci-static/resources/view/status/dmesg.js b/modules/luci-mod-status/htdocs/luci-static/resources/view/status/dmesg.js
+index f3ee539bd1..0436843e53 100644
+--- a/modules/luci-mod-status/htdocs/luci-static/resources/view/status/dmesg.js
++++ b/modules/luci-mod-status/htdocs/luci-static/resources/view/status/dmesg.js
+@@ -16,16 +16,47 @@ return view.extend({
+ 			return line.replace(/^<\d+>/, '');
+ 		});
+ 
++		var scrollDownButton = E('button', {
++			'id': 'scrollDownButton',
++			'class': 'cbi-button cbi-button-neutral',
++			'style': 'margin-right: 10px;'
++		}, _('Scroll to tail'));
++		scrollDownButton.addEventListener('click', function() {
++			window.scrollTo({ top: document.body.scrollHeight});
++		});
++
++		var scrollUpButton = E('button', {
++			'id': 'scrollUpButton',
++			'class': 'cbi-button cbi-button-neutral'
++		}, _('Scroll to head'));
++		scrollUpButton.addEventListener('click', function() {
++			window.scrollTo({ top: 0});
++		});
++
++		var reverseLogButton = E('button', {
++			'id': 'reverseLogButton',
++			'class': 'cbi-button cbi-button-neutral'
++		}, _('Reverse Log Order'));
++		reverseLogButton.addEventListener('click', function() {
++			var textarea = document.getElementById('syslog');
++			loglines.reverse();
++			textarea.value = loglines.join('\n');
++		});
++
+ 		return E([], [
+ 			E('h2', {}, [ _('Kernel Log') ]),
+ 			E('div', { 'id': 'content_syslog' }, [
++				E('div', {'style': 'padding-bottom: 20px'}, [
++					scrollDownButton, reverseLogButton
++				]),
+ 				E('textarea', {
+ 					'id': 'syslog',
+ 					'style': 'font-size:12px',
+ 					'readonly': 'readonly',
+ 					'wrap': 'off',
+ 					'rows': loglines.length + 1
+-				}, [ loglines.join('\n') ])
++				}, [ loglines.join('\n') ]),
++				E('div', {'style': 'padding-bottom: 20px'}, [scrollUpButton])
+ 			])
+ 		]);
+ 	},

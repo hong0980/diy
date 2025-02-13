@@ -79,21 +79,47 @@ create_directory() {
 }
 
 git_diff() {
-	local path="$1"
-	[[ -d $path ]] && safe_pushd "$path" || return 1
-	shift
-
+	[[ $# -lt 1 ]] && return
 	for i in $@; do
-		[[ -d $i || -f $i ]] && \
-			git diff -- "$i" > $GITHUB_WORKSPACE/firmware/${REPO_BRANCH}-${i##*/}.patch
+		original_dir=$(pwd)
+		if [[ $i =~ ^feeds ]]; then
+			cd $(cut -d'/' -f1-2 <<< "$i") || return 1
+			i=$(cut -d'/' -f3- <<< "$i")
+		fi
+
+		if [[ -d "$i" || -f "$i" ]]; then
+			patch_file="$GITHUB_WORKSPACE/firmware/${REPO_BRANCH}-${i##*/}.patch"
+			git diff -- "$i" > "$patch_file"
+			[[ -s "$patch_file" ]] || rm "$patch_file"
+		fi
+		cd "$original_dir"
 	done
-	safe_popd
 }
 
 git_apply() {
-	for z in $@; do
-		[[ $z =~ \# ]] || wget -qO- $z | git apply --reject --ignore-whitespace
-	done
+	[[ $# -lt 1 || $1 =~ ^# ]] && return
+	local patch_source=$1 path=$2 original_dir=$(pwd)
+	if [[ -n $path && -d $path ]]; then
+		cd "$path"
+	else
+		echo -e "$(color cr '无法进入目录'): $path"
+		return 1
+	fi
+
+	if [[ $patch_source =~ ^http ]]; then
+		wget -qO- "$patch_source" | git apply --ignore-whitespace > /dev/null 2>&1
+	elif [[ -f $patch_source ]]; then
+		git apply --ignore-whitespace < "$patch_source" > /dev/null 2>&1
+	else
+		echo -e "$(color cr '无效的补丁源：') $patch_source"
+		cd "$original_dir"
+		return 1
+	fi
+
+	[[ $? -eq 0 ]] \
+		&& _printf "$(color cg 执行) ${patch_source##*/} [ $(color cg ✔) ]" \
+		|| _printf "$(color cr 执行) ${patch_source##*/} [ $(color cr ✕) ]"
+	cd "$original_dir"
 }
 
 addpackage() {
@@ -169,27 +195,28 @@ clone_dir() {
 }
 
 set_config() {
+	cat >.config<<-EOF
+		CONFIG_KERNEL_BUILD_USER="win3gp"
+		CONFIG_KERNEL_BUILD_DOMAIN="OpenWrt"
+		# CONFIG_LUCI_SRCDIET is not set #压缩 Lua 源代码
+		# CONFIG_LUCI_JSMIN is not set  #压缩 JavaScript 源代码
+		# CONFIG_LUCI_CSSTIDY is not set #压缩 CSS 文件
+	EOF
 	case "$TARGET_DEVICE" in
 		x86_64)
-			cat >.config<<-EOF
+			cat >>.config<<-EOF
 				CONFIG_TARGET_x86=y
 				CONFIG_TARGET_x86_64=y
 				CONFIG_TARGET_x86_64_DEVICE_generic=y
 				CONFIG_TARGET_ROOTFS_PARTSIZE=$PARTSIZE
-				CONFIG_BUILD_NLS=y
-				CONFIG_BUILD_PATENTED=y
-				CONFIG_GRUB_IMAGES=y
-				CONFIG_TARGET_IMAGES_GZIP=y
-				# CONFIG_VMDK_IMAGES is not set
-				# CONFIG_GRUB_EFI_IMAGES is not set
 			EOF
 			lan_ip "192.168.2.150"
 			export DEVICE_NAME="$TARGET_DEVICE"
 			echo "FIRMWARE_TYPE=squashfs-combined" >> $GITHUB_ENV
-			addpackage "#git-http #subversion-client #unixodbc #htop #lscpu #lsscsi #lsusb #luci-app-deluge luci-app-diskman luci-app-dockerman #luci-app-netdata luci-app-poweroff luci-app-qbittorrent #luci-app-store #nano #pciutils #pv #screen"
+			addpackage "luci-app-dockerman luci-app-diskman luci-app-poweroff luci-app-qbittorrent #git-http #subversion-client #unixodbc #htop #lscpu #lsscsi #lsusb #luci-app-deluge #luci-app-netdata #luci-app-store #nano #pciutils #pv #screen"
 			;;
 		r[124]*)
-			cat >.config<<-EOF
+			cat >>.config<<-EOF
 				CONFIG_TARGET_rockchip=y
 				CONFIG_TARGET_rockchip_armv8=y
 				CONFIG_TARGET_ROOTFS_PARTSIZE=$PARTSIZE
@@ -218,7 +245,7 @@ set_config() {
 			# git_apply "raw.githubusercontent.com/hong0980/diy/master/files/r1-plus-lts-patches/0001-Add-pwm-fan.sh.patch"
 			;;
 		newifi-d2)
-			cat >.config<<-EOF
+			cat >>.config<<-EOF
 				CONFIG_TARGET_ramips=y
 				CONFIG_TARGET_ramips_mt7621=y
 				CONFIG_TARGET_ramips_mt7621_DEVICE_d-team_newifi-d2=y
@@ -228,7 +255,7 @@ set_config() {
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
 			;;
 		phicomm_k2p)
-			cat >.config<<-EOF
+			cat >>.config<<-EOF
 				CONFIG_TARGET_ramips=y
 				CONFIG_TARGET_ramips_mt7621=y
 				CONFIG_TARGET_ramips_mt7621_DEVICE_phicomm_k2p=y
@@ -238,7 +265,7 @@ set_config() {
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
 			;;
 		asus_rt-n16)
-			cat >.config<<-EOF
+			cat >>.config<<-EOF
 				CONFIG_TARGET_bcm47xx=y
 				CONFIG_TARGET_bcm47xx_mips74k=y
 				CONFIG_TARGET_bcm47xx_mips74k_DEVICE_asus_rt-n16=y
@@ -248,7 +275,7 @@ set_config() {
 			echo "FIRMWARE_TYPE=n16" >> $GITHUB_ENV
 			;;
 		armvirt-64-default)
-			cat >.config<<-EOF
+			cat >>.config<<-EOF
 				CONFIG_TARGET_armvirt=y
 				CONFIG_TARGET_armvirt_64=y
 				CONFIG_TARGET_armvirt_64_Default=y
@@ -283,39 +310,32 @@ set_config() {
 			}
 			;;
 	esac
-	echo -e 'CONFIG_KERNEL_BUILD_USER="win3gp"\nCONFIG_KERNEL_BUILD_DOMAIN="OpenWrt"' >> .config
-	addpackage "luci-app-bypass #luci-app-cowb-speedlimit luci-app-cowbping luci-app-ddnsto luci-app-filebrowser luci-app-openclash luci-app-passwall luci-app-passwall2 #luci-app-simplenetwork luci-app-ssr-plus luci-app-timedtask luci-app-tinynote luci-app-ttyd luci-app-uhttpd luci-app-wizard luci-app-homeproxy"
-	delpackage "luci-app-ddns luci-app-autoreboot luci-app-wol luci-app-vlmcsd luci-app-filetransfer"
+	addpackage "luci-app-bypass luci-app-ddnsto luci-app-filebrowser luci-app-openclash luci-app-passwall luci-app-passwall2 luci-app-ssr-plus luci-app-timedtask luci-app-tinynote luci-app-ttyd luci-app-uhttpd luci-app-wizard luci-app-homeproxy luci-app-usb-printer luci-app-eqos"
+	delpackage "luci-app-ddns luci-app-autoreboot luci-app-wol luci-app-vlmcsd luci-app-filetransfer luci-app-turboacc"
 }
 
 deploy_cache() {
-	export SOURCE_NAME=$(basename $(dirname $REPO_URL))
-	TOOLS_HASH=$(git log --pretty=tformat:"%h" -n1 tools toolchain)
+	local TOOLS_HASH=$(git log --pretty=tformat:"%h" -n1 tools toolchain)
 	export CACHE_NAME="$SOURCE_NAME-$REPO_BRANCH-$TOOLS_HASH-$ARCH"
 	echo "CACHE_NAME=$CACHE_NAME" >> $GITHUB_ENV
-
-	if (grep -q "$CACHE_NAME" ../xa ../xc); then
-		ls ../*"$CACHE_NAME"* > /dev/null 2>&1 || {
-			echo -e "$(color cy '下载tz-cache')\c"
-			begin_time=$(date '+%H:%M:%S')
-			grep -q "$CACHE_NAME" ../xa \
-				&& wget -qc -t=3 -P ../ $(grep "$CACHE_NAME" ../xa) \
-				|| wget -qc -t=3 -P ../ $(grep "$CACHE_NAME" ../xc)
+	if grep -q "$CACHE_NAME" ../xa ../xc; then
+		ls ../*"$CACHE_NAME"* >/dev/null 2>&1 || {
+			echo -e "$(color cy '下载tz-cache')\c"; begin_time=$(date '+%H:%M:%S')
+			wget -qc -t=3 -P ../ "$(grep -l "$CACHE_NAME" ../xa ../xc | head -1 | xargs grep -m1 "$CACHE_NAME")"
 			status
 		}
 
-		ls ../*"$CACHE_NAME"* > /dev/null 2>&1 && {
-			echo -e "$(color cy '部署tz-cache')\c"
-			begin_time=$(date '+%H:%M:%S')
-			(tar -I unzstd -xf ../*.tzst || tar -xf ../*.tzst) && {
-				if ! grep -q "$CACHE_NAME" ../xa; then
+		if ls ../*"$CACHE_NAME"* >/dev/null 2>&1; then
+			echo -e "$(color cy '部署tz-cache')\c"; begin_time=$(date '+%H:%M:%S')
+			if tar -I unzstd -xf ../*.tzst || tar -xf ../*.tzst; then
+				grep -q "$CACHE_NAME" ../xa || {
 					cp ../$CACHE_NAME-cache.tzst ../output
 					echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
-				fi
+				}
 				sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
-			}
+			fi
 			[ -d staging_dir ]; status
-		}
+		fi
 	else
 		echo "CACHE_ACTIONS=true" >> $GITHUB_ENV
 	fi
@@ -342,6 +362,7 @@ git_clone() {
 }
 
 REPO_URL="https://github.com/coolsnowwolf/lede"
+SOURCE_NAME=$(basename $(dirname $REPO_URL))
 git_clone
 
 if [[ $REPO_URL =~ "coolsnowwolf" ]]; then
@@ -367,12 +388,13 @@ clone_dir vernesong/OpenClash luci-app-openclash
 clone_dir xiaorouji/openwrt-passwall luci-app-passwall
 clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir openwrt-24.10 immortalwrt/luci luci-app-homeproxy
-clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-poweroff luci-app-filebrowser luci-app-cowbping \
-	luci-app-diskman luci-app-cowb-speedlimit luci-app-qbittorrent luci-app-wizard luci-app-dockerman \
-	luci-app-pwdHackDeny luci-app-softwarecenter luci-app-ddnsto luci-lib-docker lsscsi
-clone_dir kiddin9/kwrt-packages chinadns-ng geoview lua-maxminddb luci-app-bypass luci-app-pushbot \
-	luci-app-store luci-lib-taskd luci-lib-xterm sing-box taskd trojan-plus xray-core
-	
+clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-poweroff luci-app-filebrowser \
+	luci-app-diskman luci-app-qbittorrent luci-app-wizard luci-app-ddnsto \
+	luci-app-softwarecenter lsscsi luci-lib-docker luci-app-dockerman
+clone_dir kiddin9/kwrt-packages chinadns-ng geoview sing-box trojan-plus xray-core \
+	luci-app-bypass lua-maxminddb \
+	#luci-app-pushbot luci-app-store luci-lib-taskd taskd luci-lib-xterm
+
 # https://github.com/userdocs/qbittorrent-nox-static/releases
 xc=$(_find "package/A/ feeds/" "qBittorrent-static")
 [[ -d $xc ]] && sed -Ei "s/(PKG_VERSION:=).*/\1${qb_version:-4.5.2_v2.0.8}/" $xc/Makefile

@@ -2,8 +2,9 @@
 # sudo bash -c 'bash <(curl -s https://build-scripts.immortalwrt.eu.org/init_build_environment.sh)'
 qb_version=$(curl -sL https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K(.*?)(?=/)' | sort -Vr | uniq | awk 'NR==1')
 curl -sL https://raw.githubusercontent.com/klever1988/nanopi-openwrt/zstd-bin/zstd | sudo tee /usr/bin/zstd > /dev/null
-curl -sL "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases?page=1" | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' > xa
-curl -sL "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases?page=2" | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' >> xa
+for page in 1 2; do
+	curl -sL "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases?page=$page"
+done | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' > xa
 curl -sL api.github.com/repos/hong0980/OpenWrt-Cache/releases | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' >xc
 
 color() {
@@ -56,7 +57,7 @@ safe_pushd() {
 }
 
 safe_popd() {
-	popd &> /dev/null || echo -e "$(color cr '该目录不存在。')"
+	[ $(dirs -p | wc -l) -gt 0 ] &&　popd &> /dev/null
 }
 
 _printf() {
@@ -69,22 +70,28 @@ lan_ip() {
 }
 
 git_diff() {
-	path="$1"
-	[[ -d $path ]] && safe_pushd "$path" || return 1
-	shift
-
+	[[ $# -lt 1 ]] && return
 	for i in $@; do
-		[[ -d $i || -f $i ]] && \
-			git diff -- "$i" > $GITHUB_WORKSPACE/firmware/${REPO_BRANCH}-${i##*/}.patch
+		original_dir=$(pwd)
+		if [[ $i =~ ^feeds ]]; then
+			cd $(cut -d'/' -f1-2 <<< "$i") || return 1
+			i=$(cut -d'/' -f3- <<< "$i")
+		fi
+
+		if [[ -d "$i" || -f "$i" ]]; then
+			patch_file="$GITHUB_WORKSPACE/firmware/${REPO_BRANCH}-${i##*/}.patch"
+			git diff -- "$i" > "$patch_file"
+			[[ -s "$patch_file" ]] || rm "$patch_file"
+		fi
+		cd "$original_dir"
 	done
-	safe_popd
 }
 
 git_apply() {
-	[[ $1 =~ ^# ]] && return
-	local patch_source=$1 path=$2
-	[[ -n $path && -d $path ]] && safe_pushd "$path" || \
-	{ echo -e "$(color cr '无法进入目录'): $path"; return 1; }
+	[[ $# -lt 1 || $1 =~ ^# ]] && return
+	local patch_source=$1 path=$2 original_dir=$(pwd)
+	[[ -n $path && -d $path ]] || { echo -e "$(color cr '无法进入目录'): $path"; return 1; }
+	cd "$path"
 
 	if [[ $patch_source =~ ^http ]]; then
 		wget -qO- "$patch_source" | git apply --ignore-whitespace > /dev/null 2>&1
@@ -92,15 +99,14 @@ git_apply() {
 		git apply --ignore-whitespace < "$patch_source" > /dev/null 2>&1
 	else
 		echo -e "$(color cr '无效的补丁源：') $patch_source"
-		safe_popd
+		cd "$original_dir"
 		return 1
 	fi
 
 	[[ $? -eq 0 ]] \
 		&& _printf "$(color cg 执行) ${patch_source##*/} [ $(color cg ✔) ]" \
 		|| _printf "$(color cr 执行) ${patch_source##*/} [ $(color cr ✕) ]"
-
-	[[ -n $path ]] && safe_popd
+	cd "$original_dir"
 }
 
 clone_dir() {
@@ -122,11 +128,8 @@ clone_dir() {
 		return 1
 	}
 
-	# [[ $repo_url =~ openwrt_helloworld && $REPO_BRANCH =~ 21 ]] && set -- "$@" "luci-app-homeproxy"
-	[[ $repo_url =~ coolsnowwolf/packages && $REPO_BRANCH =~ 23 ]] && set -- "$@" "golang" "bandwidthd"
-
+	# [[ $repo_url =~ kiddin9/kwrt-packages && $REPO_BRANCH =~ 21 ]] && set -- "$@" "luci-app-homeproxy"
 	for target_dir in $@; do
-		# [[ $target_dir =~ ^luci-app- ]] && create_directory "feeds/luci/applications/$target_dir"
 		local source_dir current_dir destination_dir
 		if [[ ${repo_url##*/} == ${target_dir} ]]; then
 			mv -f ${temp_dir} ${target_dir}
@@ -203,9 +206,16 @@ clone_url() {
 }
 
 set_config (){
+	cat >.config<<-EOF
+		CONFIG_KERNEL_BUILD_USER="win3gp"
+		CONFIG_KERNEL_BUILD_DOMAIN="OpenWrt"
+		# CONFIG_LUCI_SRCDIET is not set #压缩 Lua 源代码
+		# CONFIG_LUCI_JSMIN is not set  #压缩 JavaScript 源代码
+		# CONFIG_LUCI_CSSTIDY is not set #压缩 CSS 文件
+	EOF
 	case "$TARGET_DEVICE" in
 		"x86_64")
-			cat >.config<<-EOF
+			cat >>.config<<-EOF
 			CONFIG_TARGET_x86=y
 			CONFIG_TARGET_x86_64=y
 			CONFIG_TARGET_x86_64_DEVICE_generic=y
@@ -221,10 +231,10 @@ set_config (){
 			lan_ip "192.168.2.1"
 			export DEVICE_NAME="x86_64"
 			echo "FIRMWARE_TYPE=squashfs-combined" >> $GITHUB_ENV
-			addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-cowbping luci-app-cowb-speedlimit luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer"
+			addpackage "autosamba pciutils luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer diffutils patch"
 			;;
 		r[124]*)
-			cat >.config<<-EOF
+			cat >>.config<<-EOF
 			CONFIG_TARGET_rockchip=y
 			CONFIG_TARGET_rockchip_armv8=y
 			CONFIG_TARGET_ROOTFS_PARTSIZE=$PARTSIZE
@@ -241,10 +251,10 @@ set_config (){
 			lan_ip "192.168.2.1"
 			export DEVICE_NAME="$TARGET_DEVICE"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
-			addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-cowbping luci-app-cowb-speedlimit luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer"
+			addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer"
 			;;
 		"newifi-d2")
-			cat >.config<<-EOF
+			cat >>.config<<-EOF
 			CONFIG_TARGET_ramips=y
 			CONFIG_TARGET_ramips_mt7621=y
 			CONFIG_TARGET_ramips_mt7621_DEVICE_d-team_newifi-d2=y
@@ -254,7 +264,7 @@ set_config (){
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
 			;;
 		"phicomm_k2p")
-			cat >.config<<-EOF
+			cat >>.config<<-EOF
 			CONFIG_TARGET_ramips=y
 			CONFIG_TARGET_ramips_mt7621=y
 			CONFIG_TARGET_ramips_mt7621_DEVICE_phicomm_k2p=y
@@ -265,13 +275,13 @@ set_config (){
 			;;
 		"asus_rt-n16")
 			if [[ "${REPO_BRANCH#*-}" = "18.06" ]]; then
-				cat >.config<<-EOF
+				cat >>.config<<-EOF
 				CONFIG_TARGET_brcm47xx=y
 				CONFIG_TARGET_brcm47xx_mips74k=y
 				CONFIG_TARGET_brcm47xx_mips74k_DEVICE_asus_rt-n16=y
 				EOF
 			else
-				cat >.config<<-EOF
+				cat >>.config<<-EOF
 				CONFIG_TARGET_bcm47xx=y
 				CONFIG_TARGET_bcm47xx_mips74k=y
 				CONFIG_TARGET_bcm47xx_mips74k_DEVICE_asus_rt-n16=y
@@ -282,7 +292,7 @@ set_config (){
 			echo "FIRMWARE_TYPE=n16" >> $GITHUB_ENV
 			;;
 		"armvirt-64-default")
-			cat >.config<<-EOF
+			cat >>.config<<-EOF
 			CONFIG_TARGET_armvirt=y
 			CONFIG_TARGET_armvirt_64=y
 			CONFIG_TARGET_armvirt_64_Default=y
@@ -292,37 +302,31 @@ set_config (){
 			echo "FIRMWARE_TYPE=$TARGET_DEVICE" >> $GITHUB_ENV
 			;;
 	esac
-	echo -e 'CONFIG_KERNEL_BUILD_USER="win3gp"\nCONFIG_KERNEL_BUILD_DOMAIN="OpenWrt"' >> .config
-	addpackage "luci-app-arpbind luci-app-ksmbd luci-app-nlbwmon luci-app-upnp luci-app-bypass luci-app-cowb-speedlimit luci-app-cowbping luci-app-ddnsto luci-app-filebrowser luci-app-openclash luci-app-passwall luci-app-passwall2 luci-app-simplenetwork luci-app-ssr-plus luci-app-timedtask luci-app-tinynote luci-app-ttyd luci-app-uhttpd luci-app-wizard luci-app-homeproxy"
+	addpackage "luci-app-arpbind luci-app-ksmbd luci-app-nlbwmon luci-app-upnp luci-app-bypass luci-app-ddnsto luci-app-filebrowser luci-app-openclash luci-app-passwall luci-app-passwall2 luci-app-simplenetwork luci-app-ssr-plus luci-app-timedtask luci-app-tinynote luci-app-ttyd #luci-app-uhttpd luci-app-wizard luci-app-homeproxy luci-app-eqos"
 }
 
 deploy_cache() {
 	local TOOLS_HASH=$(git log --pretty=tformat:"%h" -n1 tools toolchain)
-	echo "tools toolchain 的md5值 $(find tools toolchain -type f -exec md5sum {} \; | sort | md5sum)"
-	export SOURCE_NAME=$(basename $(dirname $REPO_URL))
 	CACHE_NAME="$SOURCE_NAME-${REPO_BRANCH#*-}-$TOOLS_HASH-$ARCH"
 	echo "CACHE_NAME=$CACHE_NAME" >> $GITHUB_ENV
-	if (grep -q "$CACHE_NAME" ../xa ../xc); then
-		ls ../*"$CACHE_NAME"* > /dev/null 2>&1 || {
-			echo -e "$(color cy '下载tz-cache')\c"
-			begin_time=$(date '+%H:%M:%S')
-			grep -q "$CACHE_NAME" ../xa \
-				&& wget -qc -t=3 -P ../ $(grep "$CACHE_NAME" ../xa) \
-				|| wget -qc -t=3 -P ../ $(grep "$CACHE_NAME" ../xc)
+	if grep -q "$CACHE_NAME" ../xa ../xc; then
+		ls ../*"$CACHE_NAME"* >/dev/null 2>&1 || {
+			echo -e "$(color cy '下载tz-cache')\c"; begin_time=$(date '+%H:%M:%S')
+			wget -qc -t=3 -P ../ "$(grep -l "$CACHE_NAME" ../xa ../xc | head -1 | xargs grep -m1 "$CACHE_NAME")"
 			status
 		}
 
-		ls ../*"$CACHE_NAME"* > /dev/null 2>&1 && {
+		if ls ../*"$CACHE_NAME"* >/dev/null 2>&1; then
 			echo -e "$(color cy '部署tz-cache')\c"; begin_time=$(date '+%H:%M:%S')
-			(tar -I unzstd -xf ../*.tzst || tar -xf ../*.tzst) && {
-				if ! grep -q "$CACHE_NAME" ../xa; then
+			if tar -I unzstd -xf ../*.tzst || tar -xf ../*.tzst; then
+				grep -q "$CACHE_NAME" ../xa || {
 					cp ../$CACHE_NAME-cache.tzst ../output
 					echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
-				fi
+				}
 				sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
-			}
+			fi
 			[ -d staging_dir ]; status
-		}
+		fi
 	else
 		echo "CACHE_ACTIONS=true" >> $GITHUB_ENV
 	fi
@@ -343,17 +347,12 @@ git_clone() {
 	./scripts/feeds install -a 1>/dev/null 2>&1
 	status
 	set_config
-	wget -qO package/base-files/files/etc/banner git.io/JoNK8
-	color cy "自定义设置.... "
-	sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
-	sed -i "/DISTRIB_DESCRIPTION/ {s/'$/-$SOURCE_NAME-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/openwrt_release || true
-	sed -i "/VERSION_NUMBER/ s/if.*/if \$(VERSION_NUMBER),\$(VERSION_NUMBER),${REPO_BRANCH#*-}-SNAPSHOT)/" include/version.mk || true
-	sed -i "\$i\uci -q set upnpd.config.enabled=\"1\"\nuci commit upnpd\nuci -q set system.@system[0].hostname=\"OpenWrt\"\nuci commit system\nuci -q set luci.main.mediaurlbase=\"/luci-static/bootstrap\"\nuci commit luci\nsed -i 's/root:.*/root:\$1\$pn1ABFaI\$vt5cmIjlr6M7Z79Eds2lV0:16821:0:99999:7:::/g' /etc/shadow" package/emortal/*/files/*default-settings
 }
 
 create_directory "firmware" "output"
 REPO=${REPO:-immortalwrt}
 REPO_URL="https://github.com/$REPO/$REPO"
+SOURCE_NAME=$(basename $(dirname $REPO_URL))
 config_generate="package/base-files/files/bin/config_generate"
 git_clone
 
@@ -371,98 +370,47 @@ if [[ "$TARGET_DEVICE" =~ x86_64|r1-plus-lts && "$REPO_BRANCH" =~ master|23|24 ]
 		delpackage "dnsmasq"
 		[[ $REPO_BRANCH =~ 23.05 ]] && clone_dir openwrt/packages openwrt-24.10 golang
 	fi
-	[[ $REPO_BRANCH =~ 23 ]] && clone_dir coolsnowwolf/packages ""
-	# git_diff "feeds/luci" "applications/luci-app-diskman" "applications/luci-app-passwall" "applications/luci-app-ssr-plus" "applications/luci-app-dockerman"
+	# git_diff "feeds/luciapplications/luci-app-diskman" "feeds/luciapplications/luci-app-dockerman"
+	[[ $REPO_BRANCH =~ 23 ]] && clone_dir coolsnowwolf/packages golang
 	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev
-	addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-cowbping luci-app-cowb-speedlimit luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer"
-	[[ $REPO_BRANCH =~ master|24 ]] && sed -i '/store\|deluge/d' .config
-else
-	# git diff ./ >> ../output/t.patch || true
-	clone_url "
-		https://github.com/fw876/helloworld
-		https://github.com/xiaorouji/openwrt-passwall-packages
-	"
-	create_directory "package/utils/ucode" "package/network/config/firewall4" \
-		"package/network/utils/fullconenat-nft" "package/libs/libmd"
-	# clone_dir coolsnowwolf/lede automount busybox dnsmasq f2fs-tools firewall \
-	# 	firewall4 fullconenat fullconenat-nft iproute2 iwinfo libnftnl \
-	# 	nftables openssl opkg parted ppp smartmontools sonfilter ucode
-		#fstools odhcp6c iptables ipset dropbear usbmode
-	# clone_dir coolsnowwolf/packages bandwidthd bash bluez btrfs-progs containerd curl docker \
-	# 	dockerd gawk golang htop jq libwebsockets lua-openssl mwan3 nghttp3 \
-	# 	nginx-util ngtcp2 pciutils runc samba4 smartdns
-		#miniupnpc miniupnpd
-	clone_dir coolsnowwolf/packages golang bandwidthd docker dockerd containerd runc btrfs-progs
-	clone_dir immortalwrt/immortalwrt ppp busybox #firewall4 fullconenat fullconenat-nft firewall ucode iptables libnftnl libmd
-	cat <<-\EOF >>package/kernel/linux/modules/netfilter.mk
-	define KernelPackage/nft-tproxy
-	  SUBMENU:=$(NF_MENU)
-	  TITLE:=Netfilter nf_tables tproxy support
-	  DEPENDS:=+kmod-nft-core +kmod-nf-tproxy +kmod-nf-conntrack
-	  FILES:=$(foreach mod,$(NFT_TPROXY-m),$(LINUX_DIR)/net/$(mod).ko)
-	  AUTOLOAD:=$(call AutoProbe,$(notdir $(NFT_TPROXY-m)))
-	  KCONFIG:=$(KCONFIG_NFT_TPROXY)
-	endef
-	$(eval $(call KernelPackage,nft-tproxy))
-	define KernelPackage/nf-tproxy
-	  SUBMENU:=$(NF_MENU)
-	  TITLE:=Netfilter tproxy support
-	  KCONFIG:= $(KCONFIG_NF_TPROXY)
-	  FILES:=$(foreach mod,$(NF_TPROXY-m),$(LINUX_DIR)/net/$(mod).ko)
-	  AUTOLOAD:=$(call AutoProbe,$(notdir $(NF_TPROXY-m)))
-	endef
-	$(eval $(call KernelPackage,nf-tproxy))
-	define KernelPackage/nft-compat
-	  SUBMENU:=$(NF_MENU)
-	  TITLE:=Netfilter nf_tables compat support
-	  DEPENDS:=+kmod-nft-core +kmod-nf-ipt
-	  FILES:=$(foreach mod,$(NFT_COMPAT-m),$(LINUX_DIR)/net/$(mod).ko)
-	  AUTOLOAD:=$(call AutoProbe,$(notdir $(NFT_COMPAT-m)))
-	  KCONFIG:=$(KCONFIG_NFT_COMPAT)
-	endef
-	$(eval $(call KernelPackage,nft-compat))
-	define KernelPackage/ipt-socket
-	  TITLE:=Iptables socket matching support
-	  DEPENDS+=+kmod-nf-socket +kmod-nf-conntrack
-	  KCONFIG:=$(KCONFIG_IPT_SOCKET)
-	  FILES:=$(foreach mod,$(IPT_SOCKET-m),$(LINUX_DIR)/net/$(mod).ko)
-	  AUTOLOAD:=$(call AutoProbe,$(notdir $(IPT_SOCKET-m)))
-	  $(call AddDepends/ipt)
-	endef
-	define KernelPackage/ipt-socket/description
-	  Kernel modules for socket matching
-	endef
-	$(eval $(call KernelPackage,ipt-socket))
-	define KernelPackage/nf-socket
-	  SUBMENU:=$(NF_MENU)
-	  TITLE:=Netfilter socket lookup support
-	  KCONFIG:= $(KCONFIG_NF_SOCKET)
-	  FILES:=$(foreach mod,$(NF_SOCKET-m),$(LINUX_DIR)/net/$(mod).ko)
-	  AUTOLOAD:=$(call AutoProbe,$(notdir $(NF_SOCKET-m)))
-	endef
-	$(eval $(call KernelPackage,nf-socket))
-	EOF
-	curl -sSo include/openssl-module.mk \
-		https://raw.githubusercontent.com/immortalwrt/immortalwrt/master/include/openssl-module.mk
+	addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer"
+fi
 
-	# mv -f package/A/luci-app* feeds/luci/applications/
-	# git diff -- feeds/luci/applications/luci-app-qbittorrent > ../firmware/$REPO_BRANCH-luci-app-qbittorrent.patch
-	sed -i '/bridge\|vssr\|deluge/d' .config
+if [[ "$REPO_BRANCH" =~ 21|18 ]]; then
+	clone_url "https://github.com/fw876/helloworld
+		https://github.com/xiaorouji/openwrt-passwall-packages"
+	create_directory "package/network/config/firewall4" "package/utils/ucode"
+	clone_dir coolsnowwolf/lede automount ppp busybox parted r8101 r8125 r8168 firewall
+	clone_dir coolsnowwolf/packages golang bandwidthd bash docker dockerd containerd runc \
+		btrfs-progs gawk jq nginx-util pciutils curl
+	git_apply "https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/openwrt-21.02-dmesg.js.patch" "feeds/luci"
+	git_apply "https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/openwrt-21.02-syslog.js.patch" "feeds/luci"
+	curl -sSo package/kernel/linux/modules/netfilter.mk \
+		https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/package/kernel/linux/modules/netfilter.mk
+	# curl -sSo include/openssl-module.mk \
+	# 	https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/include/openssl-module.mk
 fi
 
 clone_dir kiddin9/kwrt-packages chinadns-ng geoview lua-maxminddb luci-app-bypass luci-app-nlbwmon \
-	luci-app-pushbot luci-app-store luci-app-syncdial luci-app-wizard luci-lib-taskd luci-lib-xterm \
-	qBittorrent-static sing-box taskd trojan-plus xray-core
-clone_dir sbwml/openwrt_helloworld shadowsocks-rust
+	luci-app-pushbot luci-app-store luci-app-syncdial luci-lib-taskd luci-lib-xterm qBittorrent-static taskd
+clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box trojan-plus
+delpackage "luci-app-filetransfer luci-app-turboacc"
 
+wget -qO package/base-files/files/etc/banner git.io/JoNK8
+color cy "自定义设置.... "
 sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
+sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 sed -i 's|/bin/login|/bin/login -f root|' feeds/packages/utils/ttyd/files/ttyd.config
+sed -i "/DISTRIB_DESCRIPTION/ {s/'$/-$SOURCE_NAME-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/openwrt_release || true
+sed -i "/VERSION_NUMBER/ s/if.*/if \$(VERSION_NUMBER),\$(VERSION_NUMBER),${REPO_BRANCH#*-}-SNAPSHOT)/" include/version.mk || true
+sed -i "\$i\uci -q set upnpd.config.enabled=\"1\"\nuci commit upnpd\nuci -q set system.@system[0].hostname=\"OpenWrt\"\nuci commit system\nuci -q set luci.main.mediaurlbase=\"/luci-static/bootstrap\"\nuci commit luci\nsed -i 's/root:.*/root:\$1\$pn1ABFaI\$vt5cmIjlr6M7Z79Eds2lV0:16821:0:99999:7:::/g' /etc/shadow" package/emortal/*/files/*default-settings
 sed -Ei "s/(PKG_VERSION:=).*/\1${qb_version:-4.5.2_v2.0.8}/" package/A/qBittorrent-static/Makefile
-sed -iE \
+sed -Ei \
 	-e 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|' \
 	-e 's?include ../(lang|devel)?include $(TOPDIR)/feeds/packages/\1?' \
 	-e "s/((^| |    )(PKG_HASH|PKG_MD5SUM|PKG_MIRROR_HASH|HASH):=).*/\1skip/" \
 	package/A/*/Makefile 2>/dev/null
+
 for p in package/A/luci-app*/po feeds/luci/applications/luci-app*/po; do
 	[[ -L $p/zh_Hans || -L $p/zh-cn ]] || (ln -s zh-cn $p/zh_Hans 2>/dev/null || ln -s zh_Hans $p/zh-cn 2>/dev/null)
 done
