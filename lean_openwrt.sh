@@ -152,7 +152,7 @@ git_apply() {
 }
 
 clone_dir() {
-	create_directory "package/A"
+	create_directory "package/A" "package/A/luci-app-daed"
 	[[ $# -lt 1 ]] && return
 	local repo_url branch temp_dir=$(mktemp -d)
 	trap 'rm -rf "$temp_dir"' EXIT INT TERM
@@ -202,7 +202,7 @@ clone_url() {
 		local temp_dir existing_sub_path dest="package/A"
 		temp_dir=$(mktemp -d) && trap 'rm -rf "$temp_dir"' EXIT INT TERM
 
-		if ! timeout 60 git clone -q --depth 1 --single-branch \
+		if ! git clone -q --depth 1 --single-branch \
 			--config advice.detachedHead=false "$url" "$temp_dir"; then
 			_printf "$(color cr "克隆失败") $url"
 			continue
@@ -256,6 +256,10 @@ set_config (){
 			CONFIG_TARGET_x86_64=y
 			CONFIG_TARGET_x86_64_DEVICE_generic=y
 			CONFIG_TARGET_ROOTFS_PARTSIZE=$PARTSIZE
+			CONFIG_BUILD_NLS=y
+			CONFIG_GRUB_IMAGES=y
+			CONFIG_BUILD_PATENTED=y
+			# CONFIG_GRUB_EFI_IMAGES is not set
 			EOF
 			lan_ip "192.168.2.150"
 			echo "FIRMWARE_TYPE=squashfs-combined" >> $GITHUB_ENV
@@ -446,11 +450,11 @@ sed -Ei \
 	package/A/*/Makefile 2>/dev/null
 
 find {package/A,feeds/luci/applications}/luci-app*/po -type d 2>/dev/null | while read p; do
-  if [[ -d $p/zh-cn && ! -e $p/zh_Hans ]]; then
-    ln -s zh-cn "$p/zh_Hans" 2>/dev/null
-  elif [[ -d $p/zh_Hans && ! -e $p/zh-cn ]]; then
-    ln -s zh_Hans "$p/zh-cn" 2>/dev/null
-  fi
+	if [[ -d $p/zh-cn && ! -e $p/zh_Hans ]]; then
+		ln -s zh-cn "$p/zh_Hans" 2>/dev/null
+	elif [[ -d $p/zh_Hans && ! -e $p/zh-cn ]]; then
+		ln -s zh_Hans "$p/zh-cn" 2>/dev/null
+	fi
 done
 
 echo -e "$(color cy '更新配置....')\c"

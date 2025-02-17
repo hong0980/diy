@@ -173,7 +173,7 @@ clone_url() {
 		local temp_dir existing_sub_path dest="package/A"
 		temp_dir=$(mktemp -d) && trap 'rm -rf "$temp_dir"' EXIT INT TERM
 
-		if ! timeout 60 git clone -q --depth 1 --single-branch \
+		if ! git clone -q --depth 1 --single-branch \
 			--config advice.detachedHead=false "$url" "$temp_dir"; then
 			_printf "$(color cr "克隆失败") $url"
 			continue
@@ -233,7 +233,6 @@ set_config (){
 			CONFIG_TARGET_IMAGES_GZIP=y
 			CONFIG_GRUB_IMAGES=y
 			# CONFIG_GRUB_EFI_IMAGES is not set
-			# CONFIG_VMDK_IMAGES is not set
 			EOF
 			lan_ip "192.168.2.150"
 			export DEVICE_NAME="x86_64"
@@ -425,11 +424,11 @@ sed -Ei \
 	package/A/*/Makefile 2>/dev/null
 
 find {package/A,feeds/luci/applications}/luci-app*/po -type d 2>/dev/null | while read p; do
-  if [[ -d $p/zh-cn && ! -e $p/zh_Hans ]]; then
-	ln -s zh-cn "$p/zh_Hans" 2>/dev/null
-  elif [[ -d $p/zh_Hans && ! -e $p/zh-cn ]]; then
-	ln -s zh_Hans "$p/zh-cn" 2>/dev/null
-  fi
+	if [[ -d $p/zh-cn && ! -e $p/zh_Hans ]]; then
+		ln -s zh-cn "$p/zh_Hans" 2>/dev/null
+	elif [[ -d $p/zh_Hans && ! -e $p/zh-cn ]]; then
+		ln -s zh_Hans "$p/zh-cn" 2>/dev/null
+	fi
 done
 
 echo -e "$(color cy '更新配置....')\c"
