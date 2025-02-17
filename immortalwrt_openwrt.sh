@@ -173,8 +173,8 @@ clone_url() {
 		local temp_dir existing_sub_path dest="package/A"
 		temp_dir=$(mktemp -d) && trap 'rm -rf "$temp_dir"' EXIT INT TERM
 
-		if ! git clone -q --depth 1 --single-branch \
-			--config advice.detachedHead=false "$url" "$temp_dir"; then
+		if ! git clone -q --depth 1 --single-branch --config \
+			advice.detachedHead=false "$url" "$temp_dir"; then
 			_printf "$(color cr "克隆失败") $url"
 			continue
 		fi
@@ -387,8 +387,8 @@ fi
 if [[ "$REPO_BRANCH" =~ 21|18 ]]; then
 	clone_url "fw876/helloworld xiaorouji/openwrt-passwall-packages"
 	create_directory "package/network/config/firewall4" "package/utils/ucode" "package/network/utils/fullconenat-nft" "package/libs/libmd" "package/kernel/bpf-headers"
-	clone_dir coolsnowwolf/lede automount ppp busybox parted r8101 r8125 r8168 firewall bpf-headers \
-		# firewall4 ucode fullconenat fullconenat-nft libmd
+	clone_dir coolsnowwolf/lede automount ppp busybox parted r8101 r8125 r8168 firewall openssl \
+		bpf-headers firewall4 ucode fullconenat fullconenat-nft libmd
 	clone_dir coolsnowwolf/packages golang bandwidthd bash docker dockerd containerd runc \
 		btrfs-progs gawk jq nginx-util pciutils curl
 	[[ "$REPO_BRANCH" =~ 21 ]] && {
@@ -397,8 +397,8 @@ if [[ "$REPO_BRANCH" =~ 21|18 ]]; then
 	}
 	curl -sSo package/kernel/linux/modules/netfilter.mk \
 		https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/package/kernel/linux/modules/netfilter.mk
-	# curl -sSo include/openssl-module.mk \
-	# 	https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/include/openssl-module.mk
+	curl -sSo include/openssl-module.mk \
+		https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/include/openssl-module.mk
 fi
 
 clone_dir kiddin9/kwrt-packages chinadns-ng geoview lua-maxminddb luci-app-bypass luci-app-nlbwmon \

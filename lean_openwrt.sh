@@ -152,7 +152,7 @@ git_apply() {
 }
 
 clone_dir() {
-	create_directory "package/A" "package/A/luci-app-daed"
+	create_directory "package/A"
 	[[ $# -lt 1 ]] && return
 	local repo_url branch temp_dir=$(mktemp -d)
 	trap 'rm -rf "$temp_dir"' EXIT INT TERM
@@ -202,8 +202,8 @@ clone_url() {
 		local temp_dir existing_sub_path dest="package/A"
 		temp_dir=$(mktemp -d) && trap 'rm -rf "$temp_dir"' EXIT INT TERM
 
-		if ! git clone -q --depth 1 --single-branch \
-			--config advice.detachedHead=false "$url" "$temp_dir"; then
+		if ! git clone -q --depth 1 --single-branch --config \
+			advice.detachedHead=false "$url" "$temp_dir"; then
 			_printf "$(color cr "克隆失败") $url"
 			continue
 		fi
@@ -357,7 +357,7 @@ set_config (){
 			}
 			;;
 	esac
-	addpackage "luci-app-bypass luci-app-ddnsto luci-app-filebrowser luci-app-openclash luci-app-passwall luci-app-passwall2 luci-app-ssr-plus luci-app-timedtask luci-app-tinynote luci-app-ttyd luci-app-uhttpd luci-app-wizard luci-app-homeproxy luci-app-usb-printer luci-app-eqos diffutils patch luci-app-daed luci-app-nikki"
+	addpackage "luci-app-bypass luci-app-ddnsto luci-app-filebrowser luci-app-openclash luci-app-passwall luci-app-passwall2 luci-app-ssr-plus luci-app-timedtask luci-app-tinynote luci-app-ttyd luci-app-uhttpd luci-app-wizard luci-app-homeproxy luci-app-usb-printer luci-app-eqos diffutils patch luci-app-nikki"
 	delpackage "luci-app-ddns luci-app-autoreboot luci-app-wol luci-app-vlmcsd luci-app-filetransfer luci-app-turboacc"
 }
 
@@ -419,7 +419,7 @@ clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-poweroff luci-app-filebrowser \
 	luci-app-diskman luci-app-qbittorrent luci-app-wizard luci-app-ddnsto \
 	luci-app-softwarecenter luci-lib-docker luci-app-dockerman lsscsi
-clone_dir sbwml/openwrt_helloworld daed nikki luci-app-daed luci-app-nikki \
+clone_dir sbwml/openwrt_helloworld nikki luci-app-nikki \
 	luci-app-homeproxy chinadns-ng geoview sing-box trojan-plus xray-core
 clone_dir kiddin9/kwrt-packages luci-app-bypass lua-maxminddb \
 	#luci-app-pushbot luci-app-store luci-lib-taskd taskd luci-lib-xterm
