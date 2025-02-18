@@ -449,13 +449,15 @@ sed -Ei '{
 		s/((^| |    )(PKG_HASH|PKG_MD5SUM|PKG_MIRROR_HASH|HASH):=).*/\1skip/
 	}' package/A/*/Makefile 2>/dev/null
 
-find {package/A,feeds/luci/applications}/luci-app*/po -type d 2>/dev/null | while read p; do
-	if [[ -d $p/zh-cn && ! -e $p/zh_Hans ]]; then
-		ln -s zh-cn "$p/zh_Hans" 2>/dev/null
-	elif [[ -d $p/zh_Hans && ! -e $p/zh-cn ]]; then
-		ln -s zh_Hans "$p/zh-cn" 2>/dev/null
+find {package/A,feeds/luci/applications}/luci-app*/po \
+	-type d -print0 | xargs -0 -P$(nproc) -I{} bash -c '
+	dir="$1"
+	if [[ -d "$dir/zh-cn" && ! -e "$dir/zh_Hans" ]]; then
+		ln -sf zh-cn "$dir/zh_Hans" 2>/dev/null
+	elif [[ -d "$dir/zh_Hans" && ! -e "$dir/zh-cn" ]]; then
+		ln -sf zh_Hans "$dir/zh-cn" 2>/dev/null
 	fi
-done
+' _ {}
 
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')

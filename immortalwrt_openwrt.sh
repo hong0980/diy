@@ -381,6 +381,7 @@ if [[ "$TARGET_DEVICE" =~ x86_64|r1-plus-lts && "$REPO_BRANCH" =~ master|23|24 ]
 	# git_diff "feeds/luciapplications/luci-app-diskman" "feeds/luciapplications/luci-app-dockerman"
 	[[ $REPO_BRANCH =~ 23 ]] && clone_dir coolsnowwolf/packages golang
 	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns
+	clone_dir coolsnowwolf/lede iptables
 	addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer"
 fi
 
@@ -388,7 +389,7 @@ if [[ "$REPO_BRANCH" =~ 21|18 ]]; then
 	clone_url "fw876/helloworld xiaorouji/openwrt-passwall-packages"
 	create_directory "package/network/config/firewall4" "package/utils/ucode" "package/network/utils/fullconenat-nft" "package/libs/libmd" "package/kernel/bpf-headers"
 	clone_dir coolsnowwolf/lede automount ppp busybox parted r8101 r8125 r8168 firewall openssl \
-		bpf-headers firewall4 ucode fullconenat fullconenat-nft libmd
+		# bpf-headers firewall4 ucode fullconenat fullconenat-nft libmd
 	clone_dir coolsnowwolf/packages golang bandwidthd bash docker dockerd containerd runc \
 		btrfs-progs gawk jq nginx-util pciutils curl
 	[[ "$REPO_BRANCH" =~ 21 ]] && {
