@@ -379,7 +379,7 @@ if [[ "$TARGET_DEVICE" =~ x86_64|r1-plus-lts && "$REPO_BRANCH" =~ master|23|24 ]
 		addpackage "default-settings-chn autocore block-mount kmod-nf-nathelper kmod-nf-nathelper-extra luci-light luci-app-cpufreq luci-app-package-manager luci-compat luci-lib-base luci-lib-ipkg"
 	fi
 	# git_diff "feeds/luciapplications/luci-app-diskman" "feeds/luciapplications/luci-app-dockerman"
-	[[ $REPO_BRANCH =~ 23 ]] && clone_dir coolsnowwolf/packages golang
+	[[ $REPO_BRANCH =~ 23 ]] && clone_dir coolsnowwolf/packages golang bandwidthd docker dockerd containerd
 	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns
 	clone_dir coolsnowwolf/lede iptables
 	addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer"
