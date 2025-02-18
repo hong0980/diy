@@ -430,7 +430,7 @@ REPO_BRANCH=${REPO_BRANCH:-18.06}
 xc=$(find_first_dir "package/A feeds" "qBittorrent-static")
 [[ -d $xc ]] && sed -Ei "s/(PKG_VERSION:=).*/\1${qb_version:-4.5.2_v2.0.8}/" $xc/Makefile
 # sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
-sed -i 's/invalid users = root/#&/g' feeds/*/*/*/files/smb.conf.template
+# sed -i 's/invalid users = root/#&/g' feeds/*/*/*/files/smb.conf.template
 sed -i 's|/bin/login|/bin/login -f root|' feeds/*/*/*/files/ttyd.config
 sed -i 's/option enabled.*/option enabled 1/' feeds/*/*/*/*/upnpd.config
 sed -i "s/%R/-$SOURCE_NAME-$(TZ=UTC-8 date +%Y年%m月%d日)/" package/*/*/*/openwrt_release
@@ -440,14 +440,14 @@ sed -i "{
 		/upnp\|openwrt_release\|shadow/d
 		/uci commit system/i\uci set system.@system[0].hostname=OpenWrt
 		/uci commit system/a\uci set luci.main.mediaurlbase=/luci-static/bootstrap\nuci commit luci\n[ -f '/bin/bash' ] && sed -i '/\\\/ash$/s/ash/bash/' /etc/passwd\nsed -i 's/root::.*/root:\$1\$RysBCijW\$wIxPNkj9Ht9WhglXAXo4w0:18206:0:99999:7:::/g' /etc/shadow
-		}" package/lean/*/*/*default-settings
-git_apply "https://raw.githubusercontent.com/sbwml/openwrt_helloworld/refs/heads/v5/patch-luci-app-ssr-plus.patch" "feeds/helloworld"
-git_apply "https://raw.githubusercontent.com/sbwml/openwrt_helloworld/refs/heads/v5/patch-luci-app-passwall.patch" "feeds/luci/applications"
-sed -Ei \
-	-e 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|' \
-	-e 's?include ../(lang|devel)?include $(TOPDIR)/feeds/packages/\1?' \
-	-e "s/((^| |    )(PKG_HASH|PKG_MD5SUM|PKG_MIRROR_HASH|HASH):=).*/\1skip/" \
-	package/A/*/Makefile 2>/dev/null
+	}" package/lean/*/*/*default-settings
+# git_apply "https://raw.githubusercontent.com/sbwml/openwrt_helloworld/refs/heads/v5/patch-luci-app-ssr-plus.patch" "feeds/helloworld"
+# git_apply "https://raw.githubusercontent.com/sbwml/openwrt_helloworld/refs/heads/v5/patch-luci-app-passwall.patch" "feeds/luci/applications"
+sed -Ei '{
+		s|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|
+		s?include ../(lang|devel)?include $(TOPDIR)/feeds/packages/\1?
+		s/((^| |    )(PKG_HASH|PKG_MD5SUM|PKG_MIRROR_HASH|HASH):=).*/\1skip/
+	}' package/A/*/Makefile 2>/dev/null
 
 find {package/A,feeds/luci/applications}/luci-app*/po -type d 2>/dev/null | while read p; do
 	if [[ -d $p/zh-cn && ! -e $p/zh_Hans ]]; then
