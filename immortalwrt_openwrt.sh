@@ -381,7 +381,7 @@ if [[ "$TARGET_DEVICE" =~ x86_64|r1-plus-lts && "$REPO_BRANCH" =~ master|23|24 ]
 	# git_diff "feeds/luciapplications/luci-app-diskman" "feeds/luciapplications/luci-app-dockerman"
 	[[ $REPO_BRANCH =~ 23 ]] && clone_dir coolsnowwolf/packages golang bandwidthd docker dockerd containerd
 	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns
-	clone_dir coolsnowwolf/lede iptables
+	clone_dir coolsnowwolf/lede iptables firewall firewall4
 	addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer"
 fi
 
