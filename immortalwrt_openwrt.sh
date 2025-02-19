@@ -121,7 +121,7 @@ git_apply() {
 
 clone_dir() {
 	[[ $# -lt 1 ]] && return
-	local repo_url branch temp_dir=$(mktemp -d)
+	local repo_url branch temp_dir=$(mktemp -d) find_dir="package feeds target"
 	trap 'rm -rf "$temp_dir"' EXIT INT TERM
 	if [[ $1 == */* ]]; then
 		repo_url="$1"
@@ -130,6 +130,10 @@ clone_dir() {
 		branch="-b $1 --single-branch"
 		repo_url="$2"
 		shift 2
+	fi
+	if [[ $1 =~ ^(package|feeds|target)$ ]]; then
+		find_dir="$1"
+		shift
 	fi
 	[[ $repo_url =~ ^https?:// ]] || repo_url="https://github.com/$repo_url"
 
@@ -151,7 +155,7 @@ clone_dir() {
 			source_dir=$(find_first_dir "$temp_dir" "$target_dir")
 		fi
 		[[ -d "$source_dir" ]] || continue
-		current_dir=$(find_first_dir "package feeds target" "$target_dir")
+		current_dir=$(find_first_dir "$find_dir" "$target_dir")
 		destination_dir="${current_dir:-package/A/$target_dir}"
 
 		[[ -d "$current_dir" ]] && rm -rf "../$(basename "$current_dir")" && mv -f "$current_dir" ../
@@ -365,25 +369,21 @@ clone_dir vernesong/OpenClash luci-app-openclash
 clone_dir xiaorouji/openwrt-passwall luci-app-passwall
 clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir hong0980/build luci-app-ddnsto luci-app-diskman luci-app-dockerman \
-	luci-app-filebrowser luci-app-poweroff uci-app-qbittorrent luci-app-softwarecenter \
+	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
 	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi
 
-if [[ "$TARGET_DEVICE" =~ x86_64|r1-plus-lts && "$REPO_BRANCH" =~ master|23|24 ]]; then
+if [[ "$REPO_BRANCH" =~ master|23|24 ]]; then
+	[[ $REPO_BRANCH =~ 23 ]] && clone_dir coolsnowwolf/packages golang
 	if [[ $REPO =~ openwrt ]]; then
 		delpackage "dnsmasq"
 		create_directory "package/emortal"
 		clone_dir openwrt-24.10 immortalwrt/immortalwrt emortal
-		[[ $REPO_BRANCH =~ 23.05 ]] && clone_dir openwrt-24.10 coolsnowwolf/packages golang
-		# echo "src-git helloworld https://github.com/fw876/helloworld.git" >> feeds.conf.default
 		addpackage "default-settings-chn autocore block-mount kmod-nf-nathelper kmod-nf-nathelper-extra luci-light luci-app-cpufreq luci-app-package-manager luci-compat luci-lib-base luci-lib-ipkg"
 	fi
 	# git_diff "feeds/luciapplications/luci-app-diskman" "feeds/luciapplications/luci-app-dockerman"
-	[[ $REPO_BRANCH =~ 23 ]] && clone_dir coolsnowwolf/packages golang
 	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns
 	addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer"
-fi
-
-if [[ "$REPO_BRANCH" =~ 21|18 ]]; then
+else
 	clone_url "fw876/helloworld xiaorouji/openwrt-passwall-packages"
 	create_directory "package/network/config/firewall4" "package/utils/ucode" "package/network/utils/fullconenat-nft" "package/libs/libmd" "package/kernel/bpf-headers"
 	clone_dir coolsnowwolf/lede automount ppp busybox parted r8101 r8125 r8168 firewall openssl \
