@@ -379,7 +379,7 @@ if [[ "$TARGET_DEVICE" =~ x86_64|r1-plus-lts && "$REPO_BRANCH" =~ master|23|24 ]
 		addpackage "default-settings-chn autocore block-mount kmod-nf-nathelper kmod-nf-nathelper-extra luci-light luci-app-cpufreq luci-app-package-manager luci-compat luci-lib-base luci-lib-ipkg"
 	fi
 	# git_diff "feeds/luciapplications/luci-app-diskman" "feeds/luciapplications/luci-app-dockerman"
-	clone_dir coolsnowwolf/packages golang bandwidthd docker dockerd containerd miniupnpd
+	clone_dir coolsnowwolf/packages golang docker dockerd containerd runc miniupnpd alsa-utils
 	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns
 	clone_dir coolsnowwolf/lede iptables firewall firewall4
 	addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer"
@@ -390,7 +390,7 @@ if [[ "$REPO_BRANCH" =~ 21|18 ]]; then
 	create_directory "package/network/config/firewall4" "package/utils/ucode" "package/network/utils/fullconenat-nft" "package/libs/libmd" "package/kernel/bpf-headers"
 	clone_dir coolsnowwolf/lede automount ppp busybox parted r8101 r8125 r8168 firewall openssl \
 		# bpf-headers firewall4 ucode fullconenat fullconenat-nft libmd
-	clone_dir coolsnowwolf/packages golang bandwidthd bash docker dockerd containerd runc \
+	clone_dir coolsnowwolf/packages golang bash docker dockerd runc containerd \
 		btrfs-progs gawk jq nginx-util pciutils curl
 	[[ "$REPO_BRANCH" =~ 21 ]] && {
 		git_apply "https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/openwrt-21.02-dmesg.js.patch" "feeds/luci"
