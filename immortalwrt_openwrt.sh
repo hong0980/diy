@@ -120,20 +120,26 @@ git_apply() {
 }
 
 clone_dir() {
-	[[ $# -lt 1 ]] && return
-	local repo_url branch temp_dir=$(mktemp -d)
+	[[ $# -lt 1 ]] && { _printf "Usage: clone_dir [branch] <repo_url> [find_dir]"; return 1; }
+	local repo_url branch temp_dir=$(mktemp -d) find_dir="package feeds target"
 	trap 'rm -rf "$temp_dir"' EXIT INT TERM
-	if [[ $1 == */* ]]; then
-		repo_url="$1"
-		shift
-	else
+
+	if [[ $1 != */* ]] && git check-ref-format --allow-onelevel "$1"; then
 		branch="-b $1 --single-branch"
 		repo_url="$2"
 		shift 2
+	else
+		repo_url="$1"
+		shift
 	fi
-	[[ $repo_url =~ ^https?:// ]] || repo_url="https://github.com/$repo_url"
 
-	git clone -q $branch --depth 1 "$repo_url" $temp_dir 2>/dev/null || {
+	[[ $1 =~ ^(package|feeds|target)$ ]] && { find_dir="$1"; shift; }
+
+	[[ $repo_url =~ ^https?:// ]] || repo_url="https://github.com/$repo_url"
+	repo_name=${repo_url##*/}
+	repo_name=${repo_name%.git}
+
+	git clone -q "$branch" --depth 1 "$repo_url" $temp_dir 2>/dev/null || {
 		_printf "$(color cr 拉取) $repo_url [ $(color cr ✕) ]"
 		return 1
 	}
@@ -144,14 +150,14 @@ clone_dir() {
 
 	for target_dir in $@; do
 		local source_dir current_dir destination_dir
-		if [[ ${repo_url##*/} == ${target_dir} ]]; then
+		if [[ $repo_name == ${target_dir} ]]; then
 			mv -f ${temp_dir} ${target_dir}
 			source_dir=${target_dir}
 		else
 			source_dir=$(find_first_dir "$temp_dir" "$target_dir")
 		fi
 		[[ -d "$source_dir" ]] || continue
-		current_dir=$(find_first_dir "package feeds target" "$target_dir")
+		current_dir=$(find_first_dir "$find_dir" "$target_dir")
 		destination_dir="${current_dir:-package/A/$target_dir}"
 
 		[[ -d "$current_dir" ]] && rm -rf "../$(basename "$current_dir")" && mv -f "$current_dir" ../
@@ -364,33 +370,32 @@ git_clone
 clone_dir vernesong/OpenClash luci-app-openclash
 clone_dir xiaorouji/openwrt-passwall luci-app-passwall
 clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
-clone_dir hong0980/build luci-app-cowb-speedlimit luci-app-cowbping luci-app-ddnsto \
-	luci-app-diskman luci-app-dockerman luci-app-filebrowser luci-app-poweroff \
-	luci-app-pwdHackDeny luci-app-qbittorrent luci-app-softwarecenter luci-app-timedtask \
-	luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi
+clone_dir hong0980/build luci-app-ddnsto luci-app-diskman luci-app-dockerman \
+	luci-app-filebrowser luci-app-poweroff uci-app-qbittorrent luci-app-softwarecenter \
+	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi
 
 if [[ "$TARGET_DEVICE" =~ x86_64|r1-plus-lts && "$REPO_BRANCH" =~ master|23|24 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
 		delpackage "dnsmasq"
 		create_directory "package/emortal"
-		clone_dir openwrt-24.10 immortalwrt/immortalwrt emortal
-		[[ $REPO_BRANCH =~ 23.05 ]] && clone_dir openwrt/packages openwrt-24.10 golang
+		clone_dir openwrt-24.10 immortalwrt/immortalwrt package emortal
+		[[ $REPO_BRANCH =~ 23.05 ]] && clone_dir openwrt-24.10 openwrt/packages feeds golang
 		# echo "src-git helloworld https://github.com/fw876/helloworld.git" >> feeds.conf.default
 		addpackage "default-settings-chn autocore block-mount kmod-nf-nathelper kmod-nf-nathelper-extra luci-light luci-app-cpufreq luci-app-package-manager luci-compat luci-lib-base luci-lib-ipkg"
 	fi
 	# git_diff "feeds/luciapplications/luci-app-diskman" "feeds/luciapplications/luci-app-dockerman"
-	clone_dir coolsnowwolf/packages golang docker dockerd containerd runc miniupnpd alsa-utils
-	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns
-	clone_dir coolsnowwolf/lede iptables firewall firewall4
+	clone_dir coolsnowwolf/packages feeds golang docker dockerd containerd runc miniupnpd alsa-utils
+	clone_dir fw876/helloworld feeds luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns
+	clone_dir coolsnowwolf/lede package iptables firewall firewall4 gettext-full
 	addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer"
 fi
 
 if [[ "$REPO_BRANCH" =~ 21|18 ]]; then
 	clone_url "fw876/helloworld xiaorouji/openwrt-passwall-packages"
 	create_directory "package/network/config/firewall4" "package/utils/ucode" "package/network/utils/fullconenat-nft" "package/libs/libmd" "package/kernel/bpf-headers"
-	clone_dir coolsnowwolf/lede automount ppp busybox parted r8101 r8125 r8168 firewall openssl \
+	clone_dir coolsnowwolf/lede package automount ppp busybox parted r8101 r8125 r8168 firewall openssl \
 		# bpf-headers firewall4 ucode fullconenat fullconenat-nft libmd
-	clone_dir coolsnowwolf/packages golang bash docker dockerd runc containerd \
+	clone_dir coolsnowwolf/packages feeds golang bash docker dockerd runc containerd \
 		btrfs-progs gawk jq nginx-util pciutils curl
 	[[ "$REPO_BRANCH" =~ 21 ]] && {
 		git_apply "https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/openwrt-21.02-dmesg.js.patch" "feeds/luci"
