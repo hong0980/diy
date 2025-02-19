@@ -373,14 +373,13 @@ if [[ "$TARGET_DEVICE" =~ x86_64|r1-plus-lts && "$REPO_BRANCH" =~ master|23|24 ]
 		delpackage "dnsmasq"
 		create_directory "package/emortal"
 		clone_dir openwrt-24.10 immortalwrt/immortalwrt emortal
-		[[ $REPO_BRANCH =~ 23.05 ]] && clone_dir openwrt-24.10 openwrt/packages golang
+		[[ $REPO_BRANCH =~ 23.05 ]] && clone_dir openwrt-24.10 coolsnowwolf/packages golang
 		# echo "src-git helloworld https://github.com/fw876/helloworld.git" >> feeds.conf.default
 		addpackage "default-settings-chn autocore block-mount kmod-nf-nathelper kmod-nf-nathelper-extra luci-light luci-app-cpufreq luci-app-package-manager luci-compat luci-lib-base luci-lib-ipkg"
 	fi
 	# git_diff "feeds/luciapplications/luci-app-diskman" "feeds/luciapplications/luci-app-dockerman"
-	clone_dir coolsnowwolf/packages golang docker dockerd containerd runc miniupnpd alsa-utils
+	[[ $REPO_BRANCH =~ 23 ]] && clone_dir coolsnowwolf/packages golang
 	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns
-	clone_dir coolsnowwolf/lede iptables firewall firewall4 gettext-full
 	addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer"
 fi
 
