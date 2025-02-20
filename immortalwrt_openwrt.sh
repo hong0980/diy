@@ -382,8 +382,8 @@ if [[ "$REPO_BRANCH" =~ master|23|24 ]]; then
 	else
 		clone_dir openwrt/luci luci-app-dockerman luci-lib-docker
 	fi
-	git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
-	# git_diff "feeds/luciapplications/luci-app-diskman" "feeds/luciapplications/luci-app-dockerman"
+	git_diff "feeds/luci/collections/luci-lib-docker"
+	git_diff "feeds/luci/applications/luci-app-dockerman"
 	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns
 	addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer luci-app-nikki"
 else
