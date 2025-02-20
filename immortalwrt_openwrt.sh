@@ -88,7 +88,7 @@ git_diff() {
 		fi
 
 		if [[ -d "$i" || -f "$i" ]]; then
-			patch_file="$GITHUB_WORKSPACE/firmware/${REPO_BRANCH}-${i##*/}.patch"
+			patch_file="$GITHUB_WORKSPACE/firmware/${REPO}-${REPO_BRANCH}-${i##*/}.patch"
 			git diff -- "$i" > "$patch_file"
 			[[ -s "$patch_file" ]] && _printf "$(color cm 生成) ${patch_file##*/} [ $(color cg ✔) ]" || rm "$patch_file"
 		fi
