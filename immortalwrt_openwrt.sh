@@ -143,7 +143,7 @@ clone_dir() {
 	}
 
 	# [[ $repo_url =~ kiddin9/kwrt-packages && $REPO_BRANCH =~ 21 ]] && set -- "$@" "luci-app-homeproxy" #"fullconenat" "fullconenat-nft"
-	[[ $repo_url =~ sbwml/openwrt_helloworld && $REPO =~ openwrt ]] && set -- "$@" "dns2socks" "dns2tcp" "hysteria" "ipt2socks" "lua-neturl" "luci-app-homeproxy" "microsocks" "naiveproxy" "pdnsd" "redsocks2" "simple-obfs" "tcping" "trojan" "tuic-client" "v2ray-core" "v2ray-geodata" "v2ray-plugin" "xray-plugin"
+	[[ $repo_url =~ sbwml/openwrt_helloworld && $REPO =~ openwrt ]] && set -- "$@" "dns2socks" "dns2tcp" "hysteria" "ipt2socks" "luci-app-homeproxy" "microsocks" "naiveproxy" "pdnsd" "redsocks2" "simple-obfs" "tcping" "trojan" "tuic-client" "v2ray-core" "v2ray-geodata" "v2ray-plugin" "xray-plugin"
 	[[ $repo_url =~ sbwml/openwrt_helloworld && ! $REPO_BRANCH =~ 18|21 ]] && set -- "$@" daed luci-app-daed nikki luci-app-nikki
 
 	for target_dir in $@; do
@@ -382,7 +382,7 @@ if [[ "$REPO_BRANCH" =~ master|23|24 ]]; then
 	fi
 	# git_diff "feeds/luci/collections/luci-lib-docker"
 	# git_diff "feeds/luci/applications/luci-app-dockerman"
-	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns
+	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns lua-neturl
 	addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer luci-app-nikki"
 else
 	clone_url "fw876/helloworld xiaorouji/openwrt-passwall-packages"
