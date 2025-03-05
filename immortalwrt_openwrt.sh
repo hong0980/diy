@@ -379,11 +379,9 @@ if [[ "$REPO_BRANCH" =~ master|23|24 ]]; then
 		create_directory "package/emortal"
 		clone_dir openwrt-24.10 immortalwrt/immortalwrt emortal bcm27xx-utils
 		addpackage "default-settings-chn autocore block-mount kmod-nf-nathelper kmod-nf-nathelper-extra luci-light luci-app-cpufreq luci-app-package-manager luci-compat luci-lib-base luci-lib-ipkg"
-	else
-		clone_dir openwrt/luci luci-app-dockerman luci-lib-docker
 	fi
-	git_diff "feeds/luci/collections/luci-lib-docker"
-	git_diff "feeds/luci/applications/luci-app-dockerman"
+	# git_diff "feeds/luci/collections/luci-lib-docker"
+	# git_diff "feeds/luci/applications/luci-app-dockerman"
 	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns
 	addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer luci-app-nikki"
 else
