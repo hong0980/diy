@@ -386,7 +386,7 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
 		delpackage "dnsmasq"
 		create_directory "package/emortal"
-		clone_dir $REPO immortalwrt/immortalwrt emortal bcm27xx-utils
+		clone_dir $REPO_BRANCH immortalwrt/immortalwrt emortal bcm27xx-utils
 		addpackage "default-settings-chn autocore block-mount kmod-nf-nathelper kmod-nf-nathelper-extra luci-light luci-app-cpufreq luci-app-package-manager luci-compat luci-lib-base luci-lib-ipkg"
 	fi
 	clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
