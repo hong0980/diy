@@ -172,7 +172,7 @@ clone_dir() {
 			if [[ -d "$current_dir" ]]; then
 				_printf "$(color cg 替换) $target_dir [ $(color cg ✔) ]"
 			else
-				_printf "$(color cb 添加) $target_dir [ $(color cb ✔) ]"
+				_printf "$(color cb 添加) $target_dir $destination_dir [ $(color cb ✔) ]"
 			fi
 		fi
 	done
@@ -374,7 +374,7 @@ SOURCE_NAME=$(basename $(dirname $REPO_URL))
 config_generate="package/base-files/files/bin/config_generate"
 git_clone
 
-[[ $REPO =~ openwrt ]] && create_directory "package/emortal/luci-app-passwall"
+[[ $REPO =~ openwrt ]] && create_directory "package/emortal/luci-app-passwall2"
 clone_dir vernesong/OpenClash luci-app-openclash
 clone_dir xiaorouji/openwrt-passwall luci-app-passwall
 clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
@@ -394,7 +394,7 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
 	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns lua-neturl
 	addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer luci-app-nikki"
-	passwall_qrcode='package/A/luci-app-passwall2/htdocs/luci-static/resources/qrcode.min.js'
+	passwall_qrcode='package/emortal/luci-app-passwall2/htdocs/luci-static/resources/qrcode.min.js'
 	[[ $REPO == 'immortalwrt' && $REPO_BRANCH == 'master' && -f $passwall_qrcode ]] && rm $passwall_qrcode
 else
 	clone_url "fw876/helloworld xiaorouji/openwrt-passwall-packages"
