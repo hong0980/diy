@@ -374,7 +374,7 @@ SOURCE_NAME=$(basename $(dirname $REPO_URL))
 config_generate="package/base-files/files/bin/config_generate"
 git_clone
 
-[[ $REPO =~ openwrt ]] && create_directory "package/emortal/luci-app-passwall2"
+[[ $REPO =~ openwrt ]] && create_directory "package/emortal/luci-app-passwall2/po"
 clone_dir vernesong/OpenClash luci-app-openclash
 clone_dir xiaorouji/openwrt-passwall luci-app-passwall
 clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
