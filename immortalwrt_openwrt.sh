@@ -393,6 +393,8 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
 	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns lua-neturl
 	addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer luci-app-nikki"
+	passwall_qrcode='package/A/luci-app-passwall2/htdocs/luci-static/resources/qrcode.min.js'
+	[[ $REPO == 'immortalwrt' && $REPO_BRANCH == 'master' && -f $passwall_qrcode ]] && rm $passwall_qrcode
 else
 	clone_url "fw876/helloworld xiaorouji/openwrt-passwall-packages"
 	create_directory "package/network/config/firewall4" "package/utils/ucode" "package/network/utils/fullconenat-nft" "package/libs/libmd" "package/kernel/bpf-headers"
