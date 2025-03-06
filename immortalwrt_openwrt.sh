@@ -144,7 +144,16 @@ clone_dir() {
 
 	# [[ $repo_url =~ kiddin9/kwrt-packages && $REPO_BRANCH =~ 21 ]] && set -- "$@" "luci-app-homeproxy" #"fullconenat" "fullconenat-nft"
 	[[ $repo_url =~ sbwml/openwrt_helloworld && $REPO =~ openwrt ]] && set -- "$@" "dns2socks" "dns2tcp" "hysteria" "ipt2socks" "luci-app-homeproxy" "microsocks" "naiveproxy" "pdnsd" "redsocks2" "simple-obfs" "tcping" "trojan" "tuic-client" "v2ray-core" "v2ray-geodata" "v2ray-plugin" "xray-plugin"
-	[[ $repo_url =~ sbwml/openwrt_helloworld && ! $REPO_BRANCH =~ 18|21 ]] && set -- "$@" daed luci-app-daed nikki luci-app-nikki
+
+	if [[ $repo_url =~ hong0980 && $REPO =~ openwrt ]]; then
+		local new_args=()
+		for arg in "$@"; do
+			if [[ "$arg" != "luci-app-dockerman" && "$arg" != "luci-lib-docker" ]]; then
+				new_args+=("$arg")
+			fi
+		done
+		set -- "${new_args[@]}"
+	fi
 
 	for target_dir in $@; do
 		local source_dir current_dir destination_dir
@@ -380,8 +389,8 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 		clone_dir openwrt-24.10 immortalwrt/immortalwrt emortal bcm27xx-utils
 		addpackage "default-settings-chn autocore block-mount kmod-nf-nathelper kmod-nf-nathelper-extra luci-light luci-app-cpufreq luci-app-package-manager luci-compat luci-lib-base luci-lib-ipkg"
 	fi
-	# git_diff "feeds/luci/collections/luci-lib-docker"
-	# git_diff "feeds/luci/applications/luci-app-dockerman"
+	clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
+	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
 	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns lua-neturl
 	addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer luci-app-nikki"
 else
