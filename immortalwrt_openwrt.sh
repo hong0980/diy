@@ -374,7 +374,6 @@ SOURCE_NAME=$(basename $(dirname $REPO_URL))
 config_generate="package/base-files/files/bin/config_generate"
 git_clone
 
-[[ $REPO =~ openwrt ]] && create_directory "package/emortal/luci-app-passwall2/po"
 clone_dir vernesong/OpenClash luci-app-openclash
 clone_dir xiaorouji/openwrt-passwall luci-app-passwall
 clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
@@ -387,15 +386,15 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
 		delpackage "dnsmasq"
 		create_directory "package/emortal"
-		clone_dir openwrt-24.10 immortalwrt/immortalwrt emortal bcm27xx-utils
+		clone_dir $REPO immortalwrt/immortalwrt emortal bcm27xx-utils
 		addpackage "default-settings-chn autocore block-mount kmod-nf-nathelper kmod-nf-nathelper-extra luci-light luci-app-cpufreq luci-app-package-manager luci-compat luci-lib-base luci-lib-ipkg"
 	fi
 	clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
 	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
 	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns lua-neturl
 	addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer luci-app-nikki"
-	passwall_qrcode='package/emortal/luci-app-passwall2/htdocs/luci-static/resources/qrcode.min.js'
-	[[ $REPO == 'immortalwrt' && $REPO_BRANCH == 'master' && -f $passwall_qrcode ]] && rm $passwall_qrcode
+
+	[[ $REPO =~ openwrt && $REPO_BRANCH == 'master' ]] && rm package/*/luci-app-passwall2/htdocs/luci-static/resources/qrcode.min.js
 else
 	clone_url "fw876/helloworld xiaorouji/openwrt-passwall-packages"
 	create_directory "package/network/config/firewall4" "package/utils/ucode" "package/network/utils/fullconenat-nft" "package/libs/libmd" "package/kernel/bpf-headers"
