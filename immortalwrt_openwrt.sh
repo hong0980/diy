@@ -415,7 +415,7 @@ fi
 
 clone_dir kiddin9/kwrt-packages chinadns-ng geoview lua-maxminddb luci-app-bypass luci-app-nlbwmon \
 	luci-app-pushbot luci-app-store luci-app-syncdial luci-lib-taskd luci-lib-xterm qBittorrent-static taskd trojan-plus
-clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box nikki luci-app-nikki
+clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box
 delpackage "luci-app-filetransfer luci-app-turboacc"
 
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
