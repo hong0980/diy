@@ -170,7 +170,7 @@ clone_dir() {
 		[[ -d "$current_dir" ]] && rm -rf "../$(basename "$current_dir")" && mv -f "$current_dir" ../
 		if mv -f "$source_dir" "${destination_dir%/*}"; then
 			if [[ -d "$current_dir" ]]; then
-				_printf "$(color cg 替换) $target_dir $destination_dir [ $(color cg ✔) ]"
+				_printf "$(color cg 替换) $target_dir [ $(color cg ✔) ]"
 			else
 				_printf "$(color cb 添加) $target_dir [ $(color cb ✔) ]"
 			fi
