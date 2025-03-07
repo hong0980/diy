@@ -145,15 +145,15 @@ clone_dir() {
 	# [[ $repo_url =~ kiddin9/kwrt-packages && $REPO_BRANCH =~ 21 ]] && set -- "$@" "luci-app-homeproxy" #"fullconenat" "fullconenat-nft"
 	[[ $repo_url =~ sbwml/openwrt_helloworld && $REPO =~ openwrt ]] && set -- "$@" "dns2socks" "dns2tcp" "hysteria" "ipt2socks" "luci-app-homeproxy" "microsocks" "naiveproxy" "pdnsd" "redsocks2" "simple-obfs" "tcping" "trojan" "tuic-client" "v2ray-core" "v2ray-geodata" "v2ray-plugin" "xray-plugin"
 
-	if [[ $repo_url =~ hong0980 && $REPO =~ openwrt ]]; then
-		local new_args=()
-		for arg in "$@"; do
-			if [[ "$arg" != "luci-app-dockerman" && "$arg" != "luci-lib-docker" ]]; then
-				new_args+=("$arg")
-			fi
-		done
-		set -- "${new_args[@]}"
-	fi
+	# if [[ $repo_url =~ hong0980 && $REPO =~ openwrt ]]; then
+	# 	local new_args=()
+	# 	for arg in "$@"; do
+	# 		if [[ "$arg" != "luci-app-dockerman" && "$arg" != "luci-lib-docker" ]]; then
+	# 			new_args+=("$arg")
+	# 		fi
+	# 	done
+	# 	set -- "${new_args[@]}"
+	# fi
 
 	for target_dir in $@; do
 		local source_dir current_dir destination_dir
