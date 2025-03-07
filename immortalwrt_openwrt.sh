@@ -379,17 +379,16 @@ clone_dir xiaorouji/openwrt-passwall luci-app-passwall
 clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir hong0980/build luci-app-ddnsto luci-app-diskman luci-app-dockerman \
 	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
-	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi
+	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi golang
 
 if [[ $REPO_BRANCH =~ master|23|24 ]]; then
-	[[ $REPO_BRANCH =~ 23 ]] && clone_dir coolsnowwolf/packages golang docker dockerd containerd runc
+	[[ $REPO_BRANCH =~ 23 ]] && clone_dir coolsnowwolf/packages docker dockerd containerd runc
 	if [[ $REPO =~ openwrt ]]; then
 		delpackage "dnsmasq"
 		create_directory "package/emortal"
 		clone_dir $REPO_BRANCH immortalwrt/immortalwrt emortal bcm27xx-utils
 		addpackage "default-settings-chn autocore block-mount kmod-nf-nathelper kmod-nf-nathelper-extra luci-light luci-app-cpufreq luci-app-package-manager luci-compat luci-lib-base luci-lib-ipkg"
 	fi
-	clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
 	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
 	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns lua-neturl
 	addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer luci-app-nikki"
@@ -400,7 +399,7 @@ else
 	create_directory "package/network/config/firewall4" "package/utils/ucode" "package/network/utils/fullconenat-nft" "package/libs/libmd" "package/kernel/bpf-headers"
 	clone_dir coolsnowwolf/lede automount ppp busybox parted r8101 r8125 r8168 firewall openssl \
 		# bpf-headers firewall4 ucode fullconenat fullconenat-nft libmd
-	clone_dir coolsnowwolf/packages golang bash docker dockerd containerd runc \
+	clone_dir coolsnowwolf/packages bash docker dockerd containerd runc \
 		btrfs-progs gawk jq nginx-util pciutils curl
 	[[ "$REPO_BRANCH" =~ 21 ]] && {
 		git_apply "https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/openwrt-21.02-dmesg.js.patch" "feeds/luci"
@@ -414,7 +413,7 @@ fi
 
 clone_dir kiddin9/kwrt-packages chinadns-ng geoview lua-maxminddb luci-app-bypass luci-app-nlbwmon \
 	luci-app-pushbot luci-app-store luci-app-syncdial luci-lib-taskd luci-lib-xterm qBittorrent-static taskd trojan-plus
-clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box
+clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box nikki luci-app-nikki
 delpackage "luci-app-filetransfer luci-app-turboacc"
 
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
@@ -442,7 +441,7 @@ find {package/A,feeds/luci/applications}/luci-app*/po -type d 2>/dev/null | whil
 	fi
 done
 
-sed -i '/qbittorrent/d' .config
+[[ $REPO_BRANCH =~ master ]] && sed -i '/qbittorrent/d' .config
 
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
