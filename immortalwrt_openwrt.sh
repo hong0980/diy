@@ -393,7 +393,7 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns lua-neturl
 	addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer luci-app-nikki"
 
-	[[ $REPO =~ openwrt && $REPO_BRANCH == 'master' ]] && rm package/*/luci-app-passwall2/htdocs/luci-static/resources/qrcode.min.js
+	[[ $REPO_BRANCH == 'master' ]] && rm package/*/luci-app-passwall2/htdocs/luci-static/resources/qrcode.min.js
 else
 	clone_url "fw876/helloworld xiaorouji/openwrt-passwall-packages"
 	create_directory "package/network/config/firewall4" "package/utils/ucode" "package/network/utils/fullconenat-nft" "package/libs/libmd" "package/kernel/bpf-headers"
