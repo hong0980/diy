@@ -142,8 +142,8 @@ clone_dir() {
 		return 1
 	}
 
-	# [[ $repo_url =~ kiddin9/kwrt-packages && $REPO_BRANCH =~ 21 ]] && set -- "$@" "luci-app-homeproxy" #"fullconenat" "fullconenat-nft"
-	[[ $repo_url =~ sbwml/openwrt_helloworld && $REPO =~ openwrt ]] && set -- "$@" "dns2socks" "dns2tcp" "hysteria" "ipt2socks" "luci-app-homeproxy" "microsocks" "naiveproxy" "pdnsd" "redsocks2" "simple-obfs" "tcping" "trojan" "tuic-client" "v2ray-core" "v2ray-geodata" "v2ray-plugin" "xray-plugin"
+	[[ $repo_url =~ hong0980 && $REPO_BRANCH =~ 21|23|24 ]] && set -- "$@" " golang"
+	[[ $repo_url =~ sbwml && $REPO =~ openwrt ]] && set -- "$@" "dns2socks" "dns2tcp" "hysteria" "ipt2socks" "luci-app-homeproxy" "microsocks" "naiveproxy" "pdnsd" "redsocks2" "simple-obfs" "tcping" "trojan" "tuic-client" "v2ray-core" "v2ray-geodata" "v2ray-plugin" "xray-plugin"
 
 	# if [[ $repo_url =~ hong0980 && $REPO =~ openwrt ]]; then
 	# 	local new_args=()
@@ -379,7 +379,7 @@ clone_dir xiaorouji/openwrt-passwall luci-app-passwall
 clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir hong0980/build luci-app-ddnsto luci-app-diskman luci-app-dockerman \
 	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
-	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi golang
+	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi
 
 if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 	[[ $REPO_BRANCH =~ 23 ]] && clone_dir coolsnowwolf/packages docker dockerd containerd runc
@@ -389,6 +389,7 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 		clone_dir $REPO_BRANCH immortalwrt/immortalwrt emortal bcm27xx-utils
 		addpackage "default-settings-chn autocore block-mount kmod-nf-nathelper kmod-nf-nathelper-extra luci-light luci-app-cpufreq luci-app-package-manager luci-compat luci-lib-base luci-lib-ipkg"
 	fi
+	clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
 	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
 	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns lua-neturl
 	addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer luci-app-nikki"
@@ -413,7 +414,7 @@ fi
 
 clone_dir kiddin9/kwrt-packages chinadns-ng geoview lua-maxminddb luci-app-bypass luci-app-nlbwmon \
 	luci-app-pushbot luci-app-store luci-app-syncdial luci-lib-taskd luci-lib-xterm qBittorrent-static taskd trojan-plus
-clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box nikki luci-app-nikki
+clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box
 delpackage "luci-app-filetransfer luci-app-turboacc"
 
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
