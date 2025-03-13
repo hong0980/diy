@@ -175,7 +175,6 @@ clone_dir() {
 				_printf "$(color cb 添加) $target_dir [ $(color cb ✔) ]"
 			fi
 		fi
-		[[ $repo_url =~ hong0980 && $target_dir =~ dockerman && $REPO =~ openwrt ]] && rm -rf feeds/luci/applications/luci-app-dockerman/root/etc
 	done
 }
 
