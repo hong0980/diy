@@ -425,6 +425,7 @@ sed -i 's|/bin/login|/bin/login -f root|' feeds/packages/utils/ttyd/files/ttyd.c
 sed -i "/DISTRIB_DESCRIPTION/ {s/'$/-$SOURCE_NAME-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/openwrt_release || true
 sed -i "/VERSION_NUMBER/ s/if.*/if \$(VERSION_NUMBER),\$(VERSION_NUMBER),${REPO_BRANCH#*-}-SNAPSHOT)/" include/version.mk || true
 sed -i "\$i\uci -q set upnpd.config.enabled=\"1\"\nuci commit upnpd\nuci -q set system.@system[0].hostname=\"OpenWrt\"\nuci commit system\nuci -q set luci.main.mediaurlbase=\"/luci-static/bootstrap\"\nuci commit luci\nsed -i 's/root:.*/root:\$1\$pn1ABFaI\$vt5cmIjlr6M7Z79Eds2lV0:16821:0:99999:7:::/g' /etc/shadow" package/emortal/*/files/*default-settings
+git_diff package/emortal/default-settings
 
 xc=$(find_first_dir "package/A feeds" "qBittorrent-static")
 [[ -d $xc ]] && sed -Ei "s/(PKG_VERSION:=).*/\1${qb_version:-4.5.2_v2.0.8}/" $xc/Makefile
