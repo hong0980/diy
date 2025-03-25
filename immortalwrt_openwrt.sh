@@ -381,7 +381,7 @@ clone_dir hong0980/build luci-app-ddnsto luci-app-diskman luci-app-dockerman \
 	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
 	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi
 
-if [[ $REPO_BRANCH =~ master|23|24 ]]; then
+if [[ $REPO_BRANCH =~ main|master|23|24 ]]; then
 	[[ $REPO_BRANCH =~ 23 ]] && clone_dir coolsnowwolf/packages docker dockerd containerd runc
 	if [[ $REPO =~ openwrt ]]; then
 		delpackage "dnsmasq"
