@@ -380,7 +380,7 @@ clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir hong0980/build luci-app-ddnsto luci-app-diskman luci-app-dockerman \
 	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
 	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi
-clone_dir openwrt/packages docker dockerd containerd docker-compose runc
+[[ $REPO != 'openwrt' ]] && clone_dir openwrt/packages docker dockerd containerd docker-compose runc
 
 if [[ $REPO_BRANCH =~ main|master|23|24 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
