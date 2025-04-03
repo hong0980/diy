@@ -380,9 +380,9 @@ clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir hong0980/build luci-app-ddnsto luci-app-diskman luci-app-dockerman \
 	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
 	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi
+clone_dir openwrt/packages docker dockerd containerd docker-compose runc
 
 if [[ $REPO_BRANCH =~ main|master|23|24 ]]; then
-	[[ $REPO_BRANCH =~ 23 ]] && clone_dir coolsnowwolf/packages docker dockerd containerd runc
 	if [[ $REPO =~ openwrt ]]; then
 		delpackage "dnsmasq"
 		create_directory "package/emortal"
@@ -401,8 +401,7 @@ else
 	create_directory "package/network/config/firewall4" "package/utils/ucode" "package/network/utils/fullconenat-nft" "package/libs/libmd" "package/kernel/bpf-headers"
 	clone_dir coolsnowwolf/lede automount ppp busybox parted r8101 r8125 r8168 firewall openssl \
 		# bpf-headers firewall4 ucode fullconenat fullconenat-nft libmd
-	clone_dir coolsnowwolf/packages bash docker dockerd containerd runc \
-		btrfs-progs gawk jq nginx-util pciutils curl
+	clone_dir coolsnowwolf/packages bash btrfs-progs gawk jq nginx-util pciutils curl
 	[[ "$REPO_BRANCH" =~ 21 ]] && {
 		git_apply "https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/openwrt-21.02-dmesg.js.patch" "feeds/luci"
 		git_apply "https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/openwrt-21.02-syslog.js.patch" "feeds/luci"

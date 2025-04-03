@@ -419,10 +419,12 @@ clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-poweroff luci-app-filebrowser \
 	luci-app-diskman luci-app-qbittorrent luci-app-wizard luci-app-ddnsto \
 	luci-app-softwarecenter luci-lib-docker luci-app-dockerman lsscsi
-clone_dir sbwml/openwrt_helloworld nikki luci-app-nikki \
-	luci-app-homeproxy chinadns-ng geoview sing-box trojan-plus xray-core
+clone_dir sbwml/openwrt_helloworld luci-app-homeproxy chinadns-ng \
+	geoview sing-box trojan-plus xray-core
 clone_dir kiddin9/kwrt-packages luci-app-bypass lua-maxminddb \
 	#luci-app-pushbot luci-app-store luci-lib-taskd taskd luci-lib-xterm
+clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
+clone_dir openwrt/packages docker dockerd containerd docker-compose runc
 
 REPO_BRANCH=$(sed -En 's/^src-git luci.*;(.*)/\1/p' feeds.conf.default)
 REPO_BRANCH=${REPO_BRANCH:-18.06}
