@@ -370,6 +370,7 @@ REPO=${REPO:-immortalwrt}
 REPO_URL="https://github.com/$REPO/$REPO"
 SOURCE_NAME=$(basename $(dirname $REPO_URL))
 config_generate="package/base-files/files/bin/config_generate"
+REPO_BRANCH=${REPO_BRANCH/main/master}
 git_clone
 
 clone_dir vernesong/OpenClash luci-app-openclash
@@ -380,12 +381,11 @@ clone_dir hong0980/build luci-app-ddnsto luci-app-diskman luci-app-dockerman \
 	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi golang
 [[ $REPO != 'openwrt' ]] && clone_dir openwrt/packages docker dockerd containerd docker-compose runc
 
-if [[ $REPO_BRANCH =~ main|master|23|24 ]]; then
+if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
 		delpackage "dnsmasq"
 		create_directory "package/emortal"
-		repo=$([ "$REPO_BRANCH" = "main" ] && echo 'master' || echo "$REPO_BRANCH")
-		clone_dir $repo immortalwrt/immortalwrt emortal bcm27xx-utils
+		clone_dir $REPO_BRANCH immortalwrt/immortalwrt emortal bcm27xx-utils
 		addpackage "default-settings-chn autocore block-mount kmod-nf-nathelper kmod-nf-nathelper-extra luci-light luci-app-cpufreq luci-app-package-manager luci-compat luci-lib-base luci-lib-ipkg"
 	fi
 	clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
