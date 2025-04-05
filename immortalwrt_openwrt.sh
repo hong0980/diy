@@ -141,19 +141,17 @@ clone_dir() {
 		_printf "$(color cr 拉取) $repo_url [ $(color cr ✕) ]"
 		return 1
 	}
-
-	[[ $repo_url =~ hong0980 && $REPO_BRANCH =~ 21|23|24 ]] && set -- "$@" " golang"
 	[[ $repo_url =~ sbwml && $REPO =~ openwrt ]] && set -- "$@" "dns2socks" "dns2tcp" "hysteria" "ipt2socks" "luci-app-homeproxy" "microsocks" "naiveproxy" "pdnsd" "redsocks2" "simple-obfs" "tcping" "trojan" "tuic-client" "v2ray-core" "v2ray-geodata" "v2ray-plugin" "xray-plugin"
 
-	# if [[ $repo_url =~ hong0980 && $REPO =~ openwrt ]]; then
-	# 	local new_args=()
-	# 	for arg in "$@"; do
-	# 		if [[ "$arg" != "luci-app-dockerman" && "$arg" != "luci-lib-docker" ]]; then
-	# 			new_args+=("$arg")
-	# 		fi
-	# 	done
-	# 	set -- "${new_args[@]}"
-	# fi
+	if [[ $repo_url =~ hong0980 && $REPO =~ openwrt ]]; then
+		local new_args=()
+		for arg in "$@"; do
+			if [[ "$arg" != "luci-app-dockerman" && "$arg" != "luci-lib-docker" ]]; then
+				new_args+=("$arg")
+			fi
+		done
+		set -- "${new_args[@]}"
+	fi
 
 	for target_dir in $@; do
 		local source_dir current_dir destination_dir
@@ -379,7 +377,7 @@ clone_dir xiaorouji/openwrt-passwall luci-app-passwall
 clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir hong0980/build luci-app-ddnsto luci-app-diskman luci-app-dockerman \
 	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
-	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi
+	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi golang
 [[ $REPO != 'openwrt' ]] && clone_dir openwrt/packages docker dockerd containerd docker-compose runc
 
 if [[ $REPO_BRANCH =~ main|master|23|24 ]]; then
