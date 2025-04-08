@@ -227,7 +227,7 @@ set_config (){
 		CONFIG_KERNEL_BUILD_USER="win3gp"
 		CONFIG_KERNEL_BUILD_DOMAIN="OpenWrt"
 		# CONFIG_LUCI_SRCDIET is not set #压缩 Lua 源代码
-		# CONFIG_LUCI_JSMIN is not set  #压缩 JavaScript 源代码
+		## CONFIG_LUCI_JSMIN is not set  #压缩 JavaScript 源代码
 		# CONFIG_LUCI_CSSTIDY is not set #压缩 CSS 文件
 	EOF
 	export DEVICE_NAME="$TARGET_DEVICE"
@@ -378,8 +378,8 @@ clone_dir xiaorouji/openwrt-passwall luci-app-passwall
 clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir hong0980/build luci-app-ddnsto luci-app-diskman luci-app-dockerman \
 	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
-	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi golang
-[[ $REPO != 'openwrt' ]] && clone_dir openwrt/packages docker dockerd containerd docker-compose runc
+	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi
+[[ $REPO_BRANCH =~ master|24 ]] || clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang
 
 if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
@@ -440,8 +440,6 @@ find {package/A,feeds/luci/applications}/luci-app*/po -type d 2>/dev/null | whil
 		ln -s zh_Hans "$p/zh-cn" 2>/dev/null
 	fi
 done
-
-[[ $REPO_BRANCH =~ master ]] && sed -i '/qbittorrent/d' .config
 
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
