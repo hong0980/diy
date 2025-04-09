@@ -392,7 +392,8 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 	clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
 	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
 	# clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns lua-neturl
-	addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer luci-app-nikki"
+	[[ $TARGET_DEVICE =~ k2p ]] || \
+		addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer luci-app-nikki"
 
 	[[ $REPO_BRANCH == 'master' ]] && rm package/*/luci-app-passwall2/htdocs/luci-static/resources/qrcode.min.js
 else
