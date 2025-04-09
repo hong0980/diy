@@ -319,7 +319,7 @@ set_config (){
 	esac
 	[[ $TARGET_DEVICE =~ k2p ]] || \
 	addpackage "luci-app-nlbwmon luci-app-bypass luci-app-ddnsto luci-app-openclash luci-app-passwall luci-app-passwall2 luci-app-simplenetwork luci-app-ssr-plus luci-app-tinynote luci-app-uhttpd luci-app-homeproxy luci-app-eqos diffutils patch"
-	addpackage "luci-app-upnp luci-app-ttyd luci-app-timedtask luci-app-arpbind luci-app-ksmbd luci-app-filebrowser luci-app-wizard luci-app-turboacc"
+	addpackage "luci-app-upnp luci-app-ttyd luci-app-timedtask luci-app-arpbind luci-app-ksmbd luci-app-filebrowser luci-app-wizard"
 }
 
 deploy_cache() {
@@ -375,7 +375,6 @@ config_generate="package/base-files/files/bin/config_generate"
 REPO_BRANCH=${REPO_BRANCH/main/master}
 git_clone
 
-clone_dir coolsnowwolf/luci luci-app-turboacc
 clone_dir vernesong/OpenClash luci-app-openclash
 clone_dir xiaorouji/openwrt-passwall luci-app-passwall
 clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
