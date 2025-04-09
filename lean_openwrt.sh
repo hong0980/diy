@@ -357,6 +357,7 @@ set_config (){
 			}
 			;;
 	esac
+	[[ $TARGET_DEVICE =~ k2p ]] || \
 	addpackage "luci-app-bypass luci-app-ddnsto luci-app-filebrowser luci-app-openclash luci-app-passwall luci-app-passwall2 luci-app-ssr-plus luci-app-timedtask luci-app-tinynote luci-app-ttyd luci-app-uhttpd luci-app-wizard luci-app-homeproxy luci-app-usb-printer luci-app-eqos diffutils patch luci-app-nikki"
 	delpackage "luci-app-ddns luci-app-autoreboot luci-app-wol luci-app-vlmcsd luci-app-filetransfer luci-app-turboacc"
 }
