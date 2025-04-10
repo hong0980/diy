@@ -318,7 +318,7 @@ set_config (){
 			;;
 	esac
 	[[ $TARGET_DEVICE =~ k2p ]] || \
-	addpackage "luci-app-nlbwmon luci-app-bypass luci-app-ddnsto luci-app-openclash luci-app-passwall luci-app-passwall2 luci-app-simplenetwork luci-app-ssr-plus luci-app-tinynote luci-app-uhttpd luci-app-homeproxy luci-app-eqos diffutils patch"
+		addpackage "luci-app-nlbwmon luci-app-bypass luci-app-ddnsto luci-app-openclash luci-app-passwall luci-app-passwall2 luci-app-simplenetwork luci-app-ssr-plus luci-app-tinynote luci-app-uhttpd luci-app-homeproxy luci-app-eqos diffutils patch"
 	addpackage "luci-app-upnp luci-app-ttyd luci-app-timedtask luci-app-arpbind luci-app-ksmbd luci-app-filebrowser luci-app-wizard"
 }
 
@@ -381,7 +381,7 @@ clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir hong0980/build luci-app-ddnsto luci-app-diskman luci-app-dockerman \
 	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
 	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi
-[[ $REPO_BRANCH =~ master|24 ]] || clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang
+clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang
 
 if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
@@ -413,7 +413,7 @@ else
 		https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/include/openssl-module.mk
 fi
 
-clone_dir kiddin9/kwrt-packages chinadns-ng geoview lua-maxminddb luci-app-bypass luci-app-nlbwmon \
+clone_dir kiddin9/kwrt-packages chinadns-ng geoview lua-maxminddb luci-app-bypass luci-app-nlbwmon luci-app-arpbind \
 	luci-app-pushbot luci-app-store luci-app-syncdial luci-lib-taskd luci-lib-xterm qBittorrent-static taskd trojan-plus
 clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev lua-neturl mosdns
 delpackage "luci-app-filetransfer luci-app-turboacc"
