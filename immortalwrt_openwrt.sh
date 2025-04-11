@@ -141,6 +141,8 @@ clone_dir() {
 		_printf "$(color cr 拉取) $repo_url [ $(color cr ✕) ]"
 		return 1
 	}
+
+	[[ $REPO_BRANCH =~ master|23|24 ]] || ([[ $repo_url =~ coolsnowwolf/packages ]] && set -- "$@" "bash" "btrfs-progs" "gawk" "jq" "nginx-util" "pciutils" "curl")
 	[[ $repo_url =~ sbwml && $REPO =~ openwrt ]] && set -- "$@" "dns2socks" "dns2tcp" "hysteria" "ipt2socks" "luci-app-homeproxy" "microsocks" "naiveproxy" "pdnsd" "redsocks2" "simple-obfs" "tcping" "trojan" "tuic-client" "v2ray-core" "v2ray-geodata" "v2ray-plugin" "xray-plugin"
 
 	# if [[ $repo_url =~ hong0980 && $REPO =~ openwrt ]]; then
@@ -381,7 +383,7 @@ clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir hong0980/build luci-app-ddnsto luci-app-diskman luci-app-dockerman \
 	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
 	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi
-clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang
+clone_dir coolsnowwolf/packages docker dockerd containerd docker-compose runc golang
 
 if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
@@ -402,7 +404,7 @@ else
 	create_directory "package/network/config/firewall4" "package/utils/ucode" "package/network/utils/fullconenat-nft" "package/libs/libmd" "package/kernel/bpf-headers"
 	clone_dir coolsnowwolf/lede automount ppp busybox parted r8101 r8125 r8168 firewall openssl \
 		# bpf-headers firewall4 ucode fullconenat fullconenat-nft libmd
-	clone_dir coolsnowwolf/packages bash btrfs-progs gawk jq nginx-util pciutils curl
+	# clone_dir coolsnowwolf/packages bash btrfs-progs gawk jq nginx-util pciutils curl
 	[[ "$REPO_BRANCH" =~ 21 ]] && {
 		git_apply "https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/openwrt-21.02-dmesg.js.patch" "feeds/luci"
 		git_apply "https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/openwrt-21.02-syslog.js.patch" "feeds/luci"
