@@ -446,7 +446,7 @@ find {package/A,feeds/luci/applications}/luci-app*/po -type d 2>/dev/null | whil
 	fi
 done
 
-[[ $REPO_BRANCH =~ master ]] && sed -i '/qbittorrent/d' .config
+[[ $REPO_BRANCH =~ master|main ]] && sed -i '/qbittorrent/d' .config
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
 make defconfig 1>/dev/null 2>&1
