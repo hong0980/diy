@@ -142,18 +142,23 @@ clone_dir() {
 		return 1
 	}
 
-	[[ $REPO_BRANCH =~ master|23|24 ]] || ([[ $repo_url =~ coolsnowwolf/packages ]] && set -- "$@" "bash" "btrfs-progs" "gawk" "jq" "nginx-util" "pciutils" "curl")
-	[[ $repo_url =~ sbwml && $REPO =~ openwrt ]] && set -- "$@" "dns2socks" "dns2tcp" "hysteria" "ipt2socks" "luci-app-homeproxy" "microsocks" "naiveproxy" "pdnsd" "redsocks2" "simple-obfs" "tcping" "trojan" "tuic-client" "v2ray-core" "v2ray-geodata" "v2ray-plugin" "xray-plugin"
+	[[ $REPO_BRANCH =~ master|23|24 ]] || ([[ $repo_url =~ coolsnowwolf/packages ]] && set -- "$@" "bash" \
+			"btrfs-progs" "gawk" "jq" "nginx-util" "pciutils" "curl")
+	[[ $repo_url =~ sbwml && $REPO =~ openwrt ]] && set -- "$@" "dns2socks" "dns2tcp" "hysteria" "ipt2socks" \
+		"luci-app-homeproxy" "microsocks" "naiveproxy" "pdnsd" "redsocks2" "simple-obfs" "tcping" "trojan" \
+		"tuic-client" "v2ray-core" "v2ray-geodata" "v2ray-plugin" "xray-plugin"
 
-	# if [[ $repo_url =~ hong0980 && $REPO =~ openwrt ]]; then
-	# 	local new_args=()
-	# 	for arg in "$@"; do
-	# 		if [[ "$arg" != "luci-app-dockerman" && "$arg" != "luci-lib-docker" ]]; then
-	# 			new_args+=("$arg")
-	# 		fi
-	# 	done
-	# 	set -- "${new_args[@]}"
-	# fi
+	if [[ $repo_url =~ hong0980 && $TARGET_DEVICE =~ x86_64 ]]; then
+		set -- "$@" "deluge" "luci-app-deluge" "python-pyxdg" "python-rencode" \
+			"python-setproctitle" "libtorrent-rasterbar" "python-mako"
+		# local new_args=()
+		# for arg in "$@"; do
+		# 	if [[ "$arg" != "luci-app-dockerman" && "$arg" != "luci-lib-docker" ]]; then
+		# 		new_args+=("$arg")
+		# 	fi
+		# done
+		# set -- "${new_args[@]}"
+	fi
 
 	for target_dir in $@; do
 		local source_dir current_dir destination_dir
@@ -384,8 +389,7 @@ clone_dir xiaorouji/openwrt-passwall luci-app-passwall
 clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir hong0980/build luci-app-ddnsto luci-app-diskman luci-app-dockerman \
 	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
-	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi \
-	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle libtorrent-rasterbar python-mako
+	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi
 clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang
 
 if [[ $REPO_BRANCH =~ master|23|24 ]]; then
