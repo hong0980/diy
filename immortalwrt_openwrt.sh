@@ -250,7 +250,8 @@ set_config (){
 			lan_ip "192.168.2.150"
 			export DEVICE_NAME="x86_64"
 			echo "FIRMWARE_TYPE=squashfs-combined" >> $GITHUB_ENV
-			addpackage "autosamba automount pciutils luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer lsscsi luci-app-deluge"
+			addpackage "autosamba automount pciutils luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer lsscsi"
+			[[ $REPO =~ immortalwrt ]] && addpackage "luci-app-deluge"
 			;;
 		r[124]*)
 			cat >>.config<<-EOF
@@ -438,6 +439,7 @@ sed -Ei \
 	-e 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|' \
 	-e 's?include ../(lang|devel)?include $(TOPDIR)/feeds/packages/\1?' \
 	-e "s/((^| |    )(PKG_HASH|PKG_MD5SUM|PKG_MIRROR_HASH|HASH):=).*/\1skip/" \
+	-e 's?include ../python3?include $(TOPDIR)/feeds/packages/lang/python/python3?' \
 	package/A/*/Makefile 2>/dev/null
 
 find {package/A,feeds/luci/applications}/luci-app*/po -type d 2>/dev/null | while read p; do
