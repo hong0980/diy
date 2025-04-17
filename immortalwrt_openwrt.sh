@@ -385,7 +385,7 @@ clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir hong0980/build luci-app-ddnsto luci-app-diskman luci-app-dockerman \
 	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
 	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi \
-	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle libtorrent-rasterbar
+	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle libtorrent-rasterbar python-mako
 clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang
 
 if [[ $REPO_BRANCH =~ master|23|24 ]]; then
@@ -439,7 +439,6 @@ sed -Ei \
 	-e 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|' \
 	-e 's?include ../(lang|devel)?include $(TOPDIR)/feeds/packages/\1?' \
 	-e "s/((^| |    )(PKG_HASH|PKG_MD5SUM|PKG_MIRROR_HASH|HASH):=).*/\1skip/" \
-	-e 's?include ../python3?include $(TOPDIR)/feeds/packages/lang/python/python3?' \
 	package/A/*/Makefile 2>/dev/null
 
 find {package/A,feeds/luci/applications}/luci-app*/po -type d 2>/dev/null | while read p; do
