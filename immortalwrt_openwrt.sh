@@ -39,7 +39,7 @@ status() {
 }
 
 find_first_dir() {
-	find $1 -maxdepth 5 -type d -name "$2" -print -quit 2>/dev/null
+	find $1 -maxdepth 5 -type d -regex ".*/$(printf '%s' "$2" | sed 's/[][\.*^$(){}?+|/]/\\&/g')$" -print -quit 2>/dev/null
 }
 
 create_directory() {
@@ -250,7 +250,7 @@ set_config (){
 			lan_ip "192.168.2.150"
 			export DEVICE_NAME="x86_64"
 			echo "FIRMWARE_TYPE=squashfs-combined" >> $GITHUB_ENV
-			addpackage "autosamba automount pciutils luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer lsscsi"
+			addpackage "autosamba automount pciutils luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer lsscsi luci-app-deluge"
 			;;
 		r[124]*)
 			cat >>.config<<-EOF
@@ -375,6 +375,7 @@ REPO_URL="https://github.com/$REPO/$REPO"
 SOURCE_NAME=$(basename $(dirname $REPO_URL))
 config_generate="package/base-files/files/bin/config_generate"
 REPO_BRANCH=${REPO_BRANCH/main/master}
+echo "REPO_BRANCH=$REPO_BRANCH" >> $GITHUB_ENV
 git_clone
 
 clone_dir vernesong/OpenClash luci-app-openclash
@@ -382,7 +383,8 @@ clone_dir xiaorouji/openwrt-passwall luci-app-passwall
 clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir hong0980/build luci-app-ddnsto luci-app-diskman luci-app-dockerman \
 	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
-	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi
+	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi \
+	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle libtorrent-rasterbar
 clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang
 
 if [[ $REPO_BRANCH =~ master|23|24 ]]; then
