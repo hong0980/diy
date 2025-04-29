@@ -39,7 +39,7 @@ status() {
 }
 
 find_first_dir() {
-	find $1 -maxdepth 5 -type d -name "$2" -print -quit 2>/dev/null
+	find $1 -maxdepth 5 -type d -regex ".*/$(printf '%s' "$2" | sed 's/[][\.*^$(){}?+|/]/\\&/g')$" -print -quit 2>/dev/null
 }
 
 create_directory() {
@@ -142,10 +142,15 @@ clone_dir() {
 		return 1
 	}
 
-	[[ $REPO_BRANCH =~ master|23|24 ]] || ([[ $repo_url =~ coolsnowwolf/packages ]] && set -- "$@" "bash" "btrfs-progs" "gawk" "jq" "nginx-util" "pciutils" "curl")
-	[[ $repo_url =~ sbwml && $REPO =~ openwrt ]] && set -- "$@" "dns2socks" "dns2tcp" "hysteria" "ipt2socks" "luci-app-homeproxy" "microsocks" "naiveproxy" "pdnsd" "redsocks2" "simple-obfs" "tcping" "trojan" "tuic-client" "v2ray-core" "v2ray-geodata" "v2ray-plugin" "xray-plugin"
+	[[ $REPO_BRANCH =~ master|23|24 ]] || ([[ $repo_url =~ coolsnowwolf/packages ]] && set -- "$@" "bash" \
+			"btrfs-progs" "gawk" "jq" "nginx-util" "pciutils" "curl")
+	[[ $repo_url =~ sbwml && $REPO =~ openwrt ]] && set -- "$@" "dns2socks" "dns2tcp" "hysteria" "ipt2socks" \
+		"luci-app-homeproxy" "microsocks" "naiveproxy" "pdnsd" "redsocks2" "simple-obfs" "tcping" "trojan" \
+		"tuic-client" "v2ray-core" "v2ray-geodata" "v2ray-plugin" "xray-plugin"
 
-	# if [[ $repo_url =~ hong0980 && $REPO =~ openwrt ]]; then
+	# if [[ $repo_url =~ hong0980 && $TARGET_DEVICE =~ x86_64 ]]; then
+	# 	set -- "$@" "deluge" "luci-app-deluge" "python-pyxdg" "python-rencode" \
+	# 		"python-setproctitle" "libtorrent-rasterbar" "python-mako"
 	# 	local new_args=()
 	# 	for arg in "$@"; do
 	# 		if [[ "$arg" != "luci-app-dockerman" && "$arg" != "luci-lib-docker" ]]; then
@@ -251,6 +256,8 @@ set_config (){
 			export DEVICE_NAME="x86_64"
 			echo "FIRMWARE_TYPE=squashfs-combined" >> $GITHUB_ENV
 			addpackage "autosamba automount pciutils luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer lsscsi"
+			# [[ $REPO =~ immortalwrt ]] && addpackage "luci-app-deluge"
+			addpackage "luci-app-deluge"
 			;;
 		r[124]*)
 			cat >>.config<<-EOF
@@ -321,7 +328,7 @@ set_config (){
 	esac
 	[[ $TARGET_DEVICE =~ k2p ]] || \
 		addpackage "luci-app-nlbwmon luci-app-bypass luci-app-ddnsto luci-app-openclash luci-app-passwall luci-app-passwall2 luci-app-simplenetwork luci-app-ssr-plus luci-app-tinynote luci-app-uhttpd luci-app-homeproxy luci-app-eqos diffutils patch"
-	addpackage "luci-app-upnp luci-app-ttyd luci-app-timedtask luci-app-arpbind luci-app-ksmbd luci-app-filebrowser luci-app-wizard"
+	addpackage "luci-app-upnp luci-app-ttyd luci-app-timedtask luci-app-arpbind luci-app-ksmbd luci-app-filebrowser luci-app-wizard opkg"
 }
 
 deploy_cache() {
@@ -375,6 +382,7 @@ REPO_URL="https://github.com/$REPO/$REPO"
 SOURCE_NAME=$(basename $(dirname $REPO_URL))
 config_generate="package/base-files/files/bin/config_generate"
 REPO_BRANCH=${REPO_BRANCH/main/master}
+echo "REPO_BRANCH=$REPO_BRANCH" >> $GITHUB_ENV
 git_clone
 
 clone_dir vernesong/OpenClash luci-app-openclash
@@ -382,7 +390,9 @@ clone_dir xiaorouji/openwrt-passwall luci-app-passwall
 clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir hong0980/build luci-app-ddnsto luci-app-diskman luci-app-dockerman \
 	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
-	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi
+	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi \
+	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle \
+	libtorrent-rasterbar python-mako
 clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang
 
 if [[ $REPO_BRANCH =~ master|23|24 ]]; then
@@ -390,6 +400,7 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 		delpackage "dnsmasq"
 		create_directory "package/emortal"
 		clone_dir $REPO_BRANCH immortalwrt/immortalwrt emortal bcm27xx-utils
+		clone_dir $REPO_BRANCH immortalwrt/luci luci-base luci-mod-status
 		addpackage "default-settings-chn autocore block-mount kmod-nf-nathelper kmod-nf-nathelper-extra luci-light luci-app-cpufreq luci-app-package-manager luci-compat luci-lib-base luci-lib-ipkg"
 	fi
 	clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
@@ -413,6 +424,7 @@ else
 		https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/package/kernel/linux/modules/netfilter.mk
 	curl -sSo include/openssl-module.mk \
 		https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/include/openssl-module.mk
+	sed -i '/deluge/d' .config
 fi
 
 clone_dir kiddin9/kwrt-packages chinadns-ng geoview lua-maxminddb luci-app-bypass luci-app-nlbwmon luci-app-arpbind \
