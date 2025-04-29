@@ -285,7 +285,7 @@ set_config (){
 			addpackage "
 			luci-app-cpufreq luci-app-dockerman luci-app-qbittorrent luci-app-turboacc
 			luci-app-passwall2 #luci-app-easymesh luci-app-store luci-app-netdata
-			luci-app-deluge htop lscpu lsscsi lsusb #nano screen zstd pv
+			#luci-app-deluge htop lscpu lsscsi lsusb #nano screen zstd pv
 			#AmuleWebUI-Reloaded #subversion-client #unixodbc #git-http
 			"
 			# sed -i '/KERNEL_PATCHVER/s/=.*/=5.4/' target/linux/rockchip/Makefile
@@ -418,9 +418,9 @@ git_clone
 clone_dir vernesong/OpenClash luci-app-openclash
 clone_dir xiaorouji/openwrt-passwall luci-app-passwall
 clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
-clone_dir hong0980/build luci-app-timedtask luci-app-tinynote luci-app-poweroff luci-app-filebrowser \
-	luci-app-diskman luci-app-qbittorrent luci-app-wizard luci-app-ddnsto \
-	luci-app-softwarecenter luci-lib-docker luci-app-dockerman lsscsi
+clone_dir hong0980/build luci-app-ddnsto luci-app-diskman luci-app-dockerman \
+	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
+	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi
 clone_dir sbwml/openwrt_helloworld luci-app-homeproxy chinadns-ng \
 	geoview sing-box trojan-plus xray-core
 clone_dir kiddin9/kwrt-packages luci-app-bypass lua-maxminddb \
