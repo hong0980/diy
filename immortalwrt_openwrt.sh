@@ -255,7 +255,7 @@ set_config (){
 			lan_ip "192.168.2.150"
 			export DEVICE_NAME="x86_64"
 			echo "FIRMWARE_TYPE=squashfs-combined" >> $GITHUB_ENV
-			addpackage "autosamba automount pciutils luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer lsscsi" "luci-app-deluge"
+			addpackage "autosamba automount pciutils luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer lsscsi" "luci-app-deluge" "luci-app-transmission" "luci-app-aria2"
 			;;
 		r[124]*)
 			cat >>.config<<-EOF
@@ -389,6 +389,7 @@ clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir hong0980/build luci-app-ddnsto luci-app-diskman luci-app-dockerman \
 	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
 	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi \
+	aria2 luci-app-aria2 transmission transmission-web-control luci-app-transmission \
 	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle \
 	libtorrent-rasterbar python-mako
 clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang
