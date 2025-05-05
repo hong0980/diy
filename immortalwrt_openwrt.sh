@@ -39,8 +39,7 @@ status() {
 }
 
 find_first_dir() {
-	escaped_arg=$(printf '%s' "$2" | sed 's/[][?*\\]/\\&/g')
-	find $1 -maxdepth 5 -type d -name "$escaped_arg" -print -quit 2>/dev/null
+	find $1 -maxdepth 5 -type d -name "$2" -print -quit 2>/dev/null
 }
 
 create_directory() {
@@ -390,7 +389,7 @@ clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir hong0980/build luci-app-ddnsto luci-app-diskman luci-app-dockerman \
 	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
 	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi \
-	aria2 luci-app-aria2 transmission luci-app-transmission \
+	aria2 luci-app-aria2 transmission transmission-web-control luci-app-transmission \
 	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle \
 	libtorrent-rasterbar python-mako
 clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang
