@@ -389,7 +389,7 @@ clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir hong0980/build luci-app-ddnsto luci-app-diskman luci-app-dockerman \
 	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
 	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi \
-	luci-app-transmission \
+	aria2 luci-app-aria2 transmission-web-control luci-app-transmission \
 	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle \
 	libtorrent-rasterbar python-mako
 clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang
@@ -400,7 +400,7 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 		create_directory "package/emortal"
 		clone_dir $REPO_BRANCH immortalwrt/immortalwrt emortal bcm27xx-utils
 		clone_dir $REPO_BRANCH immortalwrt/luci luci-base luci-mod-status
-		addpackage "default-settings-chn autocore block-mount kmod-nf-nathelper kmod-nf-nathelper-extra luci-light luci-app-cpufreq luci-app-package-manager luci-compat luci-lib-base luci-lib-ipkg"
+		addpackage "default-settings-chn default-settings autocore block-mount kmod-nf-nathelper kmod-nf-nathelper-extra luci-light luci-app-cpufreq luci-app-package-manager luci-compat luci-lib-base luci-lib-ipkg"
 	fi
 	clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
 	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
@@ -409,6 +409,8 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 		addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer luci-app-nikki"
 
 	[[ $REPO_BRANCH == 'master' ]] && rm package/*/luci-app-passwall2/htdocs/luci-static/resources/qrcode.min.js
+	[ $(grep -q 'luci-app-aria2' .config) -a "$TARGET_DEVICE" =~ x86_64 ] && \
+	echo -e "CONFIG_ARIA2_GNUTLS=y\nCONFIG_ARIA2_NOSSL=y\nCONFIG_ARIA2_LIBXML2=y\nCONFIG_ARIA2_EXPAT=y\nCONFIG_ARIA2_SFTP=y\nCONFIG_ARIA2_ASYNC_DNS=y\nCONFIG_ARIA2_COOKIE=y" >> .config
 else
 	clone_url "fw876/helloworld xiaorouji/openwrt-passwall-packages"
 	create_directory "package/network/config/firewall4" "package/utils/ucode" "package/network/utils/fullconenat-nft" "package/libs/libmd" "package/kernel/bpf-headers"
