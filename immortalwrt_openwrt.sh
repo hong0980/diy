@@ -409,8 +409,6 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 		addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer luci-app-nikki"
 
 	[[ $REPO_BRANCH == 'master' ]] && rm package/*/luci-app-passwall2/htdocs/luci-static/resources/qrcode.min.js
-	[ $(grep -q 'luci-app-aria2' .config) -a "$TARGET_DEVICE" =~ x86_64 ] && \
-	echo -e "CONFIG_ARIA2_GNUTLS=y\nCONFIG_ARIA2_NOSSL=y\nCONFIG_ARIA2_LIBXML2=y\nCONFIG_ARIA2_EXPAT=y\nCONFIG_ARIA2_SFTP=y\nCONFIG_ARIA2_ASYNC_DNS=y\nCONFIG_ARIA2_COOKIE=y" >> .config
 else
 	clone_url "fw876/helloworld xiaorouji/openwrt-passwall-packages"
 	create_directory "package/network/config/firewall4" "package/utils/ucode" "package/network/utils/fullconenat-nft" "package/libs/libmd" "package/kernel/bpf-headers"
