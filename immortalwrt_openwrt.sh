@@ -451,11 +451,15 @@ sed -Ei \
 	-e "s/((^| |    )(PKG_HASH|PKG_MD5SUM|PKG_MIRROR_HASH|HASH):=).*/\1skip/" \
 	package/A/*/Makefile 2>/dev/null
 
-[ -d feeds/packages/net/ariang ] && {
+[ -f feeds/packages/net/ariang/Makefile ] && {
 	sed -Ei \
 		-e 's/(PKG_HASH:=).*/\1skip/' \
 		-e 's/(PKG_VERSION:=).*/\11.3.10/' \
-		feeds/packages/net/ariang/Makefile}
+		feeds/packages/net/ariang/Makefile
+}
+
+[ -f feeds/luci/applications/luci-app-transmission/Makefile ] && \
+	sed -i 's/transmission-daemon/transmission-daemon +transmission-web-control/' feeds/luci/applications/luci-app-transmission/Makefile
 
 find {package/A,feeds/luci/applications}/luci-app*/po -type d 2>/dev/null | while read p; do
 	if [[ -d $p/zh-cn && ! -e $p/zh_Hans ]]; then
