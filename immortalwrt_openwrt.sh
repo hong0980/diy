@@ -452,11 +452,10 @@ sed -Ei \
 	package/A/*/Makefile 2>/dev/null
 
 [ -d feeds/packages/net/ariang ] && {
-	sed -i \
-		-e 's/PKG_VERSION:=.*/PKG_VERSION:=1.3.10/' \
-		-e 's/PKG_HASH:=.*/PKG_HASH:=skip/' \
-		feeds/packages/net/ariang/Makefile
-}
+	sed -Ei \
+		-e 's/(PKG_HASH:=).*/\1skip/' \
+		-e 's/(PKG_VERSION:=).*/\11.3.10/' \
+		feeds/packages/net/ariang/Makefile}
 
 find {package/A,feeds/luci/applications}/luci-app*/po -type d 2>/dev/null | while read p; do
 	if [[ -d $p/zh-cn && ! -e $p/zh_Hans ]]; then
