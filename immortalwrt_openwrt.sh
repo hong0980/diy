@@ -234,13 +234,14 @@ set_config (){
 		CONFIG_KERNEL_BUILD_USER="win3gp"
 		CONFIG_KERNEL_BUILD_DOMAIN="OpenWrt"
 		# CONFIG_LUCI_SRCDIET is not set #压缩 Lua 源代码
-		# CONFIG_LUCI_JSMIN is not set  #压缩 JavaScript 源代码
+		## CONFIG_LUCI_JSMIN is not set  #压缩 JavaScript 源代码
 		# CONFIG_LUCI_CSSTIDY is not set #压缩 CSS 文件
 	EOF
 	export DEVICE_NAME="$TARGET_DEVICE"
 	case "$TARGET_DEVICE" in
 		x86_64)
 			cat >>.config<<-EOF
+			# CONFIG_LUCI_JSMIN is not set  #压缩 JavaScript 源代码
 			CONFIG_TARGET_x86=y
 			CONFIG_TARGET_x86_64=y
 			CONFIG_TARGET_x86_64_DEVICE_generic=y
@@ -253,7 +254,6 @@ set_config (){
 			# CONFIG_GRUB_EFI_IMAGES is not set
 			EOF
 			lan_ip "192.168.2.150"
-			export DEVICE_NAME="x86_64"
 			echo "FIRMWARE_TYPE=squashfs-combined" >> $GITHUB_ENV
 			addpackage "autosamba automount pciutils luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer lsscsi" "luci-app-deluge" "luci-app-transmission" "luci-app-aria2"
 			;;
@@ -393,7 +393,6 @@ clone_dir hong0980/build luci-app-ddnsto luci-app-diskman luci-app-dockerman \
 	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle \
 	libtorrent-rasterbar python-mako
 clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang
-clone_dir hong0980/chinternet luci-app-wizard
 
 if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
