@@ -1,0 +1,36 @@
+<%
+  local uci  = require "luci.model.uci".cursor()
+  local newip = uci:get("wizard", "default", "lan_ipaddr")
+%>
+
+<script type="text/javascript">//<![CDATA[
+var currentUrl = window.location.href;
+var updatedUrl = currentUrl.replace(/(\d{1,3}\.){3}\d{1,3}/, '<%=newip%>');
+
+// 输出替换后的 URL（你可以选择打印出来调试）
+console.log("原始 URL:", currentUrl);
+console.log("更新后的 URL:", updatedUrl);
+
+// 创建一个自定义弹窗
+var modal = document.createElement('div');
+modal.style.position = 'fixed';
+modal.style.top = '50%';
+modal.style.left = '50%';
+modal.style.transform = 'translate(-50%, -50%)';
+modal.style.padding = '20px';
+modal.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+modal.style.color = '#fff';
+modal.style.borderRadius = '10px';
+modal.style.fontSize = '18px';
+modal.style.textAlign = 'center';
+modal.innerText = '页面将在10秒后跳转至新的地址：<%=newip%>';
+
+// 将弹窗添加到页面中
+document.body.appendChild(modal);
+
+// 设置10秒后跳转
+// setTimeout(function() {
+//     window.location.href = updatedUrl;
+// }, 15000);
+
+//]]></script>

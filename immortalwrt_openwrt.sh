@@ -39,7 +39,7 @@ status() {
 }
 
 find_first_dir() {
-	find $1 -maxdepth 5 -type d -regex ".*/$(printf '%s' "$2" | sed 's/[][\.*^$(){}?+|/]/\\&/g')$" -print -quit 2>/dev/null
+	find $1 -maxdepth 5 -type d -name "$2" -print -quit 2>/dev/null
 }
 
 create_directory() {
@@ -48,9 +48,27 @@ create_directory() {
 	done
 }
 
-addpackage() {
+add_package() {
 	for z in $@; do
 		[[ $z =~ ^# ]] || echo "CONFIG_PACKAGE_$z=y" >>.config
+	done
+}
+
+add_busybox() {
+	local config_file="package/utils/busybox/Config-defaults.in"
+	[[ -f "$config_file" ]] || return 1
+
+	local args=()
+	for arg in "$@"; do
+		read -ra split_args <<< "$arg"
+		args+=("${split_args[@]}")
+	done
+
+	for z in "${args[@]}"; do
+		[[ "$z" =~ ^# ]] && continue
+		local str=$(echo "$z" | tr 'a-z' 'A-Z')
+		grep -q "BUSYBOX_DEFAULT_$str$" "$config_file" && \
+		sed -i "/^config BUSYBOX_DEFAULT_$str$/{n;n;/default /!{s/$/\n\tdefault y/};/default /s/default .*/default y/}" "$config_file" && _printf "$(color cb 添加) busybox_$z [ $(color cb ✔) ]"
 	done
 }
 
@@ -66,7 +84,7 @@ safe_pushd() {
 }
 
 safe_popd() {
-	[ $(dirs -p | wc -l) -gt 0 ] &&　popd &> /dev/null
+	[[ $(dirs -p | wc -l) -gt 0 ]] &&　popd &> /dev/null
 }
 
 _printf() {
@@ -80,8 +98,8 @@ lan_ip() {
 
 git_diff() {
 	[[ $# -lt 1 ]] && return
+	local original_dir=$(pwd)
 	for i in $@; do
-		original_dir=$(pwd)
 		if [[ $i =~ ^feeds ]]; then
 			cd $(cut -d'/' -f1-2 <<< "$i") || return 1
 			i=$(cut -d'/' -f3- <<< "$i")
@@ -120,7 +138,7 @@ git_apply() {
 }
 
 clone_dir() {
-	[[ $# -lt 1 ]] && return
+	[[ $# -lt 1 ]] && return 1
 	local repo_url branch temp_dir=$(mktemp -d) find_dir="package feeds target"
 	trap 'rm -rf "$temp_dir"' EXIT INT TERM
 	if [[ $1 == */* ]]; then
@@ -142,23 +160,14 @@ clone_dir() {
 		return 1
 	}
 
-	[[ $REPO_BRANCH =~ master|23|24 ]] || ([[ $repo_url =~ coolsnowwolf/packages ]] && set -- "$@" "bash" \
-			"btrfs-progs" "gawk" "jq" "nginx-util" "pciutils" "curl")
+	[[ $REPO_BRANCH =~ master|23|24 ]] || {
+		[[ $repo_url =~ hong0980/diy ]] && set -- "$@" luci-app-wizard
+		[[ $repo_url =~ coolsnowwolf/packages ]] && set -- "$@" "bash" \
+				"btrfs-progs" "gawk" "jq" "nginx-util" "pciutils" "curl"
+	}
 	[[ $repo_url =~ sbwml && $REPO =~ openwrt ]] && set -- "$@" "dns2socks" "dns2tcp" "hysteria" "ipt2socks" \
-		"luci-app-homeproxy" "microsocks" "naiveproxy" "pdnsd" "redsocks2" "simple-obfs" "tcping" "trojan" \
+		"microsocks" "naiveproxy" "pdnsd" "redsocks2" "simple-obfs" "tcping" "trojan" \
 		"tuic-client" "v2ray-core" "v2ray-geodata" "v2ray-plugin" "xray-plugin"
-
-	# if [[ $repo_url =~ hong0980 && $TARGET_DEVICE =~ x86_64 ]]; then
-	# 	set -- "$@" "deluge" "luci-app-deluge" "python-pyxdg" "python-rencode" \
-	# 		"python-setproctitle" "libtorrent-rasterbar" "python-mako"
-	# 	local new_args=()
-	# 	for arg in "$@"; do
-	# 		if [[ "$arg" != "luci-app-dockerman" && "$arg" != "luci-lib-docker" ]]; then
-	# 			new_args+=("$arg")
-	# 		fi
-	# 	done
-	# 	set -- "${new_args[@]}"
-	# fi
 
 	for target_dir in $@; do
 		local source_dir current_dir destination_dir
@@ -241,6 +250,7 @@ set_config (){
 	case "$TARGET_DEVICE" in
 		x86_64)
 			cat >>.config<<-EOF
+			# CONFIG_LUCI_JSMIN is not set  #压缩 JavaScript 源代码
 			CONFIG_TARGET_x86=y
 			CONFIG_TARGET_x86_64=y
 			CONFIG_TARGET_x86_64_DEVICE_generic=y
@@ -253,9 +263,8 @@ set_config (){
 			# CONFIG_GRUB_EFI_IMAGES is not set
 			EOF
 			lan_ip "192.168.2.150"
-			export DEVICE_NAME="x86_64"
 			echo "FIRMWARE_TYPE=squashfs-combined" >> $GITHUB_ENV
-			addpackage "autosamba automount pciutils luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer lsscsi" "luci-app-deluge" "luci-app-transmission" "luci-app-aria2"
+			add_package "kmod-rtl8187 kmod-r8101 kmod-r8125 kmod-r8126 kmod-r8152 kmod-r8186 kmod-rtl8xxxu"
 			;;
 		r[124]*)
 			cat >>.config<<-EOF
@@ -274,7 +283,6 @@ set_config (){
 			esac
 			lan_ip "192.168.2.1"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
-			addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer"
 			;;
 		newifi-d2)
 			cat >>.config<<-EOF
@@ -324,9 +332,10 @@ set_config (){
 			echo "FIRMWARE_TYPE=$TARGET_DEVICE" >> $GITHUB_ENV
 			;;
 	esac
-	[[ $TARGET_DEVICE =~ k2p ]] || \
-		addpackage "luci-app-nlbwmon luci-app-bypass luci-app-ddnsto luci-app-openclash luci-app-passwall luci-app-passwall2 luci-app-simplenetwork luci-app-ssr-plus luci-app-tinynote luci-app-uhttpd luci-app-homeproxy luci-app-eqos diffutils patch"
-	addpackage "luci-app-upnp luci-app-ttyd luci-app-timedtask luci-app-arpbind luci-app-ksmbd luci-app-filebrowser luci-app-wizard opkg"
+	[[ $TARGET_DEVICE =~ k2p ]] || {
+		add_package "automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser luci-app-nlbwmon luci-app-bypass luci-app-ddnsto luci-app-openclash luci-app-passwall2 luci-app-simplenetwork luci-app-tinynote luci-app-uhttpd luci-app-eqos luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils patch" "luci-app-qbittorrent luci-app-transmission luci-app-aria2 luci-app-deluge" luci-app-easymesh
+	}
+	add_package "autocore opkg luci-app-arpbind luci-app-ssr-plus luci-app-passwall luci-app-upnp luci-app-ttyd luci-app-timedtask luci-app-ksmbd luci-app-wizard kmod-rt2800-lib kmod-rt2800-usb kmod-rt2x00-lib kmod-rt2x00-usb"
 }
 
 deploy_cache() {
@@ -363,7 +372,7 @@ git_clone() {
 	[ "$REPO_BRANCH" ] && cmd="-b $REPO_BRANCH --single-branch"
 	git clone -q $cmd $REPO_URL $REPO_FLODER # --depth 1
 	status
-	[[ -d $REPO_FLODER ]] && cd $REPO_FLODER || exit
+	[[ -d $REPO_FLODER ]] && cd $REPO_FLODER || exit 1
 
 	echo -e "$(color cy '更新软件....')\c"
 	begin_time=$(date '+%H:%M:%S')
@@ -389,7 +398,7 @@ clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir hong0980/build luci-app-ddnsto luci-app-diskman luci-app-dockerman \
 	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
 	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi \
-	aria2 luci-app-aria2 transmission transmission-web-control luci-app-transmission \
+	aria2 luci-app-aria2 \
 	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle \
 	libtorrent-rasterbar python-mako
 clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang
@@ -399,16 +408,33 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 		delpackage "dnsmasq"
 		create_directory "package/emortal"
 		clone_dir $REPO_BRANCH immortalwrt/immortalwrt emortal bcm27xx-utils
-		clone_dir $REPO_BRANCH immortalwrt/luci luci-base luci-mod-status
-		addpackage "default-settings-chn autocore block-mount kmod-nf-nathelper kmod-nf-nathelper-extra luci-light luci-app-cpufreq luci-app-package-manager luci-compat luci-lib-base luci-lib-ipkg"
+		clone_dir $REPO_BRANCH immortalwrt/luci luci-base luci-mod-status luci-app-homeproxy
+		add_package "default-settings-chn default-settings block-mount kmod-nf-nathelper kmod-nf-nathelper-extra luci-light luci-app-cpufreq luci-app-package-manager luci-compat luci-lib-base luci-lib-ipkg"
 	fi
 	clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
 	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
 	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns lua-neturl dns2socks-rust
-	[[ $TARGET_DEVICE =~ k2p ]] || \
-		addpackage "autosamba luci-app-diskman luci-app-qbittorrent luci-app-poweroff luci-app-pushbot luci-app-dockerman luci-app-softwarecenter luci-app-usb-printer luci-app-nikki"
+	[[ $TARGET_DEVICE =~ k2p ]] || add_package "luci-app-homeproxy luci-app-nikki"
+	[[ $REPO_BRANCH =~ master ]] && rm package/*/luci-app-passwall2/htdocs/luci-static/resources/qrcode.min.js
 
-	[[ $REPO_BRANCH == 'master' ]] && rm package/*/luci-app-passwall2/htdocs/luci-static/resources/qrcode.min.js
+# rtl8187='
+# config-$(call config_package,rtl8187) += RTL8187
+
+# define KernelPackage/rtl8187
+#   $(call KernelPackage/mac80211/Default)
+#   TITLE:=Realtek RTL8187 USB support
+#   DEPENDS:=@USB_SUPPORT +kmod-mac80211 +kmod-eeprom-93cx6 +kmod-usb-core
+#   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtl8187/rtl8187.ko
+#   AUTOLOAD:=$(call AutoProbe,rtl8187)
+# endef
+
+# define KernelPackage/rtl8187/description
+#   Kernel module for Realtek RTL8187 USB wireless cards
+# endef
+# '
+# 	echo -e "$rtl8187" >> package/kernel/mac80211/realtek.mk
+# 	sed -i 's/PKG_DRIVERS +=/PKG_DRIVERS += rtl8187/' package/kernel/mac80211/realtek.mk
+	# git_diff package/kernel/mac80211/realtek.mk
 else
 	clone_url "fw876/helloworld xiaorouji/openwrt-passwall-packages"
 	create_directory "package/network/config/firewall4" "package/utils/ucode" "package/network/utils/fullconenat-nft" "package/libs/libmd" "package/kernel/bpf-headers"
@@ -424,8 +450,10 @@ else
 	curl -sSo include/openssl-module.mk \
 		https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/include/openssl-module.mk
 	sed -i '/deluge/d' .config
+	rm -rf package/A/python-mako
 fi
 
+clone_dir hong0980/diy luci-app-easymesh
 clone_dir kiddin9/kwrt-packages chinadns-ng geoview lua-maxminddb luci-app-bypass luci-app-nlbwmon luci-app-arpbind \
 	luci-app-pushbot luci-app-store luci-app-syncdial luci-lib-taskd luci-lib-xterm qBittorrent-static taskd trojan-plus
 clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box
@@ -438,8 +466,20 @@ sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 sed -i 's|/bin/login|/bin/login -f root|' feeds/packages/utils/ttyd/files/ttyd.config
 sed -i "/DISTRIB_DESCRIPTION/ {s/'$/-$SOURCE_NAME-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/openwrt_release || true
 sed -i "/VERSION_NUMBER/ s/if.*/if \$(VERSION_NUMBER),\$(VERSION_NUMBER),${REPO_BRANCH#*-}-SNAPSHOT)/" include/version.mk || true
-sed -i "\$i\uci -q set upnpd.config.enabled=\"1\"\nuci commit upnpd\nuci -q set system.@system[0].hostname=\"OpenWrt\"\nuci commit system\nuci -q set luci.main.mediaurlbase=\"/luci-static/bootstrap\"\nuci commit luci\nsed -i 's/root:.*/root:\$1\$pn1ABFaI\$vt5cmIjlr6M7Z79Eds2lV0:16821:0:99999:7:::/g' /etc/shadow" package/emortal/*/files/*default-settings
-# git_diff package/emortal/default-settings
+
+settings="
+uci -q upnpd.config.enabled='1'
+uci -q commit upnpd
+uci -q system.@system[0].hostname='OpenWrt'
+uci -q commit system
+uci -q luci.main.lang='zh_cn'
+uci -q luci.main.mediaurlbase='/luci-static/bootstrap'
+uci -q commit luci
+sed -iE 's/^(root:).*/\1\$5\$920qxtdc.ivTdd2R\$LHAFosdPCdYpPJiNnz3k7i.6VKiPnfFVPvXIj2pQth2:20227:0:99999:7:::/' /etc/shadow
+exit 0
+"
+sed -i '/^exit/d' package/emortal/default-settings/files/99-default-settings-chinese
+echo -e "$settings" >> package/emortal/default-settings/files/99-default-settings-chinese
 
 xc=$(find_first_dir "package/A feeds" "qBittorrent-static")
 [[ -d $xc ]] && sed -Ei "s/(PKG_VERSION:=).*/\1${qb_version:-4.5.2_v2.0.8}/" $xc/Makefile
@@ -449,6 +489,16 @@ sed -Ei \
 	-e "s/((^| |    )(PKG_HASH|PKG_MD5SUM|PKG_MIRROR_HASH|HASH):=).*/\1skip/" \
 	package/A/*/Makefile 2>/dev/null
 
+[ -f feeds/packages/net/ariang/Makefile ] && {
+	sed -Ei \
+		-e 's/(PKG_HASH:=).*/\1skip/' \
+		-e 's/(PKG_VERSION:=).*/\11.3.10/' \
+		feeds/packages/net/ariang/Makefile
+}
+
+[ -f feeds/luci/applications/luci-app-transmission/Makefile ] && \
+	sed -i 's/transmission-daemon/transmission-daemon +transmission-web-control/' feeds/luci/applications/luci-app-transmission/Makefile
+
 find {package/A,feeds/luci/applications}/luci-app*/po -type d 2>/dev/null | while read p; do
 	if [[ -d $p/zh-cn && ! -e $p/zh_Hans ]]; then
 		ln -s zh-cn "$p/zh_Hans" 2>/dev/null
@@ -457,6 +507,7 @@ find {package/A,feeds/luci/applications}/luci-app*/po -type d 2>/dev/null | whil
 	fi
 done
 
+add_busybox "lsusb lspci lsscsi lsof"
 [[ $REPO_BRANCH =~ master ]] && sed -i '/qbittorrent/d' .config
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')

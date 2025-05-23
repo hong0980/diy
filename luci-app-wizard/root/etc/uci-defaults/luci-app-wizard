@@ -1,0 +1,18 @@
+#!/bin/sh
+
+touch /etc/config/wizard
+uci -q batch <<-EOF >/dev/null
+	delete ucitrack.@wizard[-1]
+	add ucitrack wizard
+	set ucitrack.@wizard[-1].init=wizard
+	commit ucitrack
+	set wizard.default=wizard
+	commit wizard
+EOF
+for file in dhcp network firewall wireless; do
+	cp /etc/config/"$file" /etc/config/bk_"$file"
+done
+
+chmod +x /etc/init.d/wizard 2>/dev/null
+rm -f /tmp/luci-*
+exit 0
