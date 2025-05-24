@@ -68,7 +68,7 @@ add_busybox() {
 		[[ "$z" =~ ^# ]] && continue
 		local str=$(echo "$z" | tr 'a-z' 'A-Z')
 		grep -q "BUSYBOX_DEFAULT_$str$" "$config_file" && \
-		sed -i "/^config BUSYBOX_DEFAULT_$str$/{n;n;/default /!{s/$/\n\tdefault y/};/default /s/default .*/default y/}" "$config_file" && _printf "$(color cb 添加) busybox_$z [ $(color cb ✔) ]"
+		sed -i "/^config BUSYBOX_DEFAULT_$str$/{n;n;/default /!{s/$/\n\tdefault y/};/default /s/default .*/default y/}" "$config_file" #&& _printf "$(color cb 添加) busybox_$z [ $(color cb ✔) ]"
 	done
 }
 
@@ -77,14 +77,6 @@ delpackage() {
 		[[ $z =~ ^# ]] || echo "# CONFIG_PACKAGE_$z is not set" >> .config
 		# [[ $z =~ ^# ]] || sed -iE "s/(CONFIG_PACKAGE_.*$z)=y/# \1 is not set/" .config
 	done
-}
-
-safe_pushd() {
-	pushd "$1" &> /dev/null || echo -e "$(color cr ${1} '该目录不存在。')"
-}
-
-safe_popd() {
-	[[ $(dirs -p | wc -l) -gt 0 ]] &&　popd &> /dev/null
 }
 
 _printf() {
@@ -264,6 +256,7 @@ set_config (){
 			EOF
 			lan_ip "192.168.2.150"
 			echo "FIRMWARE_TYPE=squashfs-combined" >> $GITHUB_ENV
+			add_busybox "lsusb lspci lsscsi lsof"
 			add_package "kmod-rtl8187 kmod-r8101 kmod-r8125 kmod-r8126 kmod-r8152 kmod-r8186 kmod-rtl8xxxu"
 			;;
 		r[124]*)
@@ -407,8 +400,8 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
 		delpackage "dnsmasq"
 		create_directory "package/emortal"
-		clone_dir $REPO_BRANCH immortalwrt/immortalwrt emortal bcm27xx-utils
-		clone_dir $REPO_BRANCH immortalwrt/luci luci-base luci-mod-status luci-app-homeproxy
+		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal bcm27xx-utils
+		clone_dir "$REPO_BRANCH" immortalwrt/luci luci-base luci-mod-status luci-app-homeproxy
 		add_package "default-settings-chn default-settings block-mount kmod-nf-nathelper kmod-nf-nathelper-extra luci-light luci-app-cpufreq luci-app-package-manager luci-compat luci-lib-base luci-lib-ipkg"
 	fi
 	clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
@@ -416,25 +409,6 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns lua-neturl dns2socks-rust
 	[[ $TARGET_DEVICE =~ k2p ]] || add_package "luci-app-homeproxy luci-app-nikki"
 	[[ $REPO_BRANCH =~ master ]] && rm package/*/luci-app-passwall2/htdocs/luci-static/resources/qrcode.min.js
-
-# rtl8187='
-# config-$(call config_package,rtl8187) += RTL8187
-
-# define KernelPackage/rtl8187
-#   $(call KernelPackage/mac80211/Default)
-#   TITLE:=Realtek RTL8187 USB support
-#   DEPENDS:=@USB_SUPPORT +kmod-mac80211 +kmod-eeprom-93cx6 +kmod-usb-core
-#   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtl8187/rtl8187.ko
-#   AUTOLOAD:=$(call AutoProbe,rtl8187)
-# endef
-
-# define KernelPackage/rtl8187/description
-#   Kernel module for Realtek RTL8187 USB wireless cards
-# endef
-# '
-# 	echo -e "$rtl8187" >> package/kernel/mac80211/realtek.mk
-# 	sed -i 's/PKG_DRIVERS +=/PKG_DRIVERS += rtl8187/' package/kernel/mac80211/realtek.mk
-	# git_diff package/kernel/mac80211/realtek.mk
 else
 	clone_url "fw876/helloworld xiaorouji/openwrt-passwall-packages"
 	create_directory "package/network/config/firewall4" "package/utils/ucode" "package/network/utils/fullconenat-nft" "package/libs/libmd" "package/kernel/bpf-headers"
@@ -464,16 +438,16 @@ color cy "自定义设置.... "
 # sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
 sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 sed -i 's|/bin/login|/bin/login -f root|' feeds/packages/utils/ttyd/files/ttyd.config
-sed -i "/DISTRIB_DESCRIPTION/ {s/'$/-$SOURCE_NAME-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/openwrt_release || true
+sed -i "/OPENWRT_RELEASE/ {s/'$/-$SOURCE_NAME-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/lib/os-release || true
 sed -i "/VERSION_NUMBER/ s/if.*/if \$(VERSION_NUMBER),\$(VERSION_NUMBER),${REPO_BRANCH#*-}-SNAPSHOT)/" include/version.mk || true
 
 settings="
-uci -q upnpd.config.enabled='1'
+uci -q set upnpd.config.enabled='1'
 uci -q commit upnpd
-uci -q system.@system[0].hostname='OpenWrt'
+uci -q set system.@system[0].hostname='OpenWrt'
 uci -q commit system
-uci -q luci.main.lang='zh_cn'
-uci -q luci.main.mediaurlbase='/luci-static/bootstrap'
+uci -q set luci.main.lang='zh_cn'
+uci -q set luci.main.mediaurlbase='/luci-static/bootstrap'
 uci -q commit luci
 sed -iE 's/^(root:).*/\1\$5\$920qxtdc.ivTdd2R\$LHAFosdPCdYpPJiNnz3k7i.6VKiPnfFVPvXIj2pQth2:20227:0:99999:7:::/' /etc/shadow
 exit 0
@@ -507,7 +481,6 @@ find {package/A,feeds/luci/applications}/luci-app*/po -type d 2>/dev/null | whil
 	fi
 done
 
-add_busybox "lsusb lspci lsscsi lsof"
 [[ $REPO_BRANCH =~ master ]] && sed -i '/qbittorrent/d' .config
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
