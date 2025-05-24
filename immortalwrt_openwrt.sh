@@ -438,7 +438,8 @@ color cy "自定义设置.... "
 # sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
 sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 sed -i 's|/bin/login|/bin/login -f root|' feeds/packages/utils/ttyd/files/ttyd.config
-sed -i "/OPENWRT_RELEASE/ {s/'$/-$SOURCE_NAME-$(TZ=UTC-8 date +%Y年%m月%d日)'/}" package/*/*/*/lib/os-release || true
+REPLACEMENT=$([[ $SOURCE_NAME == openwrt ]] && echo "" || echo "${SOURCE_NAME}-")
+sed -i "/OPENWRT_RELEASE/s/'$/-${REPLACEMENT}$(TZ=UTC-8 date +%Y年%m月%d日)'/" package/*/*/*/lib/os-release || true
 sed -i "/VERSION_NUMBER/ s/if.*/if \$(VERSION_NUMBER),\$(VERSION_NUMBER),${REPO_BRANCH#*-}-SNAPSHOT)/" include/version.mk || true
 
 settings="
