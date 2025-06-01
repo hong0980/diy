@@ -193,6 +193,32 @@ answers_dict = {
     '597': '2',  # ffmpeg的libavformat主要功能是 音视频封装格式的生成和解析
     '598': '2',  # 使用ffmpeg为视频添加字幕的正确命令 ffmpeg -i input.mkv -i subtitles.srt -c copy output.mkv
     '599': '2',  # 使用ffmpeg切割视频的正确命令是 ffmpeg -ss 00:00:00 -i input.mp4 -c copy -t 60 output.mp4。
+    '600': '1', # 下列战役中，被陈毅元帅称作【人民群众用小车推出来的】是？
+    '601': '1', # "孤舟蓑笠翁，独钓寒江雪"是哪位诗人的作品？
+    '602': '1',  # 100BASE-T 以太网中的 "T" 指的是？
+    '604': '2', # 银河护卫队1最后彩蛋出现一只鸭子，是谁？
+    '605': '4', # 下面哪一项不属于我国古代的四大名楼？
+    '606': '1', # 移动副的自锁条件是    ；转动副的自锁条件是      。
+    '607': '1',  # 我国第一部叙事详备的编年体史书是？
+    '609': '2', # 在硝酸和钼酸铵作用下有黄色沉淀的矿物是
+    '611': ['1', '2', '8'], # 汽车的动力提升跟哪几项有关
+    '612': '1', # 中国人民解放军空军建军节是哪一天？
+    '613': '8',  # 阿里巴巴和四十大盗的故事，是什么夜谈？
+    '614': '4', # 河南豫剧诞生在哪一年？
+    '615': '2', # The tidal forces to which an object falling into a black hole__subjected __sufficient to tear the object apart.
+    '616': '8', # 连镇铁路不经过哪个地区？
+    '617': ['8', '4', '2'],  # 以下哪些是面向对象编程语言
+    '619': '2',  # 下列关于颐和园的描述中，正确的是（）。
+    '623': '2',  # 新冠核酸检测CT值为25时，可判断为？
+    '624': '2',  # LOL S8世界冠军是哪支战队？
+    '626': '2',  # 以下哪种激素不是下丘脑合成的？
+    '627': '2', # NASA为让美国成为全球首次载人航天而制定的航天计划？
+    '628': '2',  # 下列文言文倒装句式，哪个选项与其他三项不同？
+    '630': '2',  # 中国有____个省、5个自治区、4个直辖市和2个特别行政区
+    '631': '1',  # 琼瑶于什么时间在哪里去世?
+    '632': '4', # 以下哪一部漫画作品不是富坚义博的？
+    '633': '4',  # 在古代中国，有一套独特的选官制度，它以门第族望为主要依据来选拔人才，该制度在一定程度上维护了士族地主的特权地位，并且在后期出现了诸多弊端，如“上车不落则著作，体中何如则秘书”这种凭借门第就能获取官职的情况。这一制度是（ ）
+    '634': '2',  # 什么东西越洗越脏？
 
     '53': '',  # 下列哪种格式不会出现480P,720P.1080P的分辨率
     '70': '',  # 用户升级和哪些参数直接相关?
@@ -252,6 +278,17 @@ def get(key=None):
 
 def check_key(key):
     return key in answers_dict
+
+# def check_key(key):
+#     valid_values = ('1', '2', '4', '8')
+#     if key in answers_dict:
+#         values = answers_dict[key]
+
+#         if isinstance(values, list):
+#             return set(values).issubset(set(valid_values))
+#         elif isinstance(values, str):
+#             return values in valid_values
+#     return False
 
 def find_empty_keys(): # 找到字典中值为空字符串的键
     return [key for key, value in answers_dict.items() if value == '']

@@ -1,17 +1,15 @@
 #!/usr/bin/env bash
-curl -sL https://raw.githubusercontent.com/klever1988/nanopi-openwrt/zstd-bin/zstd | sudo tee /usr/bin/zstd > /dev/null
-qb_version=$(curl -sL https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K(.*?)(?=/)' | sort -Vr | uniq | awk 'NR==1')
+
+mkdir firmware output &>/dev/null
 for page in 1 2; do
 	curl -sL "$GITHUB_API_URL/repos/hong0980/Actions-OpenWrt/releases?page=$page"
 done | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' > xa
-curl -sL https://api.github.com/repos/hong0980/OpenWrt-Cache/releases | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' >xc
-# curl -s https://api.github.com/repos/kiddin9/kwrt-packages/contents/ | jq -r '.[] | select(.type == "dir" and (.name | startswith(".") | not)) | .name' > kiddin9_packages
-
-mkdir firmware output &>/dev/null
+curl -sL https://api.github.com/repos/hong0980/OpenWrt-Cache/releases | \
+	grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' > xc
 
 if [[ $cache_Release == 'true' ]]; then
 	count=0
-	while read -r line && [ $count -lt 4 ]; do
+	while read -r line && [ $count -lt 5 ]; do
 		filename="${line##*/}"
 		if ! grep -q "$filename" xc &>/dev/null && wget -qO "output/$filename" "$line"; then
 			echo "$filename 已经下载完成"
@@ -38,8 +36,8 @@ if [[ $CACHE_ACTIONS == 'true' ]]; then
 	[[ -d ".ccache" ]] && (ccache=".ccache"; ls -alh .ccache)
 	du -h --max-depth=1 ./staging_dir
 	du -h --max-depth=1 ./ --exclude=staging_dir
-	tar -I zstdmt -cf ../output/$CACHE_NAME-cache.tzst staging_dir/host* staging_dir/tool* $ccache || \
-	tar --zstd -cf ../output/$CACHE_NAME-cache.tar.zst staging_dir/host* staging_dir/tool* $ccache
+	tar -I zstdmt -cf ../output/$CACHE_NAME-cache-$(TZ=UTC-8 date +%m-%d).tzst staging_dir/host* staging_dir/tool* $ccache || \
+	tar --zstd -cf ../output/$CACHE_NAME-cache-$(TZ=UTC-8 date +%m-%d).tar.zst staging_dir/host* staging_dir/tool* $ccache
 	if [[ $(du -sm "../output" | cut -f1) -ge 150 ]]; then
 		ls -lh ../output
 		echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
@@ -48,6 +46,9 @@ if [[ $CACHE_ACTIONS == 'true' ]]; then
 	echo "SAVE_CACHE=" >> $GITHUB_ENV
 	exit 0
 fi
+
+curl -sL https://raw.githubusercontent.com/klever1988/nanopi-openwrt/zstd-bin/zstd | sudo tee /usr/bin/zstd > /dev/null
+qb_version=$(curl -sL https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K(.*?)(?=/)' | sort -Vr | uniq | awk 'NR==1')
 
 color() {
 	case $1 in
