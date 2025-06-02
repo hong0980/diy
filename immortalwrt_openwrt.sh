@@ -321,7 +321,7 @@ set_config (){
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || {
 		add_package "automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-simplenetwork luci-app-tinynote luci-app-uhttpd luci-app-eqos luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils patch" "luci-app-qbittorrent luci-app-transmission luci-app-aria2 luci-app-deluge"
 	}
-	add_package "autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall luci-app-upnp luci-app-ttyd luci-app-timedtask luci-app-ksmbd luci-app-wizard luci-app-accesscontrol-plus luci-app-advancedplus luci-app-eqosplus" luci-app-easymesh
+	add_package "autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall luci-app-upnp luci-app-ttyd luci-app-timedtask luci-app-ksmbd luci-app-wizard luci-app-accesscontrol-plus luci-app-eqosplus" luci-app-easymesh
 }
 
 deploy_cache() {
@@ -399,7 +399,7 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 		add_package "default-settings-chn default-settings block-mount kmod-nf-nathelper kmod-nf-nathelper-extra luci-light luci-app-cpufreq luci-app-package-manager luci-compat luci-lib-base luci-lib-ipkg"
 	fi
 	clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
-	add_package "axel luci-app-gecoosac luci-app-partexp luci-app-istorex"
+	add_package "axel luci-app-gecoosac" #luci-app-istorex luci-app-partexp
 	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
 	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns lua-neturl dns2socks-rust
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy luci-app-nikki"
@@ -426,8 +426,8 @@ delpackage "luci-app-filetransfer luci-app-turboacc"
 clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box
 clone_dir kiddin9/kwrt-packages chinadns-ng geoview lua-maxminddb luci-app-bypass luci-app-nlbwmon luci-app-arpbind \
 	luci-app-pushbot luci-app-store luci-app-syncdial luci-lib-taskd luci-lib-xterm qBittorrent-static taskd trojan-plus \
-	gecoosac luci-app-gecoosac luci-app-istorex luci-app-quickstart luci-app-accesscontrol-plus luci-app-advancedplus \
- 	luci-app-eqosplus
+	gecoosac luci-app-gecoosac luci-app-quickstart luci-app-accesscontrol-plus luci-app-advancedplus \
+ 	luci-app-eqosplus #luci-app-istorex
 
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
 color cy "自定义设置.... "
