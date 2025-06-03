@@ -384,7 +384,7 @@ clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir hong0980/build ddnsto luci-app-ddnsto luci-app-diskman luci-app-dockerman \
 	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
 	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-easymesh luci-lib-docker \
-	aria2 luci-app-aria2 sunpanel lsscsi axel \
+	aria2 luci-app-aria2 sunpanel lsscsi axel luci-app-taskplan \
 	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle \
 	libtorrent-rasterbar python-mako
 clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang nlbwmon
@@ -399,7 +399,7 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 		add_package "default-settings-chn default-settings block-mount kmod-nf-nathelper kmod-nf-nathelper-extra luci-light luci-app-cpufreq luci-app-package-manager luci-compat luci-lib-base luci-lib-ipkg"
 	fi
 	clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
-	add_package "axel luci-app-gecoosac" #luci-app-istorex luci-app-partexp
+	add_package "axel luci-app-gecoosac luci-app-taskplan" #luci-app-istorex luci-app-partexp
 	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
 	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns lua-neturl dns2socks-rust
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy luci-app-nikki"
@@ -427,7 +427,7 @@ clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box
 clone_dir kiddin9/kwrt-packages chinadns-ng geoview lua-maxminddb luci-app-bypass luci-app-nlbwmon luci-app-arpbind \
 	luci-app-pushbot luci-app-store luci-app-syncdial luci-lib-taskd luci-lib-xterm qBittorrent-static taskd trojan-plus \
 	gecoosac luci-app-gecoosac luci-app-quickstart luci-app-accesscontrol-plus luci-app-advancedplus \
- 	luci-app-eqosplus #luci-app-istorex
+ 	luci-app-eqosplus luci-app-istorex
 
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
 color cy "自定义设置.... "
