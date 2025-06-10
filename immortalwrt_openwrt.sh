@@ -319,9 +319,9 @@ set_config (){
 			;;
 	esac
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || {
-		add_package "automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-simplenetwork luci-app-tinynote luci-app-uhttpd luci-app-eqos luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils patch" "luci-app-qbittorrent luci-app-transmission luci-app-aria2 luci-app-deluge"
+		add_package "automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-simplenetwork luci-app-tinynote luci-app-uhttpd luci-app-eqos luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils patch" #"luci-app-qbittorrent luci-app-transmission luci-app-aria2 luci-app-deluge"
 	}
-	add_package "autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-ksmbd luci-app-wizard luci-app-accesscontrol-plus luci-app-eqosplus" luci-app-easymesh
+	add_package "autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-ksmbd luci-app-wizard luci-app-accesscontrol-plus luci-app-eqosplus" luci-app-easymesh luci-app-watchdog
 }
 
 deploy_cache() {
@@ -389,6 +389,7 @@ clone_dir hong0980/build ddnsto luci-app-ddnsto luci-app-diskman luci-app-docker
 	libtorrent-rasterbar python-mako
 clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang nlbwmon
 clone_dir sirpdboy/luci-app-partexp luci-app-partexp
+clone_dir sirpdboy/luci-app-watchdog watchdog luci-app-watchdog
 
 if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
@@ -427,7 +428,7 @@ clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box
 clone_dir kiddin9/kwrt-packages chinadns-ng geoview lua-maxminddb luci-app-bypass luci-app-nlbwmon luci-app-arpbind \
 	luci-app-pushbot luci-app-store luci-app-syncdial luci-lib-taskd luci-lib-xterm qBittorrent-static taskd trojan-plus \
 	gecoosac luci-app-gecoosac luci-app-quickstart luci-app-accesscontrol-plus luci-app-advancedplus \
- 	luci-app-eqosplus luci-app-istorex
+	luci-app-eqosplus luci-app-istorex
 
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
 color cy "自定义设置.... "
@@ -478,7 +479,8 @@ find {package/A,feeds/luci/applications}/luci-app*/po -type d 2>/dev/null | whil
 	fi
 done
 
-[[ $REPO_BRANCH =~ master ]] && sed -i '/qbittorrent/d' .config
+[[ "$REPO_BRANCH" =~ master ]] && sed -i '/qbittorrent/d' .config
+[[ "$TARGET_DEVICE" =~ armvirt ]] && sed -i '/qbittorrent/d' .config
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
 make defconfig 1>/dev/null 2>&1
