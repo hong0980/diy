@@ -360,7 +360,7 @@ set_config (){
 	esac
 	[[ $TARGET_DEVICE =~ k2p ]] || \
 		addpackage "luci-app-bypass luci-app-ddnsto luci-app-openclash luci-app-passwall luci-app-passwall2 luci-app-ssr-plus luci-app-tinynote luci-app-uhttpd luci-app-homeproxy luci-app-usb-printer luci-app-eqos diffutils patch luci-app-nikki"
-	addpackage "luci-app-filebrowser luci-app-timedtask luci-app-ttyd luci-app-wizard"
+	addpackage "luci-app-filebrowser luci-app-taskplan luci-app-ttyd luci-app-wizard"
 	delpackage "luci-app-ddns luci-app-autoreboot luci-app-wol luci-app-vlmcsd luci-app-filetransfer"
 }
 
@@ -419,9 +419,12 @@ git_clone
 clone_dir vernesong/OpenClash luci-app-openclash
 clone_dir xiaorouji/openwrt-passwall luci-app-passwall
 clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
-clone_dir hong0980/build luci-app-ddnsto luci-app-diskman luci-app-dockerman \
+clone_dir hong0980/build ddnsto luci-app-ddnsto luci-app-diskman luci-app-dockerman \
 	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
-	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-lib-docker lsscsi
+	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-easymesh luci-lib-docker \
+	aria2 luci-app-aria2 sunpanel lsscsi axel luci-app-taskplan \
+	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle \
+	libtorrent-rasterbar python-mako
 clone_dir sbwml/openwrt_helloworld luci-app-homeproxy chinadns-ng \
 	geoview sing-box trojan-plus xray-core
 clone_dir kiddin9/kwrt-packages luci-app-bypass lua-maxminddb \
@@ -454,15 +457,11 @@ sed -Ei '{
 		s/((^| |    )(PKG_HASH|PKG_MD5SUM|PKG_MIRROR_HASH|HASH):=).*/\1skip/
 	}' package/A/*/Makefile 2>/dev/null
 
-find {package/A,feeds/luci/applications}/luci-app*/po \
-	-type d -print0 | xargs -0 -P$(nproc) -I{} bash -c '
-	dir="$1"
-	if [[ -d "$dir/zh-cn" && ! -e "$dir/zh_Hans" ]]; then
-		ln -sf zh-cn "$dir/zh_Hans" 2>/dev/null
-	elif [[ -d "$dir/zh_Hans" && ! -e "$dir/zh-cn" ]]; then
-		ln -sf zh_Hans "$dir/zh-cn" 2>/dev/null
-	fi
-' _ {}
+sed -Ei \
+	-e 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|' \
+	-e 's?include ../(lang|devel)?include $(TOPDIR)/feeds/packages/\1?' \
+	-e "s/((^| |    )(PKG_HASH|PKG_MD5SUM|PKG_MIRROR_HASH|HASH):=).*/\1skip/" \
+	package/A/*/Makefile 2>/dev/null
 
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
