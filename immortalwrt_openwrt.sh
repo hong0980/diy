@@ -384,7 +384,7 @@ clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir hong0980/build ddnsto luci-app-ddnsto luci-app-diskman luci-app-dockerman \
 	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
 	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-easymesh luci-lib-docker \
-	aria2 luci-app-aria2 sunpanel lsscsi axel luci-app-taskplan luci-app-watchdog \
+	aria2 luci-app-aria2 sunpanel lsscsi axel luci-app-taskplan luci-app-watchdog luci-app-eqosplus \
 	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle \
 	libtorrent-rasterbar python-mako
 clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang nlbwmon
@@ -429,7 +429,7 @@ clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box
 clone_dir kiddin9/kwrt-packages chinadns-ng geoview lua-maxminddb luci-app-bypass luci-app-nlbwmon luci-app-arpbind \
 	luci-app-pushbot luci-app-store luci-app-syncdial luci-lib-taskd luci-lib-xterm qBittorrent-static taskd trojan-plus \
 	gecoosac luci-app-gecoosac luci-app-quickstart luci-app-accesscontrol-plus luci-app-advancedplus \
-	luci-app-eqosplus luci-app-istorex
+	luci-app-istorex
 
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
 color cy "自定义设置.... "
