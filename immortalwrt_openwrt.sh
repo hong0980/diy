@@ -146,6 +146,7 @@ clone_dir() {
 
 	[[ $REPO_BRANCH =~ master|23|24 ]] || {
 		[[ $repo_url =~ hong0980/diy ]] && set -- "$@" luci-app-wizard
+		[[ $REPO_BRANCH =~ master ]] && [[ $repo_url =~ hong0980/build ]] && set -- "$@" rust
 		[[ $repo_url =~ coolsnowwolf/packages ]] && set -- "$@" "bash" \
 				"btrfs-progs" "gawk" "jq" "nginx-util" "pciutils" "curl"
 	}
@@ -321,7 +322,7 @@ set_config (){
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || {
 		add_package "automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-simplenetwork luci-app-tinynote luci-app-uhttpd luci-app-eqos luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils patch" "luci-app-qbittorrent luci-app-transmission luci-app-aria2 luci-app-deluge"
 	}
-	add_package "autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-ksmbd luci-app-wizard luci-app-accesscontrol-plus luci-app-eqosplus" luci-app-easymesh luci-app-watchdog luci-app-ddns-go
+	add_package "autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-ksmbd luci-app-wizard luci-app-accesscontrol-plus" luci-app-easymesh luci-app-watchdog luci-app-ddns-go
 }
 
 deploy_cache() {
@@ -384,7 +385,7 @@ clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir hong0980/build ddnsto luci-app-ddnsto luci-app-diskman luci-app-dockerman \
 	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
 	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-easymesh luci-lib-docker \
-	aria2 luci-app-aria2 sunpanel lsscsi axel luci-app-taskplan luci-app-watchdog luci-app-eqosplus \
+	aria2 luci-app-aria2 sunpanel lsscsi axel luci-app-taskplan luci-app-watchdog \
 	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle \
 	libtorrent-rasterbar python-mako
 clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang nlbwmon
