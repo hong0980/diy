@@ -146,10 +146,10 @@ clone_dir() {
 
 	[[ $REPO_BRANCH =~ master|23|24 ]] || {
 		[[ $repo_url =~ hong0980/diy ]] && set -- "$@" luci-app-wizard
-		# ([[ $REPO_BRANCH =~ master|main ]] && [[ $repo_url =~ hong0980/build ]]) && set -- "$@" rust
 		[[ $repo_url =~ coolsnowwolf/packages ]] && set -- "$@" "bash" \
 				"btrfs-progs" "gawk" "jq" "nginx-util" "pciutils" "curl"
 	}
+	[[ $REPO_BRANCH =~ master|main ]] && [[ $repo_url =~ hong0980/build ]] && set -- "$@" rust
 	[[ $repo_url =~ sbwml && $REPO =~ openwrt ]] && set -- "$@" "dns2socks" "dns2tcp" "hysteria" "ipt2socks" \
 		"microsocks" "naiveproxy" "pdnsd" "redsocks2" "simple-obfs" "tcping" "trojan" \
 		"tuic-client" "v2ray-core" "v2ray-geodata" "v2ray-plugin" "xray-plugin"
@@ -387,7 +387,7 @@ clone_dir hong0980/build ddnsto luci-app-ddnsto luci-app-diskman luci-app-docker
 	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-easymesh luci-lib-docker \
 	aria2 luci-app-aria2 sunpanel lsscsi axel luci-app-taskplan luci-app-watchdog \
 	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle \
-	libtorrent-rasterbar python-mako rust
+	libtorrent-rasterbar python-mako
 clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang nlbwmon
 clone_dir sirpdboy/luci-app-partexp luci-app-partexp
 # clone_dir sirpdboy/luci-app-watchdog watchdog luci-app-watchdog
