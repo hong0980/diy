@@ -149,7 +149,6 @@ clone_dir() {
 		[[ $repo_url =~ coolsnowwolf/packages ]] && set -- "$@" "bash" \
 				"btrfs-progs" "gawk" "jq" "nginx-util" "pciutils" "curl"
 	}
-	[[ $REPO_BRANCH =~ master|main ]] && [[ $repo_url =~ hong0980/build ]] && set -- "$@" rust
 	[[ $repo_url =~ sbwml && $REPO =~ openwrt ]] && set -- "$@" "dns2socks" "dns2tcp" "hysteria" "ipt2socks" \
 		"microsocks" "naiveproxy" "pdnsd" "redsocks2" "simple-obfs" "tcping" "trojan" \
 		"tuic-client" "v2ray-core" "v2ray-geodata" "v2ray-plugin" "xray-plugin"
@@ -406,7 +405,10 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
 	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns lua-neturl dns2socks-rust
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy luci-app-nikki"
-	[[ $REPO_BRANCH =~ master ]] && rm package/*/luci-app-passwall2/htdocs/luci-static/resources/qrcode.min.js
+	[[ $REPO_BRANCH =~ master ]] && {
+		sed -i 's/\(--set=llvm.download-ci-llvm=\)true/\1false/' feeds/packages/lang/rust/Makefile || true
+		rm package/*/luci-app-passwall2/htdocs/luci-static/resources/qrcode.min.js
+	}
 else
 	clone_url "fw876/helloworld xiaorouji/openwrt-passwall-packages"
 	create_directory "package/network/config/firewall4" "package/utils/ucode" "package/network/utils/fullconenat-nft" "package/libs/libmd" "package/kernel/bpf-headers"
