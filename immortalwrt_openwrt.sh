@@ -406,8 +406,10 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns lua-neturl dns2socks-rust
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy luci-app-nikki"
 	[[ $REPO_BRANCH =~ master ]] && {
-		sed -i 's/\(--set=llvm.download-ci-llvm=\)true/\1false/' feeds/packages/lang/rust/Makefile || true
+		sed -i 's/\(--set=llvm.download-ci-llvm=\).*/\1false \\/' feeds/packages/lang/rust/Makefile || true
 		rm package/*/luci-app-passwall2/htdocs/luci-static/resources/qrcode.min.js
+		curl -sSo package/base-files/files/bin/config_generate \
+			https://raw.githubusercontent.com/openwrt/openwrt/refs/heads/openwrt-24.10/package/base-files/files/bin/config_generate
 	}
 else
 	clone_url "fw876/helloworld xiaorouji/openwrt-passwall-packages"
