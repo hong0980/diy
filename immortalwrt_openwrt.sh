@@ -319,7 +319,7 @@ set_config (){
 			;;
 	esac
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || {
-		add_package "automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-simplenetwork luci-app-tinynote luci-app-uhttpd luci-app-eqos luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils patch" "luci-app-qbittorrent luci-app-transmission luci-app-aria2 luci-app-deluge"
+		add_package "automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-simplenetwork luci-app-tinynote luci-app-uhttpd luci-app-eqos luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils patch" "luci-app-qbittorrent luci-app-deluge" #luci-app-transmission luci-app-aria2
 	}
 	add_package "autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-ksmbd luci-app-wizard luci-app-accesscontrol-plus" luci-app-easymesh luci-app-watchdog luci-app-ddns-go
 }
@@ -386,10 +386,9 @@ clone_dir hong0980/build ddnsto luci-app-ddnsto luci-app-diskman luci-app-docker
 	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-easymesh luci-lib-docker \
 	aria2 luci-app-aria2 sunpanel lsscsi axel luci-app-taskplan luci-app-watchdog \
 	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle \
-	libtorrent-rasterbar python-mako
+	libtorrent-rasterbar
 clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang nlbwmon
 clone_dir sirpdboy/luci-app-partexp luci-app-partexp
-# clone_dir sirpdboy/luci-app-watchdog watchdog luci-app-watchdog
 clone_dir sirpdboy/luci-app-ddns-go ddns-go luci-app-ddns-go
 
 if [[ $REPO_BRANCH =~ master|23|24 ]]; then
@@ -425,8 +424,6 @@ else
 		https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/package/kernel/linux/modules/netfilter.mk
 	curl -sSo include/openssl-module.mk \
 		https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/include/openssl-module.mk
-	sed -i '/deluge/d' .config
-	rm -rf package/A/python-mako
 fi
 
 delpackage "luci-app-filetransfer luci-app-turboacc"
@@ -476,6 +473,8 @@ sed -Ei \
 
 [ -f feeds/luci/applications/luci-app-transmission/Makefile ] && \
 	sed -i 's/transmission-daemon/transmission-daemon +transmission-web-control/' feeds/luci/applications/luci-app-transmission/Makefile
+[ -f feeds/packages/lang/python/python-mako/Makefile ] && \
+	sed -i '/^BUILDONLY:=1/s/^/#/' feeds/packages/lang/python/python-mako/Makefile
 
 find {package/A,feeds/luci/applications}/luci-app*/po -type d 2>/dev/null | while read p; do
 	if [[ -d $p/zh-cn && ! -e $p/zh_Hans ]]; then
