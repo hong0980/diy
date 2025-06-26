@@ -321,7 +321,7 @@ set_config (){
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || {
 		add_package "automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-simplenetwork luci-app-tinynote luci-app-uhttpd luci-app-eqos luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils patch" "luci-app-qbittorrent luci-app-deluge" #luci-app-transmission luci-app-aria2
 	}
-	add_package "autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-ksmbd luci-app-wizard luci-app-accesscontrol-plus" luci-app-easymesh luci-app-watchdog luci-app-ddns-go
+	add_package "autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-ksmbd luci-app-wizard luci-app-miaplus" luci-app-easymesh luci-app-watchdog luci-app-ddns-go
 }
 
 deploy_cache() {
@@ -386,7 +386,7 @@ clone_dir hong0980/build ddnsto luci-app-ddnsto luci-app-diskman luci-app-docker
 	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-easymesh luci-lib-docker \
 	aria2 luci-app-aria2 sunpanel lsscsi axel luci-app-taskplan luci-app-watchdog \
 	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle \
-	libtorrent-rasterbar python-mako luci-app-accesscontrol-plus
+	libtorrent-rasterbar python-mako luci-app-miaplus
 clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang nlbwmon
 clone_dir sirpdboy/luci-app-partexp luci-app-partexp
 clone_dir sirpdboy/luci-app-ddns-go ddns-go luci-app-ddns-go
