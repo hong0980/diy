@@ -249,7 +249,7 @@ set_config (){
 			lan_ip "192.168.2.150"
 			echo "FIRMWARE_TYPE=squashfs-combined" >> $GITHUB_ENV
 			add_busybox "lsusb lspci lsscsi lsof"
-			add_package "kmod-rtl8187 kmod-r8101 kmod-r8125 kmod-r8126 kmod-r8152 kmod-r8186 kmod-rtl8xxxu"
+			add_package "kmod-r8101 kmod-r8125 kmod-r8126 kmod-r8152 kmod-r8186"
 			;;
 		r[124]*)
 			cat >>.config<<-EOF
@@ -319,9 +319,9 @@ set_config (){
 			;;
 	esac
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || {
-		add_package "automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-simplenetwork luci-app-tinynote luci-app-uhttpd luci-app-eqos luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils patch" "luci-app-qbittorrent luci-app-deluge" #luci-app-transmission luci-app-aria2
+		add_package "automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils patch" "luci-app-qbittorrent luci-app-deluge" #luci-app-transmission luci-app-aria2
 	}
-	add_package "autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-ksmbd luci-app-wizard luci-app-miaplus" luci-app-easymesh luci-app-watchdog luci-app-ddns-go
+	add_package "autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-ksmbd luci-app-wizard luci-app-miaplus" luci-app-watchdog
 }
 
 deploy_cache() {
@@ -397,7 +397,7 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 		create_directory "package/emortal"
 		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal bcm27xx-utils
 		# clone_dir "$REPO_BRANCH" immortalwrt/luci luci-base luci-mod-status luci-app-homeproxy
-		add_package "default-settings-chn default-settings block-mount kmod-nf-nathelper kmod-nf-nathelper-extra luci-light luci-app-cpufreq luci-app-package-manager luci-compat luci-lib-base luci-lib-ipkg"
+		add_package "default-settings-chn default-settings luci-app-cpufreq luci-app-package-manager"
 	fi
 	clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
 	add_package "axel luci-app-gecoosac" #luci-app-istorex luci-app-partexp
