@@ -462,6 +462,7 @@ sed -Ei \
 	-e 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|' \
 	-e 's?include ../(lang|devel)?include $(TOPDIR)/feeds/packages/\1?' \
 	-e "s/((^| |    )(PKG_HASH|PKG_MD5SUM|PKG_MIRROR_HASH|HASH):=).*/\1skip/" \
+	-e 's|include \.\./py(.*)\.mk|include $(TOPDIR)/feeds/packages/lang/python/py\1.mk|' \
 	package/A/*/Makefile 2>/dev/null
 
 [ -f feeds/packages/net/ariang/Makefile ] && {

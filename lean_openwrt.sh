@@ -90,9 +90,19 @@ create_directory() {
 	done
 }
 
-addpackage() {
+add_package() {
 	for z in $@; do
 		[[ $z =~ ^# ]] || echo "CONFIG_PACKAGE_$z=y" >>.config
+	done
+}
+
+add_busybox() {
+	local config_file="package/utils/busybox/Config-defaults.in"
+	for z in $@; do
+		[[ "$z" =~ ^# ]] && continue
+		local str=$(echo "$z" | tr 'a-z' 'A-Z')
+		grep -q "BUSYBOX_DEFAULT_$str$" "$config_file" && \
+		sed -i "/^config BUSYBOX_DEFAULT_$str$/{n;n;/default /!{s/$/\n\tdefault y/};/default /s/default .*/default y/}" "$config_file" #&& _printf "$(color cb 添加) busybox_$z [ $(color cb ✔) ]"
 	done
 }
 
@@ -170,6 +180,10 @@ clone_dir() {
 	git clone -q $branch --depth 1 "$repo_url" $temp_dir 2>/dev/null || {
 		_printf "$(color cr 拉取) $repo_url [ $(color cr ✕) ]"
 		return 1
+	}
+
+	[[ -d package/A/python-mako ]] && [[ $repo_url =~ openwrt/packages ]] && {
+		set -- "$@" "python-build" "python-installer" "python-wheel" "python-markupsafe"
 	}
 
 	for target_dir in $@; do
@@ -264,7 +278,7 @@ set_config (){
 			EOF
 			lan_ip "192.168.2.150"
 			echo "FIRMWARE_TYPE=squashfs-combined" >> $GITHUB_ENV
-			addpackage "luci-app-dockerman luci-app-diskman luci-app-poweroff luci-app-qbittorrent lscpu lsusb lsscsi pciutils pv screen #luci-app-deluge #luci-app-netdata #luci-app-store #nano #git-http #subversion-client #unixodbc #htop "
+			add_busybox "lsusb lspci lsscsi lsof"
 			;;
 		r[124]*)
 			cat >>.config<<-EOF
@@ -283,12 +297,6 @@ set_config (){
 			esac
 			lan_ip "192.168.2.1"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
-			addpackage "
-			luci-app-cpufreq luci-app-dockerman luci-app-qbittorrent luci-app-turboacc
-			luci-app-passwall2 #luci-app-easymesh luci-app-store luci-app-netdata
-			#luci-app-deluge htop lscpu lsscsi lsusb #nano screen zstd pv
-			#AmuleWebUI-Reloaded #subversion-client #unixodbc #git-http
-			"
 			# sed -i '/KERNEL_PATCHVER/s/=.*/=5.4/' target/linux/rockchip/Makefile
 			# clone_dir 'openwrt-18.06-k5.4' immortalwrt/immortalwrt uboot-rockchip arm-trusted-firmware-rockchip-vendor
 			sed -i "/interfaces_lan_wan/s/'eth1' 'eth0'/'eth0' 'eth1'/" target/linux/rockchip/*/*/*/*/02_network
@@ -332,15 +340,6 @@ set_config (){
 			lan_ip "192.168.2.110"
 			echo "FIRMWARE_TYPE=$TARGET_DEVICE" >> $GITHUB_ENV
 			sed -i '/easymesh/d' .config
-			addpackage "attr bash blkid brcmfmac-firmware-43430-sdio brcmfmac-firmware-43455-sdio
-			btrfs-progs cfdisk chattr curl dosfstools e2fsprogs f2fs-tools f2fsck fdisk getopt
-			hostpad-common htop install-program iperf3 kmod-brcmfmac kmod-brcmutil kmod-cfg80211
-			kmod-fs-exfat kmod-fs-ext4 kmod-fs-vfat kmod-mac80211 kmod-rt2800-usb kmod-usb-net
-			kmod-usb-net-asix-ax88179 kmod-usb-net-rtl8150 kmod-usb-net-rtl8152 kmod-usb-storage
-			kmod-usb-storage-extras kmod-usb-storage-uas kmod-usb2 kmod-usb3 lm-sensors losetup
-			lsattr lsblk lscpu lsscsi luci-app-adguardhome luci-app-cpufreq luci-app-dockerman
-			luci-app-qbittorrent mkf2fs ntfs-3g parted pv python3 resize2fs tune2fs unzip
-			uuidgen wpa-cli wpad wpad-basic xfs-fsck xfs-mkf"
 
 			dc=$(find_first_dir "package/A feeds" "luci-app-cpufreq")
 			[[ -d $dc ]] && {
@@ -360,7 +359,7 @@ set_config (){
 	esac
 	[[ $TARGET_DEVICE =~ k2p ]] || \
 		add_package "automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils patch" "luci-app-qbittorrent luci-app-deluge luci-app-nikki luci-app-homeproxy" #luci-app-transmission luci-app-aria2
-	addpackage "luci-app-filebrowser luci-app-ttyd luci-app-wizard luci-app-taskplan luci-app-ksmbd luci-app-miaplus"
+	add_package "luci-app-filebrowser luci-app-ttyd luci-app-wizard luci-app-taskplan luci-app-ksmbd luci-app-miaplus"
 	delpackage "luci-app-ddns luci-app-autoreboot luci-app-wol luci-app-vlmcsd luci-app-filetransfer"
 }
 
@@ -456,13 +455,8 @@ sed -Ei '{
 		s|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|
 		s?include ../(lang|devel)?include $(TOPDIR)/feeds/packages/\1?
 		s/((^| |    )(PKG_HASH|PKG_MD5SUM|PKG_MIRROR_HASH|HASH):=).*/\1skip/
+		s|include \.\./py(.*)\.mk|include $(TOPDIR)/feeds/packages/lang/python/py\1.mk|
 	}' package/A/*/Makefile 2>/dev/null
-
-sed -Ei \
-	-e 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|' \
-	-e 's?include ../(lang|devel)?include $(TOPDIR)/feeds/packages/\1?' \
-	-e "s/((^| |    )(PKG_HASH|PKG_MD5SUM|PKG_MIRROR_HASH|HASH):=).*/\1skip/" \
-	package/A/*/Makefile 2>/dev/null
 
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
