@@ -358,7 +358,7 @@ set_config (){
 			;;
 	esac
 	[[ $TARGET_DEVICE =~ k2p ]] || \
-		add_package "automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils patch" "luci-app-qbittorrent luci-app-deluge luci-app-nikki luci-app-homeproxy" #luci-app-transmission luci-app-aria2
+		add_package "automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils patch" "luci-app-qbittorrent luci-app-nikki luci-app-homeproxy" #luci-app-deluge luci-app-transmission luci-app-aria2
 	add_package "luci-app-filebrowser luci-app-ttyd luci-app-wizard luci-app-taskplan luci-app-ksmbd luci-app-miaplus"
 	delpackage "luci-app-ddns luci-app-autoreboot luci-app-wol luci-app-vlmcsd luci-app-filetransfer"
 }
@@ -430,7 +430,7 @@ clone_dir kiddin9/kwrt-packages chinadns-ng geoview lua-maxminddb luci-app-bypas
 	gecoosac luci-app-gecoosac luci-app-quickstart luci-app-advancedplus \
 	luci-app-istorex luci-app-homeproxy
 clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
-clone_dir openwrt/packages docker dockerd containerd docker-compose runc
+clone_dir openwrt-24.10 openwrt/packages docker dockerd containerd docker-compose runc
 
 REPO_BRANCH=$(sed -En 's/^src-git luci.*;(.*)/\1/p' feeds.conf.default)
 REPO_BRANCH=${REPO_BRANCH:-18.06}
