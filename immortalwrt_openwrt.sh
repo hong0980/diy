@@ -403,13 +403,7 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 	add_package "axel luci-app-gecoosac" #luci-app-istorex luci-app-partexp
 	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
 	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns lua-neturl dns2socks-rust
-	if ! grep -q -- "--ci false" feeds/packages/lang/rust/Makefile; then
-		sed -i '/define Host\/Compile/,/endef/ {
-			/x.py/ {
-				a \		--ci false \\
-			}
-		}' feeds/packages/lang/rust/Makefile
-	fi
+	grep -q -- '--ci false \\' feeds/packages/lang/rust/Makefile || sed -i '/x\.py \\/a \        --ci false \\' feeds/packages/lang/rust/Makefile
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy luci-app-nikki"
 	[[ $REPO_BRANCH =~ master ]] && {
 		rm package/*/luci-app-passwall2/htdocs/luci-static/resources/qrcode.min.js

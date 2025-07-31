@@ -359,8 +359,8 @@ set_config (){
 			;;
 	esac
 	[[ $TARGET_DEVICE =~ k2p ]] || \
-		addpackage "luci-app-bypass luci-app-ddnsto luci-app-openclash luci-app-passwall luci-app-passwall2 luci-app-ssr-plus luci-app-tinynote luci-app-uhttpd luci-app-homeproxy luci-app-usb-printer luci-app-eqos diffutils patch luci-app-nikki"
-	addpackage "luci-app-filebrowser luci-app-taskplan luci-app-ttyd luci-app-wizard"
+		add_package "automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils patch" "luci-app-qbittorrent luci-app-deluge luci-app-nikki luci-app-homeproxy" #luci-app-transmission luci-app-aria2
+	addpackage "luci-app-filebrowser luci-app-ttyd luci-app-wizard luci-app-taskplan luci-app-ksmbd luci-app-miaplus"
 	delpackage "luci-app-ddns luci-app-autoreboot luci-app-wol luci-app-vlmcsd luci-app-filetransfer"
 }
 
@@ -422,13 +422,14 @@ clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir hong0980/build ddnsto luci-app-ddnsto luci-app-diskman luci-app-dockerman \
 	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
 	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-easymesh luci-lib-docker \
-	aria2 luci-app-aria2 sunpanel lsscsi axel luci-app-taskplan \
+	aria2 luci-app-aria2 sunpanel lsscsi axel luci-app-taskplan luci-app-watchdog \
 	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle \
-	libtorrent-rasterbar python-mako
-clone_dir sbwml/openwrt_helloworld luci-app-homeproxy chinadns-ng \
-	geoview sing-box trojan-plus xray-core
-clone_dir kiddin9/kwrt-packages luci-app-bypass lua-maxminddb \
-	#luci-app-pushbot luci-app-store luci-lib-taskd taskd luci-lib-xterm
+	libtorrent-rasterbar python-mako luci-app-miaplus
+clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box
+clone_dir kiddin9/kwrt-packages chinadns-ng geoview lua-maxminddb luci-app-bypass luci-app-nlbwmon luci-app-arpbind \
+	luci-app-pushbot luci-app-store luci-app-syncdial luci-lib-taskd luci-lib-xterm qBittorrent-static taskd trojan-plus \
+	gecoosac luci-app-gecoosac luci-app-quickstart luci-app-advancedplus \
+	luci-app-istorex luci-app-homeproxy
 clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
 clone_dir openwrt/packages docker dockerd containerd docker-compose runc
 
