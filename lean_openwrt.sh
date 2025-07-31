@@ -183,7 +183,7 @@ clone_dir() {
 	}
 
 	[[ -d package/A/python-mako ]] && [[ $repo_url =~ openwrt/packages ]] && {
-		set -- "$@" "python-build" "python-installer" "python-wheel" "python-markupsafe"
+		set -- "$@" "python-build" "python-installer" "python-wheel" "python-markupsafe" "python-flit-core" "python-packaging" "python-pyproject-hooks"
 	}
 
 	for target_dir in $@; do
