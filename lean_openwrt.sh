@@ -278,7 +278,7 @@ set_config (){
 			EOF
 			lan_ip "192.168.2.150"
 			echo "FIRMWARE_TYPE=squashfs-combined" >> $GITHUB_ENV
-			add_busybox "lsusb lspci lsscsi lsof"
+			# add_busybox "lsusb lspci lsscsi lsof"
 			;;
 		r[124]*)
 			cat >>.config<<-EOF
