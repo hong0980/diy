@@ -359,7 +359,7 @@ set_config (){
 	esac
 	[[ $TARGET_DEVICE =~ k2p ]] || \
 		add_package "automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils patch" "luci-app-qbittorrent luci-app-nikki luci-app-homeproxy" #luci-app-deluge luci-app-transmission luci-app-aria2
-	add_package "luci-app-filebrowser luci-app-passwall luci-app-ttyd luci-app-wizard luci-app-taskplan luci-app-ksmbd luci-app-miaplus" luci-app-watchdog luci-app-gecoosac
+	add_package "luci-app-filebrowser luci-app-passwall luci-app-ttyd luci-app-wizard luci-app-taskplan luci-app-ksmbd luci-app-miaplus" luci-app-watchdog #luci-app-gecoosac
 	delpackage "luci-app-ddns luci-app-autoreboot luci-app-wol luci-app-vlmcsd luci-app-filetransfer"
 }
 
@@ -401,7 +401,7 @@ git_clone() {
 
 	echo -e "$(color cy '更新软件....')\c"
 	begin_time=$(date '+%H:%M:%S')
-	sed -i '/#.*helloworld/ s/^#//; /^src-git luci/s/23.05$/24.10/' feeds.conf.default
+	sed -i '/#.*helloworld/ s/^#//' feeds.conf.default
 	./scripts/feeds update -a 1>/dev/null 2>&1
 	./scripts/feeds install -a 1>/dev/null 2>&1
 	status
