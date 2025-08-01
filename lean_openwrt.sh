@@ -359,7 +359,7 @@ set_config (){
 	esac
 	[[ $TARGET_DEVICE =~ k2p ]] || \
 		add_package "automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils patch" "luci-app-qbittorrent luci-app-nikki luci-app-homeproxy" #luci-app-deluge luci-app-transmission luci-app-aria2
-	add_package "luci-app-filebrowser luci-app-ttyd luci-app-wizard luci-app-taskplan luci-app-ksmbd luci-app-miaplus"
+	add_package "luci-app-filebrowser luci-app-passwall luci-app-ttyd luci-app-wizard luci-app-taskplan luci-app-ksmbd luci-app-miaplus"
 	delpackage "luci-app-ddns luci-app-autoreboot luci-app-wol luci-app-vlmcsd luci-app-filetransfer"
 }
 
@@ -457,6 +457,14 @@ sed -Ei '{
 		s/((^| |    )(PKG_HASH|PKG_MD5SUM|PKG_MIRROR_HASH|HASH):=).*/\1skip/
 		s|include \.\./py(.*)\.mk|include $(TOPDIR)/feeds/packages/lang/python/py\1.mk|
 	}' package/A/*/Makefile 2>/dev/null
+
+find {package/A,feeds/luci/applications}/luci-app*/po -type d 2>/dev/null | while read p; do
+	if [[ -d $p/zh-cn && ! -e $p/zh_Hans ]]; then
+		ln -s zh-cn "$p/zh_Hans" 2>/dev/null
+	elif [[ -d $p/zh_Hans && ! -e $p/zh-cn ]]; then
+		ln -s zh_Hans "$p/zh-cn" 2>/dev/null
+	fi
+done
 
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
