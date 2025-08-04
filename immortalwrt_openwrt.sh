@@ -321,7 +321,7 @@ set_config (){
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || {
 		add_package "automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils patch" "luci-app-qbittorrent luci-app-deluge" #luci-app-transmission luci-app-aria2
 	}
-	add_package "autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-ksmbd luci-app-wizard luci-app-miaplus" luci-app-watchdog
+	add_package "autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-ksmbd luci-app-wizard luci-app-miaplus" luci-app-watchdog luci-theme-argon
 }
 
 deploy_cache() {
@@ -385,8 +385,8 @@ clone_dir hong0980/build ddnsto luci-app-ddnsto luci-app-diskman luci-app-docker
 	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
 	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-easymesh luci-lib-docker \
 	aria2 luci-app-aria2 sunpanel lsscsi axel luci-app-taskplan luci-app-watchdog \
-	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle \
-	libtorrent-rasterbar python-mako luci-app-miaplus
+	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle python-pyasn1 \
+	python-mako libtorrent-rasterbar luci-app-miaplus
 clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang nlbwmon
 clone_dir sirpdboy/luci-app-partexp luci-app-partexp
 clone_dir sirpdboy/luci-app-ddns-go ddns-go luci-app-ddns-go
@@ -431,7 +431,7 @@ clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box
 clone_dir kiddin9/kwrt-packages chinadns-ng geoview lua-maxminddb luci-app-bypass luci-app-nlbwmon luci-app-arpbind \
 	luci-app-pushbot luci-app-store luci-app-syncdial luci-lib-taskd luci-lib-xterm qBittorrent-static taskd trojan-plus \
 	gecoosac luci-app-gecoosac luci-app-quickstart luci-app-advancedplus \
-	luci-app-istorex luci-app-homeproxy
+	luci-app-istorex luci-app-homeproxy luci-theme-argon
 
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
 color cy "自定义设置.... "
