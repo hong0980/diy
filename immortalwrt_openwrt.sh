@@ -121,6 +121,16 @@ git_apply() {
 	cd "$original_dir"
 }
 
+create_feed() {
+	local patch="$1"
+	shift
+	for z in $@; do
+		local dir_path="$patch/$z"
+		create_directory "$dir_path"
+		ln -sf $(pwd)/$dir_path package/feeds/packages/$z 2>/dev/null
+	done
+}
+
 clone_dir() {
 	[[ $# -lt 1 ]] && return 1
 	local repo_url branch temp_dir=$(mktemp -d) find_dir="package feeds target"
@@ -155,6 +165,7 @@ clone_dir() {
 
 	for target_dir in $@; do
 		local source_dir current_dir destination_dir
+		[[ $target_dir =~ ^luci-app ]] && create_feed feeds/luci/applications $target_dir
 		if [[ ${repo_url##*/} == ${target_dir} ]]; then
 			mv -f ${temp_dir} ${target_dir}
 			source_dir=${target_dir}
@@ -319,7 +330,7 @@ set_config (){
 			;;
 	esac
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || {
-		add_package "automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils patch" "luci-app-qbittorrent luci-app-deluge" #luci-app-transmission luci-app-aria2
+		add_package "automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils patch" "luci-app-qbittorrent luci-app-deluge" luci-app-transmission luci-app-aria2
 	}
 	add_package "autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-ksmbd luci-app-wizard luci-app-miaplus" luci-app-watchdog luci-theme-argon
 }
@@ -388,8 +399,6 @@ clone_dir hong0980/build ddnsto luci-app-ddnsto luci-app-diskman luci-app-docker
 	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle python-pyasn1 \
 	libtorrent-rasterbar luci-app-miaplus
 clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang nlbwmon
-clone_dir sirpdboy/luci-app-partexp luci-app-partexp
-clone_dir sirpdboy/luci-app-ddns-go ddns-go luci-app-ddns-go
 
 if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
@@ -427,11 +436,11 @@ else
 fi
 
 delpackage "luci-app-filetransfer luci-app-turboacc"
-clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box
+clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box luci-app-homeproxy
 clone_dir kiddin9/kwrt-packages chinadns-ng geoview lua-maxminddb luci-app-bypass luci-app-nlbwmon luci-app-arpbind \
 	luci-app-pushbot luci-app-store luci-app-syncdial luci-lib-taskd luci-lib-xterm qBittorrent-static taskd trojan-plus \
 	gecoosac luci-app-gecoosac luci-app-quickstart luci-app-advancedplus \
-	luci-app-istorex luci-app-homeproxy luci-theme-argon
+	luci-app-istorex luci-theme-argon ddns-go luci-app-ddns-go
 
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
 color cy "自定义设置.... "
@@ -465,12 +474,10 @@ sed -Ei \
 	-e 's|include \.\./py(.*)\.mk|include $(TOPDIR)/feeds/packages/lang/python/py\1.mk|' \
 	package/A/*/Makefile 2>/dev/null
 
-[ -f feeds/packages/net/ariang/Makefile ] && {
-	sed -Ei \
-		-e 's/(PKG_HASH:=).*/\1skip/' \
-		-e 's/(PKG_VERSION:=).*/\11.3.10/' \
-		feeds/packages/net/ariang/Makefile
-}
+[ -f feeds/packages/net/ariang/Makefile ] && \
+	sed -Ei -e 's/(PKG_HASH:=).*/\1skip/' \
+			-e 's/(PKG_VERSION:=).*/\11.3.10/' \
+			feeds/packages/net/ariang/Makefile
 
 [ -f feeds/luci/applications/luci-app-transmission/Makefile ] && \
 	sed -i 's/transmission-daemon/transmission-daemon +transmission-web-control/' feeds/luci/applications/luci-app-transmission/Makefile
