@@ -165,7 +165,7 @@ clone_dir() {
 
 	for target_dir in $@; do
 		local source_dir current_dir destination_dir
-		[[ $target_dir =~ ^luci-app ]] && create_feed feeds/luci/applications $target_dir
+		# [[ $target_dir =~ ^luci-app ]] && create_feed feeds/luci/applications $target_dir
 		if [[ ${repo_url##*/} == ${target_dir} ]]; then
 			mv -f ${temp_dir} ${target_dir}
 			source_dir=${target_dir}
@@ -329,10 +329,16 @@ set_config (){
 			echo "FIRMWARE_TYPE=$TARGET_DEVICE" >> $GITHUB_ENV
 			;;
 	esac
-	[[ $TARGET_DEVICE =~ k2p|d2 ]] || {
-		add_package "automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils patch" "luci-app-qbittorrent luci-app-deluge" luci-app-transmission luci-app-aria2
-	}
-	add_package "autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-ksmbd luci-app-wizard luci-app-miaplus" luci-app-watchdog luci-theme-argon
+	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package \
+		automount autosamba diffutils patch luci-app-diskman luci-app-poweroff luci-app-filebrowser \
+		luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote \
+		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter \
+		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2
+
+	add_package \
+				autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall \
+				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-ksmbd luci-app-wizard \
+				luci-app-miaplus luci-app-watchdog luci-theme-argon
 }
 
 deploy_cache() {
