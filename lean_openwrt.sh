@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 mkdir firmware output &>/dev/null
-for page in 1 2; do
+for page in 1 2 3 4; do
 	curl -sL "$GITHUB_API_URL/repos/hong0980/Actions-OpenWrt/releases?page=$page"
 done | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' > xa
 curl -sL https://api.github.com/repos/hong0980/OpenWrt-Cache/releases | \
@@ -162,6 +162,16 @@ git_apply() {
 	cd "$original_dir"
 }
 
+create_feed() {
+	local patch="$1"
+	shift
+	for z in $@; do
+	    local dir_path="$patch/$z"
+	    create_directory "$dir_path"
+	    ln -sf $(pwd)/$dir_path package/feeds/packages/$z 2>/dev/null
+	done
+}
+
 clone_dir() {
 	create_directory "package/A"
 	[[ $# -lt 1 ]] && return
@@ -182,12 +192,27 @@ clone_dir() {
 		return 1
 	}
 
-	[[ -d package/A/python-mako ]] && [[ $repo_url =~ openwrt/packages ]] && {
-		set -- "$@" "python-build" "python-installer" "python-wheel" "python-markupsafe" "python-flit-core" "python-packaging" "python-pyproject-hooks"
-	}
+	# [[ $repo_url =~ Entware/entware-packages ]] && {
+	# 	rm -rf feeds/packages/lang/python/MarkupSafe
+	# 	create_feed feeds/packages/lang/python python-build python-installer python-wheel \
+	# 				python-pathspec python-pyproject-hooks python-hatchling python-hatch-fancy-pypi-readme \
+	# 				python-semantic-version python-setuptools-rust python-setuptools-scm python-editables \
+	# 				python-trove-classifiers python-calver python-markupsafe python-flit-core
+	# 	set -- "$@" python-build python-installer python-wheel python-markupsafe python-pathspec \
+	# 				python-pyproject-hooks python-hatchling python-hatch-fancy-pypi-readme \
+	# 				python-semantic-version python-setuptools-rust python-setuptools-scm python-editables \
+	# 				python-trove-classifiers python-calver \
+	# 				python-pyopenssl python-cffi python-pycparser python-incremental python-cryptography \
+	# 				python-typing-extensions python-packaging python-pluggy python-ifaddr python-twisted \
+	# 				python-ply
+
+	# 	curl -sSo feeds/packages/lang/python/python3-host-build.mk \
+	# 		https://raw.githubusercontent.com/openwrt/packages/refs/heads/openwrt-24.10/lang/python/python3-host-build.mk
+	# }
 
 	for target_dir in $@; do
 		local source_dir current_dir destination_dir
+		[[ $target_dir =~ ^luci-app ]] && create_feed feeds/luci/applications $target_dir
 		if [[ ${repo_url##*/} == ${target_dir} ]]; then
 			mv -f ${temp_dir} ${target_dir}
 			source_dir=${target_dir}
@@ -198,10 +223,13 @@ clone_dir() {
 		current_dir=$(find_first_dir "package feeds target" "$target_dir")
 		destination_dir="${current_dir:-package/A/$target_dir}"
 
-		[[ -d "$current_dir" ]] && rm -rf "../$(basename "$current_dir")" && mv -f "$current_dir" ../
+		[[ -d "$current_dir" ]] && mv -f "$current_dir" ../
 		if mv -f "$source_dir" "${destination_dir%/*}"; then
 			if [[ -d "$current_dir" ]]; then
 				_printf "$(color cg 替换) $target_dir [ $(color cg ✔) ]"
+				[[ $destination_dir =~ feeds/packages/lang/python ]] && {
+					sed -i 's|python3-host-build.mk|python3-host.mk|' $destination_dir/Makefile
+				}
 			else
 				_printf "$(color cb 添加) $target_dir [ $(color cb ✔) ]"
 			fi
@@ -341,7 +369,7 @@ set_config (){
 			echo "FIRMWARE_TYPE=$TARGET_DEVICE" >> $GITHUB_ENV
 			sed -i '/easymesh/d' .config
 
-			dc=$(find_first_dir "package/A feeds" "luci-app-cpufreq")
+			dc=$(find_first_dir "package/A feeds/luci/applications" "luci-app-cpufreq")
 			[[ -d $dc ]] && {
 				sed -i 's/@arm/@TARGET_armvirt_64/g' $dc/Makefile
 				sed -i 's/services/system/; s/00//' $dc/luasrc/controller/cpufreq.lua
@@ -358,7 +386,7 @@ set_config (){
 			;;
 	esac
 	[[ $TARGET_DEVICE =~ k2p ]] || \
-		add_package "automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils patch" "luci-app-qbittorrent luci-app-nikki luci-app-homeproxy" #luci-app-deluge luci-app-transmission luci-app-aria2
+		add_package "automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils patch" "luci-app-qbittorrent luci-app-nikki luci-app-homeproxy" luci-app-deluge luci-app-transmission luci-app-aria2
 	add_package "luci-app-filebrowser luci-app-passwall luci-app-ttyd luci-app-wizard luci-app-taskplan luci-app-ksmbd luci-app-miaplus" luci-app-watchdog #luci-app-gecoosac
 	delpackage "luci-app-ddns luci-app-autoreboot luci-app-wol luci-app-vlmcsd luci-app-filetransfer"
 }
@@ -421,21 +449,22 @@ clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
 clone_dir hong0980/build ddnsto luci-app-ddnsto luci-app-diskman luci-app-dockerman \
 	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
 	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-easymesh luci-lib-docker \
-	aria2 luci-app-aria2 sunpanel lsscsi axel luci-app-taskplan luci-app-watchdog \
-	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle \
-	libtorrent-rasterbar python-mako luci-app-miaplus
-clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box
+	aria2 luci-app-aria2 sunpanel lsscsi axel luci-app-taskplan luci-app-watchdog luci-app-miaplus \
+	# deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle python-pyasn1 \
+	# libtorrent-rasterbar
+clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box luci-app-homeproxy \
+	#luci-app-openclash luci-app-passwall luci-app-passwall2
 clone_dir kiddin9/kwrt-packages chinadns-ng geoview lua-maxminddb luci-app-bypass luci-app-nlbwmon luci-app-arpbind \
 	luci-app-pushbot luci-app-store luci-app-syncdial luci-lib-taskd luci-lib-xterm qBittorrent-static taskd trojan-plus \
-	gecoosac luci-app-gecoosac luci-app-quickstart luci-app-advancedplus \
-	luci-app-istorex luci-app-homeproxy
+	gecoosac luci-app-gecoosac luci-app-quickstart luci-app-advancedplus luci-app-istorex
 clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
 clone_dir openwrt-24.10 openwrt/packages docker dockerd containerd docker-compose runc
+clone_dir Entware/entware-packages
 
 REPO_BRANCH=$(sed -En 's/^src-git luci.*;(.*)/\1/p' feeds.conf.default)
 REPO_BRANCH=${REPO_BRANCH:-18.06}
 # https://github.com/userdocs/qbittorrent-nox-static/releases
-xc=$(find_first_dir "package/A feeds" "qBittorrent-static")
+xc=$(find_first_dir "package/A feeds/packages/net" "qBittorrent-static")
 [[ -d $xc ]] && sed -Ei "s/(PKG_VERSION:=).*/\1${qb_version:-4.5.2_v2.0.8}/" $xc/Makefile
 # sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
 # sed -i 's/invalid users = root/#&/g' feeds/*/*/*/files/smb.conf.template
