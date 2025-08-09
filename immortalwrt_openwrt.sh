@@ -165,7 +165,7 @@ clone_dir() {
 
 	for target_dir in $@; do
 		local source_dir current_dir destination_dir
-		# [[ $target_dir =~ ^luci-app ]] && create_feed feeds/luci/applications $target_dir
+		[[ $target_dir =~ ^luci-app ]] && create_feed feeds/luci/applications $target_dir
 		if [[ ${repo_url##*/} == ${target_dir} ]]; then
 			mv -f ${temp_dir} ${target_dir}
 			source_dir=${target_dir}
@@ -403,7 +403,7 @@ clone_dir hong0980/build ddnsto luci-app-ddnsto luci-app-diskman luci-app-docker
 	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-easymesh luci-lib-docker \
 	aria2 luci-app-aria2 sunpanel lsscsi axel luci-app-taskplan luci-app-watchdog \
 	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle python-pyasn1 \
-	libtorrent-rasterbar luci-app-miaplus
+	libtorrent-rasterbar luci-app-miaplus transmission luci-app-transmission
 clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang nlbwmon
 
 if [[ $REPO_BRANCH =~ master|23|24 ]]; then
