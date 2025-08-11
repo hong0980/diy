@@ -333,7 +333,7 @@ set_config (){
 		automount autosamba diffutils patch luci-app-diskman luci-app-poweroff luci-app-filebrowser \
 		luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote \
 		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter \
-		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2
+		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2
 
 	add_package \
 				autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall \
@@ -482,7 +482,7 @@ sed -Ei \
 
 [ -f feeds/packages/net/ariang/Makefile ] && \
 	sed -Ei -e 's/(PKG_HASH:=).*/\1skip/' \
-			-e 's/(PKG_VERSION:=).*/\11.3.10/' \
+			-e 's/(PKG_VERSION:=).*/\11.3.11/' \
 			feeds/packages/net/ariang/Makefile
 
 [ -f feeds/luci/applications/luci-app-transmission/Makefile ] && \
