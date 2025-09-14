@@ -402,7 +402,7 @@ clone_dir hong0980/build ddnsto luci-app-ddnsto luci-app-diskman luci-app-docker
 	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
 	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-easymesh luci-lib-docker \
 	aria2 luci-app-aria2 sunpanel lsscsi axel luci-app-taskplan luci-app-watchdog \
-	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle python-pyasn1 \
+	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle python-pyasn1 python-twisted \
 	libtorrent-rasterbar luci-app-miaplus transmission luci-app-transmission
 clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang nlbwmon
 
