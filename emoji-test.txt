@@ -32,6 +32,586 @@
 
 # group: Smileys & Emotion
 
+# subgroup: warning
+26A0 FE0F                                  ; fully-qualified     # ⚠️ warning
+26A0                                       ; unqualified         # ⚠ warning
+1F6B8                                      ; fully-qualified     # 🚸 children crossing
+26D4                                       ; fully-qualified     # ⛔ no entry
+1F6AB                                      ; fully-qualified     # 🚫 prohibited
+1F6B3                                      ; fully-qualified     # 🚳 no bicycles
+1F6AD                                      ; fully-qualified     # 🚭 no smoking
+1F6AF                                      ; fully-qualified     # 🚯 no littering
+1F6B1                                      ; fully-qualified     # 🚱 non-potable water
+1F6B7                                      ; fully-qualified     # 🚷 no pedestrians
+1F4F5                                      ; fully-qualified     # 📵 no mobile phones
+1F51E                                      ; fully-qualified     # 🔞 no one under eighteen
+2622 FE0F                                  ; fully-qualified     # ☢️ radioactive
+2622                                       ; unqualified         # ☢ radioactive
+2623 FE0F                                  ; fully-qualified     # ☣️ biohazard
+2623                                       ; unqualified         # ☣ biohazard
+
+# subgroup: arrow
+2B06 FE0F                                  ; fully-qualified     # ⬆️ up arrow
+2B06                                       ; unqualified         # ⬆ up arrow
+2197 FE0F                                  ; fully-qualified     # ↗️ up-right arrow
+2197                                       ; unqualified         # ↗ up-right arrow
+27A1 FE0F                                  ; fully-qualified     # ➡️ right arrow
+27A1                                       ; unqualified         # ➡ right arrow
+2198 FE0F                                  ; fully-qualified     # ↘️ down-right arrow
+2198                                       ; unqualified         # ↘ down-right arrow
+2B07 FE0F                                  ; fully-qualified     # ⬇️ down arrow
+2B07                                       ; unqualified         # ⬇ down arrow
+2199 FE0F                                  ; fully-qualified     # ↙️ down-left arrow
+2199                                       ; unqualified         # ↙ down-left arrow
+2B05 FE0F                                  ; fully-qualified     # ⬅️ left arrow
+2B05                                       ; unqualified         # ⬅ left arrow
+2196 FE0F                                  ; fully-qualified     # ↖️ up-left arrow
+2196                                       ; unqualified         # ↖ up-left arrow
+2195 FE0F                                  ; fully-qualified     # ↕️ up-down arrow
+2195                                       ; unqualified         # ↕ up-down arrow
+2194 FE0F                                  ; fully-qualified     # ↔️ left-right arrow
+2194                                       ; unqualified         # ↔ left-right arrow
+21A9 FE0F                                  ; fully-qualified     # ↩️ right arrow curving left
+21A9                                       ; unqualified         # ↩ right arrow curving left
+21AA FE0F                                  ; fully-qualified     # ↪️ left arrow curving right
+21AA                                       ; unqualified         # ↪ left arrow curving right
+2934 FE0F                                  ; fully-qualified     # ⤴️ right arrow curving up
+2934                                       ; unqualified         # ⤴ right arrow curving up
+2935 FE0F                                  ; fully-qualified     # ⤵️ right arrow curving down
+2935                                       ; unqualified         # ⤵ right arrow curving down
+1F503                                      ; fully-qualified     # 🔃 clockwise vertical arrows
+1F504                                      ; fully-qualified     # 🔄 counterclockwise arrows button
+1F519                                      ; fully-qualified     # 🔙 BACK arrow
+1F51A                                      ; fully-qualified     # 🔚 END arrow
+1F51B                                      ; fully-qualified     # 🔛 ON! arrow
+1F51C                                      ; fully-qualified     # 🔜 SOON arrow
+1F51D                                      ; fully-qualified     # 🔝 TOP arrow
+
+# subgroup: religion
+1F6D0                                      ; fully-qualified     # 🛐 place of worship
+269B FE0F                                  ; fully-qualified     # ⚛️ atom symbol
+269B                                       ; unqualified         # ⚛ atom symbol
+1F549 FE0F                                 ; fully-qualified     # 🕉️ om
+1F549                                      ; unqualified         # 🕉 om
+2721 FE0F                                  ; fully-qualified     # ✡️ star of David
+2721                                       ; unqualified         # ✡ star of David
+2638 FE0F                                  ; fully-qualified     # ☸️ wheel of dharma
+2638                                       ; unqualified         # ☸ wheel of dharma
+262F FE0F                                  ; fully-qualified     # ☯️ yin yang
+262F                                       ; unqualified         # ☯ yin yang
+271D FE0F                                  ; fully-qualified     # ✝️ latin cross
+271D                                       ; unqualified         # ✝ latin cross
+2626 FE0F                                  ; fully-qualified     # ☦️ orthodox cross
+2626                                       ; unqualified         # ☦ orthodox cross
+262A FE0F                                  ; fully-qualified     # ☪️ star and crescent
+262A                                       ; unqualified         # ☪ star and crescent
+262E FE0F                                  ; fully-qualified     # ☮️ peace symbol
+262E                                       ; unqualified         # ☮ peace symbol
+1F54E                                      ; fully-qualified     # 🕎 menorah
+1F52F                                      ; fully-qualified     # 🔯 dotted six-pointed star
+
+# subgroup: zodiac
+2648                                       ; fully-qualified     # ♈ Aries
+2649                                       ; fully-qualified     # ♉ Taurus
+264A                                       ; fully-qualified     # ♊ Gemini
+264B                                       ; fully-qualified     # ♋ Cancer
+264C                                       ; fully-qualified     # ♌ Leo
+264D                                       ; fully-qualified     # ♍ Virgo
+264E                                       ; fully-qualified     # ♎ Libra
+264F                                       ; fully-qualified     # ♏ Scorpio
+2650                                       ; fully-qualified     # ♐ Sagittarius
+2651                                       ; fully-qualified     # ♑ Capricorn
+2652                                       ; fully-qualified     # ♒ Aquarius
+2653                                       ; fully-qualified     # ♓ Pisces
+26CE                                       ; fully-qualified     # ⛎ Ophiuchus
+
+# subgroup: av-symbol
+1F500                                      ; fully-qualified     # 🔀 shuffle tracks button
+1F501                                      ; fully-qualified     # 🔁 repeat button
+1F502                                      ; fully-qualified     # 🔂 repeat single button
+25B6 FE0F                                  ; fully-qualified     # ▶️ play button
+25B6                                       ; unqualified         # ▶ play button
+23E9                                       ; fully-qualified     # ⏩ fast-forward button
+23ED FE0F                                  ; fully-qualified     # ⏭️ next track button
+23ED                                       ; unqualified         # ⏭ next track button
+23EF FE0F                                  ; fully-qualified     # ⏯️ play or pause button
+23EF                                       ; unqualified         # ⏯ play or pause button
+25C0 FE0F                                  ; fully-qualified     # ◀️ reverse button
+25C0                                       ; unqualified         # ◀ reverse button
+23EA                                       ; fully-qualified     # ⏪ fast reverse button
+23EE FE0F                                  ; fully-qualified     # ⏮️ last track button
+23EE                                       ; unqualified         # ⏮ last track button
+1F53C                                      ; fully-qualified     # 🔼 upwards button
+23EB                                       ; fully-qualified     # ⏫ fast up button
+1F53D                                      ; fully-qualified     # 🔽 downwards button
+23EC                                       ; fully-qualified     # ⏬ fast down button
+23F8 FE0F                                  ; fully-qualified     # ⏸️ pause button
+23F8                                       ; unqualified         # ⏸ pause button
+23F9 FE0F                                  ; fully-qualified     # ⏹️ stop button
+23F9                                       ; unqualified         # ⏹ stop button
+23FA FE0F                                  ; fully-qualified     # ⏺️ record button
+23FA                                       ; unqualified         # ⏺ record button
+23CF FE0F                                  ; fully-qualified     # ⏏️ eject button
+23CF                                       ; unqualified         # ⏏ eject button
+1F3A6                                      ; fully-qualified     # 🎦 cinema
+1F505                                      ; fully-qualified     # 🔅 dim button
+1F506                                      ; fully-qualified     # 🔆 bright button
+1F4F6                                      ; fully-qualified     # 📶 antenna bars
+1F4F3                                      ; fully-qualified     # 📳 vibration mode
+1F4F4                                      ; fully-qualified     # 📴 mobile phone off
+
+# subgroup: gender
+2640 FE0F                                  ; fully-qualified     # ♀️ female sign
+2640                                       ; unqualified         # ♀ female sign
+2642 FE0F                                  ; fully-qualified     # ♂️ male sign
+2642                                       ; unqualified         # ♂ male sign
+
+# subgroup: other-symbol
+2695 FE0F                                  ; fully-qualified     # ⚕️ medical symbol
+2695                                       ; unqualified         # ⚕ medical symbol
+267E FE0F                                  ; fully-qualified     # ♾️ infinity
+267E                                       ; unqualified         # ♾ infinity
+267B FE0F                                  ; fully-qualified     # ♻️ recycling symbol
+267B                                       ; unqualified         # ♻ recycling symbol
+269C FE0F                                  ; fully-qualified     # ⚜️ fleur-de-lis
+269C                                       ; unqualified         # ⚜ fleur-de-lis
+1F531                                      ; fully-qualified     # 🔱 trident emblem
+1F4DB                                      ; fully-qualified     # 📛 name badge
+1F530                                      ; fully-qualified     # 🔰 Japanese symbol for beginner
+2B55                                       ; fully-qualified     # ⭕ hollow red circle
+2705                                       ; fully-qualified     # ✅ check mark button
+2611 FE0F                                  ; fully-qualified     # ☑️ check box with check
+2611                                       ; unqualified         # ☑ check box with check
+2714 FE0F                                  ; fully-qualified     # ✔️ check mark
+2714                                       ; unqualified         # ✔ check mark
+2716 FE0F                                  ; fully-qualified     # ✖️ multiplication sign
+2716                                       ; unqualified         # ✖ multiplication sign
+274C                                       ; fully-qualified     # ❌ cross mark
+274E                                       ; fully-qualified     # ❎ cross mark button
+2795                                       ; fully-qualified     # ➕ plus sign
+2796                                       ; fully-qualified     # ➖ minus sign
+2797                                       ; fully-qualified     # ➗ division sign
+27B0                                       ; fully-qualified     # ➰ curly loop
+27BF                                       ; fully-qualified     # ➿ double curly loop
+303D FE0F                                  ; fully-qualified     # 〽️ part alternation mark
+303D                                       ; unqualified         # 〽 part alternation mark
+2733 FE0F                                  ; fully-qualified     # ✳️ eight-spoked asterisk
+2733                                       ; unqualified         # ✳ eight-spoked asterisk
+2734 FE0F                                  ; fully-qualified     # ✴️ eight-pointed star
+2734                                       ; unqualified         # ✴ eight-pointed star
+2747 FE0F                                  ; fully-qualified     # ❇️ sparkle
+2747                                       ; unqualified         # ❇ sparkle
+203C FE0F                                  ; fully-qualified     # ‼️ double exclamation mark
+203C                                       ; unqualified         # ‼ double exclamation mark
+2049 FE0F                                  ; fully-qualified     # ⁉️ exclamation question mark
+2049                                       ; unqualified         # ⁉ exclamation question mark
+2753                                       ; fully-qualified     # ❓ question mark
+2754                                       ; fully-qualified     # ❔ white question mark
+2755                                       ; fully-qualified     # ❕ white exclamation mark
+2757                                       ; fully-qualified     # ❗ exclamation mark
+3030 FE0F                                  ; fully-qualified     # 〰️ wavy dash
+3030                                       ; unqualified         # 〰 wavy dash
+00A9 FE0F                                  ; fully-qualified     # ©️ copyright
+00A9                                       ; unqualified         # © copyright
+00AE FE0F                                  ; fully-qualified     # ®️ registered
+00AE                                       ; unqualified         # ® registered
+2122 FE0F                                  ; fully-qualified     # ™️ trade mark
+2122                                       ; unqualified         # ™ trade mark
+
+# subgroup: keycap
+0023 FE0F 20E3                             ; fully-qualified     # #️⃣ keycap: #
+0023 20E3                                  ; unqualified         # #⃣ keycap: #
+002A FE0F 20E3                             ; fully-qualified     # *️⃣ keycap: *
+002A 20E3                                  ; unqualified         # *⃣ keycap: *
+0030 FE0F 20E3                             ; fully-qualified     # 0️⃣ keycap: 0
+0030 20E3                                  ; unqualified         # 0⃣ keycap: 0
+0031 FE0F 20E3                             ; fully-qualified     # 1️⃣ keycap: 1
+0031 20E3                                  ; unqualified         # 1⃣ keycap: 1
+0032 FE0F 20E3                             ; fully-qualified     # 2️⃣ keycap: 2
+0032 20E3                                  ; unqualified         # 2⃣ keycap: 2
+0033 FE0F 20E3                             ; fully-qualified     # 3️⃣ keycap: 3
+0033 20E3                                  ; unqualified         # 3⃣ keycap: 3
+0034 FE0F 20E3                             ; fully-qualified     # 4️⃣ keycap: 4
+0034 20E3                                  ; unqualified         # 4⃣ keycap: 4
+0035 FE0F 20E3                             ; fully-qualified     # 5️⃣ keycap: 5
+0035 20E3                                  ; unqualified         # 5⃣ keycap: 5
+0036 FE0F 20E3                             ; fully-qualified     # 6️⃣ keycap: 6
+0036 20E3                                  ; unqualified         # 6⃣ keycap: 6
+0037 FE0F 20E3                             ; fully-qualified     # 7️⃣ keycap: 7
+0037 20E3                                  ; unqualified         # 7⃣ keycap: 7
+0038 FE0F 20E3                             ; fully-qualified     # 8️⃣ keycap: 8
+0038 20E3                                  ; unqualified         # 8⃣ keycap: 8
+0039 FE0F 20E3                             ; fully-qualified     # 9️⃣ keycap: 9
+0039 20E3                                  ; unqualified         # 9⃣ keycap: 9
+1F51F                                      ; fully-qualified     # 🔟 keycap: 10
+
+# subgroup: alphanum
+1F520                                      ; fully-qualified     # 🔠 input latin uppercase
+1F521                                      ; fully-qualified     # 🔡 input latin lowercase
+1F522                                      ; fully-qualified     # 🔢 input numbers
+1F523                                      ; fully-qualified     # 🔣 input symbols
+1F524                                      ; fully-qualified     # 🔤 input latin letters
+1F170 FE0F                                 ; fully-qualified     # 🅰️ A button (blood type)
+1F170                                      ; unqualified         # 🅰 A button (blood type)
+1F18E                                      ; fully-qualified     # 🆎 AB button (blood type)
+1F171 FE0F                                 ; fully-qualified     # 🅱️ B button (blood type)
+1F171                                      ; unqualified         # 🅱 B button (blood type)
+1F191                                      ; fully-qualified     # 🆑 CL button
+1F192                                      ; fully-qualified     # 🆒 COOL button
+1F193                                      ; fully-qualified     # 🆓 FREE button
+2139 FE0F                                  ; fully-qualified     # ℹ️ information
+2139                                       ; unqualified         # ℹ information
+1F194                                      ; fully-qualified     # 🆔 ID button
+24C2 FE0F                                  ; fully-qualified     # Ⓜ️ circled M
+24C2                                       ; unqualified         # Ⓜ circled M
+1F195                                      ; fully-qualified     # 🆕 NEW button
+1F196                                      ; fully-qualified     # 🆖 NG button
+1F17E FE0F                                 ; fully-qualified     # 🅾️ O button (blood type)
+1F17E                                      ; unqualified         # 🅾 O button (blood type)
+1F197                                      ; fully-qualified     # 🆗 OK button
+1F17F FE0F                                 ; fully-qualified     # 🅿️ P button
+1F17F                                      ; unqualified         # 🅿 P button
+1F198                                      ; fully-qualified     # 🆘 SOS button
+1F199                                      ; fully-qualified     # 🆙 UP! button
+1F19A                                      ; fully-qualified     # 🆚 VS button
+1F201                                      ; fully-qualified     # 🈁 Japanese “here” button
+1F202 FE0F                                 ; fully-qualified     # 🈂️ Japanese “service charge” button
+1F202                                      ; unqualified         # 🈂 Japanese “service charge” button
+1F237 FE0F                                 ; fully-qualified     # 🈷️ Japanese “monthly amount” button
+1F237                                      ; unqualified         # 🈷 Japanese “monthly amount” button
+1F236                                      ; fully-qualified     # 🈶 Japanese “not free of charge” button
+1F22F                                      ; fully-qualified     # 🈯 Japanese “reserved” button
+1F250                                      ; fully-qualified     # 🉐 Japanese “bargain” button
+1F239                                      ; fully-qualified     # 🈹 Japanese “discount” button
+1F21A                                      ; fully-qualified     # 🈚 Japanese “free of charge” button
+1F232                                      ; fully-qualified     # 🈲 Japanese “prohibited” button
+1F251                                      ; fully-qualified     # 🉑 Japanese “acceptable” button
+1F238                                      ; fully-qualified     # 🈸 Japanese “application” button
+1F234                                      ; fully-qualified     # 🈴 Japanese “passing grade” button
+1F233                                      ; fully-qualified     # 🈳 Japanese “vacancy” button
+3297 FE0F                                  ; fully-qualified     # ㊗️ Japanese “congratulations” button
+3297                                       ; unqualified         # ㊗ Japanese “congratulations” button
+3299 FE0F                                  ; fully-qualified     # ㊙️ Japanese “secret” button
+3299                                       ; unqualified         # ㊙ Japanese “secret” button
+1F23A                                      ; fully-qualified     # 🈺 Japanese “open for business” button
+1F235                                      ; fully-qualified     # 🈵 Japanese “no vacancy” button
+
+# subgroup: geometric
+1F534                                      ; fully-qualified     # 🔴 red circle
+1F7E0                                      ; fully-qualified     # 🟠 orange circle
+1F7E1                                      ; fully-qualified     # 🟡 yellow circle
+1F7E2                                      ; fully-qualified     # 🟢 green circle
+1F535                                      ; fully-qualified     # 🔵 blue circle
+1F7E3                                      ; fully-qualified     # 🟣 purple circle
+1F7E4                                      ; fully-qualified     # 🟤 brown circle
+26AB                                       ; fully-qualified     # ⚫ black circle
+26AA                                       ; fully-qualified     # ⚪ white circle
+1F7E5                                      ; fully-qualified     # 🟥 red square
+1F7E7                                      ; fully-qualified     # 🟧 orange square
+1F7E8                                      ; fully-qualified     # 🟨 yellow square
+1F7E9                                      ; fully-qualified     # 🟩 green square
+1F7E6                                      ; fully-qualified     # 🟦 blue square
+1F7EA                                      ; fully-qualified     # 🟪 purple square
+1F7EB                                      ; fully-qualified     # 🟫 brown square
+2B1B                                       ; fully-qualified     # ⬛ black large square
+2B1C                                       ; fully-qualified     # ⬜ white large square
+25FC FE0F                                  ; fully-qualified     # ◼️ black medium square
+25FC                                       ; unqualified         # ◼ black medium square
+25FB FE0F                                  ; fully-qualified     # ◻️ white medium square
+25FB                                       ; unqualified         # ◻ white medium square
+25FE                                       ; fully-qualified     # ◾ black medium-small square
+25FD                                       ; fully-qualified     # ◽ white medium-small square
+25AA FE0F                                  ; fully-qualified     # ▪️ black small square
+25AA                                       ; unqualified         # ▪ black small square
+25AB FE0F                                  ; fully-qualified     # ▫️ white small square
+25AB                                       ; unqualified         # ▫ white small square
+1F536                                      ; fully-qualified     # 🔶 large orange diamond
+1F537                                      ; fully-qualified     # 🔷 large blue diamond
+1F538                                      ; fully-qualified     # 🔸 small orange diamond
+1F539                                      ; fully-qualified     # 🔹 small blue diamond
+1F53A                                      ; fully-qualified     # 🔺 red triangle pointed up
+1F53B                                      ; fully-qualified     # 🔻 red triangle pointed down
+1F4A0                                      ; fully-qualified     # 💠 diamond with a dot
+1F518                                      ; fully-qualified     # 🔘 radio button
+1F533                                      ; fully-qualified     # 🔳 white square button
+1F532                                      ; fully-qualified     # 🔲 black square button
+
+# Symbols subtotal:		297
+# Symbols subtotal:		297	w/o modifiers
+
+# group: Flags
+
+# subgroup: flag
+1F3C1                                      ; fully-qualified     # 🏁 chequered flag
+1F6A9                                      ; fully-qualified     # 🚩 triangular flag
+1F38C                                      ; fully-qualified     # 🎌 crossed flags
+1F3F4                                      ; fully-qualified     # 🏴 black flag
+1F3F3 FE0F                                 ; fully-qualified     # 🏳️ white flag
+1F3F3                                      ; unqualified         # 🏳 white flag
+1F3F3 FE0F 200D 1F308                      ; fully-qualified     # 🏳️‍🌈 rainbow flag
+1F3F3 200D 1F308                           ; unqualified         # 🏳‍🌈 rainbow flag
+1F3F4 200D 2620 FE0F                       ; fully-qualified     # 🏴‍☠️ pirate flag
+1F3F4 200D 2620                            ; minimally-qualified # 🏴‍☠ pirate flag
+
+# subgroup: country-flag
+1F1E6 1F1E8                                ; fully-qualified     # 🇦🇨 flag: Ascension Island
+1F1E6 1F1E9                                ; fully-qualified     # 🇦🇩 flag: Andorra
+1F1E6 1F1EA                                ; fully-qualified     # 🇦🇪 flag: United Arab Emirates
+1F1E6 1F1EB                                ; fully-qualified     # 🇦🇫 flag: Afghanistan
+1F1E6 1F1EC                                ; fully-qualified     # 🇦🇬 flag: Antigua & Barbuda
+1F1E6 1F1EE                                ; fully-qualified     # 🇦🇮 flag: Anguilla
+1F1E6 1F1F1                                ; fully-qualified     # 🇦🇱 flag: Albania
+1F1E6 1F1F2                                ; fully-qualified     # 🇦🇲 flag: Armenia
+1F1E6 1F1F4                                ; fully-qualified     # 🇦🇴 flag: Angola
+1F1E6 1F1F6                                ; fully-qualified     # 🇦🇶 flag: Antarctica
+1F1E6 1F1F7                                ; fully-qualified     # 🇦🇷 flag: Argentina
+1F1E6 1F1F8                                ; fully-qualified     # 🇦🇸 flag: American Samoa
+1F1E6 1F1F9                                ; fully-qualified     # 🇦🇹 flag: Austria
+1F1E6 1F1FA                                ; fully-qualified     # 🇦🇺 flag: Australia
+1F1E6 1F1FC                                ; fully-qualified     # 🇦🇼 flag: Aruba
+1F1E6 1F1FD                                ; fully-qualified     # 🇦🇽 flag: Åland Islands
+1F1E6 1F1FF                                ; fully-qualified     # 🇦🇿 flag: Azerbaijan
+1F1E7 1F1E6                                ; fully-qualified     # 🇧🇦 flag: Bosnia & Herzegovina
+1F1E7 1F1E7                                ; fully-qualified     # 🇧🇧 flag: Barbados
+1F1E7 1F1E9                                ; fully-qualified     # 🇧🇩 flag: Bangladesh
+1F1E7 1F1EA                                ; fully-qualified     # 🇧🇪 flag: Belgium
+1F1E7 1F1EB                                ; fully-qualified     # 🇧🇫 flag: Burkina Faso
+1F1E7 1F1EC                                ; fully-qualified     # 🇧🇬 flag: Bulgaria
+1F1E7 1F1ED                                ; fully-qualified     # 🇧🇭 flag: Bahrain
+1F1E7 1F1EE                                ; fully-qualified     # 🇧🇮 flag: Burundi
+1F1E7 1F1EF                                ; fully-qualified     # 🇧🇯 flag: Benin
+1F1E7 1F1F1                                ; fully-qualified     # 🇧🇱 flag: St. Barthélemy
+1F1E7 1F1F2                                ; fully-qualified     # 🇧🇲 flag: Bermuda
+1F1E7 1F1F3                                ; fully-qualified     # 🇧🇳 flag: Brunei
+1F1E7 1F1F4                                ; fully-qualified     # 🇧🇴 flag: Bolivia
+1F1E7 1F1F6                                ; fully-qualified     # 🇧🇶 flag: Caribbean Netherlands
+1F1E7 1F1F7                                ; fully-qualified     # 🇧🇷 flag: Brazil
+1F1E7 1F1F8                                ; fully-qualified     # 🇧🇸 flag: Bahamas
+1F1E7 1F1F9                                ; fully-qualified     # 🇧🇹 flag: Bhutan
+1F1E7 1F1FB                                ; fully-qualified     # 🇧🇻 flag: Bouvet Island
+1F1E7 1F1FC                                ; fully-qualified     # 🇧🇼 flag: Botswana
+1F1E7 1F1FE                                ; fully-qualified     # 🇧🇾 flag: Belarus
+1F1E7 1F1FF                                ; fully-qualified     # 🇧🇿 flag: Belize
+1F1E8 1F1E6                                ; fully-qualified     # 🇨🇦 flag: Canada
+1F1E8 1F1E8                                ; fully-qualified     # 🇨🇨 flag: Cocos (Keeling) Islands
+1F1E8 1F1E9                                ; fully-qualified     # 🇨🇩 flag: Congo - Kinshasa
+1F1E8 1F1EB                                ; fully-qualified     # 🇨🇫 flag: Central African Republic
+1F1E8 1F1EC                                ; fully-qualified     # 🇨🇬 flag: Congo - Brazzaville
+1F1E8 1F1ED                                ; fully-qualified     # 🇨🇭 flag: Switzerland
+1F1E8 1F1EE                                ; fully-qualified     # 🇨🇮 flag: Côte d’Ivoire
+1F1E8 1F1F0                                ; fully-qualified     # 🇨🇰 flag: Cook Islands
+1F1E8 1F1F1                                ; fully-qualified     # 🇨🇱 flag: Chile
+1F1E8 1F1F2                                ; fully-qualified     # 🇨🇲 flag: Cameroon
+1F1E8 1F1F3                                ; fully-qualified     # 🇨🇳 flag: China
+1F1E8 1F1F4                                ; fully-qualified     # 🇨🇴 flag: Colombia
+1F1E8 1F1F5                                ; fully-qualified     # 🇨🇵 flag: Clipperton Island
+1F1E8 1F1F7                                ; fully-qualified     # 🇨🇷 flag: Costa Rica
+1F1E8 1F1FA                                ; fully-qualified     # 🇨🇺 flag: Cuba
+1F1E8 1F1FB                                ; fully-qualified     # 🇨🇻 flag: Cape Verde
+1F1E8 1F1FC                                ; fully-qualified     # 🇨🇼 flag: Curaçao
+1F1E8 1F1FD                                ; fully-qualified     # 🇨🇽 flag: Christmas Island
+1F1E8 1F1FE                                ; fully-qualified     # 🇨🇾 flag: Cyprus
+1F1E8 1F1FF                                ; fully-qualified     # 🇨🇿 flag: Czechia
+1F1E9 1F1EA                                ; fully-qualified     # 🇩🇪 flag: Germany
+1F1E9 1F1EC                                ; fully-qualified     # 🇩🇬 flag: Diego Garcia
+1F1E9 1F1EF                                ; fully-qualified     # 🇩🇯 flag: Djibouti
+1F1E9 1F1F0                                ; fully-qualified     # 🇩🇰 flag: Denmark
+1F1E9 1F1F2                                ; fully-qualified     # 🇩🇲 flag: Dominica
+1F1E9 1F1F4                                ; fully-qualified     # 🇩🇴 flag: Dominican Republic
+1F1E9 1F1FF                                ; fully-qualified     # 🇩🇿 flag: Algeria
+1F1EA 1F1E6                                ; fully-qualified     # 🇪🇦 flag: Ceuta & Melilla
+1F1EA 1F1E8                                ; fully-qualified     # 🇪🇨 flag: Ecuador
+1F1EA 1F1EA                                ; fully-qualified     # 🇪🇪 flag: Estonia
+1F1EA 1F1EC                                ; fully-qualified     # 🇪🇬 flag: Egypt
+1F1EA 1F1ED                                ; fully-qualified     # 🇪🇭 flag: Western Sahara
+1F1EA 1F1F7                                ; fully-qualified     # 🇪🇷 flag: Eritrea
+1F1EA 1F1F8                                ; fully-qualified     # 🇪🇸 flag: Spain
+1F1EA 1F1F9                                ; fully-qualified     # 🇪🇹 flag: Ethiopia
+1F1EA 1F1FA                                ; fully-qualified     # 🇪🇺 flag: European Union
+1F1EB 1F1EE                                ; fully-qualified     # 🇫🇮 flag: Finland
+1F1EB 1F1EF                                ; fully-qualified     # 🇫🇯 flag: Fiji
+1F1EB 1F1F0                                ; fully-qualified     # 🇫🇰 flag: Falkland Islands
+1F1EB 1F1F2                                ; fully-qualified     # 🇫🇲 flag: Micronesia
+1F1EB 1F1F4                                ; fully-qualified     # 🇫🇴 flag: Faroe Islands
+1F1EB 1F1F7                                ; fully-qualified     # 🇫🇷 flag: France
+1F1EC 1F1E6                                ; fully-qualified     # 🇬🇦 flag: Gabon
+1F1EC 1F1E7                                ; fully-qualified     # 🇬🇧 flag: United Kingdom
+1F1EC 1F1E9                                ; fully-qualified     # 🇬🇩 flag: Grenada
+1F1EC 1F1EA                                ; fully-qualified     # 🇬🇪 flag: Georgia
+1F1EC 1F1EB                                ; fully-qualified     # 🇬🇫 flag: French Guiana
+1F1EC 1F1EC                                ; fully-qualified     # 🇬🇬 flag: Guernsey
+1F1EC 1F1ED                                ; fully-qualified     # 🇬🇭 flag: Ghana
+1F1EC 1F1EE                                ; fully-qualified     # 🇬🇮 flag: Gibraltar
+1F1EC 1F1F1                                ; fully-qualified     # 🇬🇱 flag: Greenland
+1F1EC 1F1F2                                ; fully-qualified     # 🇬🇲 flag: Gambia
+1F1EC 1F1F3                                ; fully-qualified     # 🇬🇳 flag: Guinea
+1F1EC 1F1F5                                ; fully-qualified     # 🇬🇵 flag: Guadeloupe
+1F1EC 1F1F6                                ; fully-qualified     # 🇬🇶 flag: Equatorial Guinea
+1F1EC 1F1F7                                ; fully-qualified     # 🇬🇷 flag: Greece
+1F1EC 1F1F8                                ; fully-qualified     # 🇬🇸 flag: South Georgia & South Sandwich Islands
+1F1EC 1F1F9                                ; fully-qualified     # 🇬🇹 flag: Guatemala
+1F1EC 1F1FA                                ; fully-qualified     # 🇬🇺 flag: Guam
+1F1EC 1F1FC                                ; fully-qualified     # 🇬🇼 flag: Guinea-Bissau
+1F1EC 1F1FE                                ; fully-qualified     # 🇬🇾 flag: Guyana
+1F1ED 1F1F0                                ; fully-qualified     # 🇭🇰 flag: Hong Kong SAR China
+1F1ED 1F1F2                                ; fully-qualified     # 🇭🇲 flag: Heard & McDonald Islands
+1F1ED 1F1F3                                ; fully-qualified     # 🇭🇳 flag: Honduras
+1F1ED 1F1F7                                ; fully-qualified     # 🇭🇷 flag: Croatia
+1F1ED 1F1F9                                ; fully-qualified     # 🇭🇹 flag: Haiti
+1F1ED 1F1FA                                ; fully-qualified     # 🇭🇺 flag: Hungary
+1F1EE 1F1E8                                ; fully-qualified     # 🇮🇨 flag: Canary Islands
+1F1EE 1F1E9                                ; fully-qualified     # 🇮🇩 flag: Indonesia
+1F1EE 1F1EA                                ; fully-qualified     # 🇮🇪 flag: Ireland
+1F1EE 1F1F1                                ; fully-qualified     # 🇮🇱 flag: Israel
+1F1EE 1F1F2                                ; fully-qualified     # 🇮🇲 flag: Isle of Man
+1F1EE 1F1F3                                ; fully-qualified     # 🇮🇳 flag: India
+1F1EE 1F1F4                                ; fully-qualified     # 🇮🇴 flag: British Indian Ocean Territory
+1F1EE 1F1F6                                ; fully-qualified     # 🇮🇶 flag: Iraq
+1F1EE 1F1F7                                ; fully-qualified     # 🇮🇷 flag: Iran
+1F1EE 1F1F8                                ; fully-qualified     # 🇮🇸 flag: Iceland
+1F1EE 1F1F9                                ; fully-qualified     # 🇮🇹 flag: Italy
+1F1EF 1F1EA                                ; fully-qualified     # 🇯🇪 flag: Jersey
+1F1EF 1F1F2                                ; fully-qualified     # 🇯🇲 flag: Jamaica
+1F1EF 1F1F4                                ; fully-qualified     # 🇯🇴 flag: Jordan
+1F1EF 1F1F5                                ; fully-qualified     # 🇯🇵 flag: Japan
+1F1F0 1F1EA                                ; fully-qualified     # 🇰🇪 flag: Kenya
+1F1F0 1F1EC                                ; fully-qualified     # 🇰🇬 flag: Kyrgyzstan
+1F1F0 1F1ED                                ; fully-qualified     # 🇰🇭 flag: Cambodia
+1F1F0 1F1EE                                ; fully-qualified     # 🇰🇮 flag: Kiribati
+1F1F0 1F1F2                                ; fully-qualified     # 🇰🇲 flag: Comoros
+1F1F0 1F1F3                                ; fully-qualified     # 🇰🇳 flag: St. Kitts & Nevis
+1F1F0 1F1F5                                ; fully-qualified     # 🇰🇵 flag: North Korea
+1F1F0 1F1F7                                ; fully-qualified     # 🇰🇷 flag: South Korea
+1F1F0 1F1FC                                ; fully-qualified     # 🇰🇼 flag: Kuwait
+1F1F0 1F1FE                                ; fully-qualified     # 🇰🇾 flag: Cayman Islands
+1F1F0 1F1FF                                ; fully-qualified     # 🇰🇿 flag: Kazakhstan
+1F1F1 1F1E6                                ; fully-qualified     # 🇱🇦 flag: Laos
+1F1F1 1F1E7                                ; fully-qualified     # 🇱🇧 flag: Lebanon
+1F1F1 1F1E8                                ; fully-qualified     # 🇱🇨 flag: St. Lucia
+1F1F1 1F1EE                                ; fully-qualified     # 🇱🇮 flag: Liechtenstein
+1F1F1 1F1F0                                ; fully-qualified     # 🇱🇰 flag: Sri Lanka
+1F1F1 1F1F7                                ; fully-qualified     # 🇱🇷 flag: Liberia
+1F1F1 1F1F8                                ; fully-qualified     # 🇱🇸 flag: Lesotho
+1F1F1 1F1F9                                ; fully-qualified     # 🇱🇹 flag: Lithuania
+1F1F1 1F1FA                                ; fully-qualified     # 🇱🇺 flag: Luxembourg
+1F1F1 1F1FB                                ; fully-qualified     # 🇱🇻 flag: Latvia
+1F1F1 1F1FE                                ; fully-qualified     # 🇱🇾 flag: Libya
+1F1F2 1F1E6                                ; fully-qualified     # 🇲🇦 flag: Morocco
+1F1F2 1F1E8                                ; fully-qualified     # 🇲🇨 flag: Monaco
+1F1F2 1F1E9                                ; fully-qualified     # 🇲🇩 flag: Moldova
+1F1F2 1F1EA                                ; fully-qualified     # 🇲🇪 flag: Montenegro
+1F1F2 1F1EB                                ; fully-qualified     # 🇲🇫 flag: St. Martin
+1F1F2 1F1EC                                ; fully-qualified     # 🇲🇬 flag: Madagascar
+1F1F2 1F1ED                                ; fully-qualified     # 🇲🇭 flag: Marshall Islands
+1F1F2 1F1F0                                ; fully-qualified     # 🇲🇰 flag: Macedonia
+1F1F2 1F1F1                                ; fully-qualified     # 🇲🇱 flag: Mali
+1F1F2 1F1F2                                ; fully-qualified     # 🇲🇲 flag: Myanmar (Burma)
+1F1F2 1F1F3                                ; fully-qualified     # 🇲🇳 flag: Mongolia
+1F1F2 1F1F4                                ; fully-qualified     # 🇲🇴 flag: Macao SAR China
+1F1F2 1F1F5                                ; fully-qualified     # 🇲🇵 flag: Northern Mariana Islands
+1F1F2 1F1F6                                ; fully-qualified     # 🇲🇶 flag: Martinique
+1F1F2 1F1F7                                ; fully-qualified     # 🇲🇷 flag: Mauritania
+1F1F2 1F1F8                                ; fully-qualified     # 🇲🇸 flag: Montserrat
+1F1F2 1F1F9                                ; fully-qualified     # 🇲🇹 flag: Malta
+1F1F2 1F1FA                                ; fully-qualified     # 🇲🇺 flag: Mauritius
+1F1F2 1F1FB                                ; fully-qualified     # 🇲🇻 flag: Maldives
+1F1F2 1F1FC                                ; fully-qualified     # 🇲🇼 flag: Malawi
+1F1F2 1F1FD                                ; fully-qualified     # 🇲🇽 flag: Mexico
+1F1F2 1F1FE                                ; fully-qualified     # 🇲🇾 flag: Malaysia
+1F1F2 1F1FF                                ; fully-qualified     # 🇲🇿 flag: Mozambique
+1F1F3 1F1E6                                ; fully-qualified     # 🇳🇦 flag: Namibia
+1F1F3 1F1E8                                ; fully-qualified     # 🇳🇨 flag: New Caledonia
+1F1F3 1F1EA                                ; fully-qualified     # 🇳🇪 flag: Niger
+1F1F3 1F1EB                                ; fully-qualified     # 🇳🇫 flag: Norfolk Island
+1F1F3 1F1EC                                ; fully-qualified     # 🇳🇬 flag: Nigeria
+1F1F3 1F1EE                                ; fully-qualified     # 🇳🇮 flag: Nicaragua
+1F1F3 1F1F1                                ; fully-qualified     # 🇳🇱 flag: Netherlands
+1F1F3 1F1F4                                ; fully-qualified     # 🇳🇴 flag: Norway
+1F1F3 1F1F5                                ; fully-qualified     # 🇳🇵 flag: Nepal
+1F1F3 1F1F7                                ; fully-qualified     # 🇳🇷 flag: Nauru
+1F1F3 1F1FA                                ; fully-qualified     # 🇳🇺 flag: Niue
+1F1F3 1F1FF                                ; fully-qualified     # 🇳🇿 flag: New Zealand
+1F1F4 1F1F2                                ; fully-qualified     # 🇴🇲 flag: Oman
+1F1F5 1F1E6                                ; fully-qualified     # 🇵🇦 flag: Panama
+1F1F5 1F1EA                                ; fully-qualified     # 🇵🇪 flag: Peru
+1F1F5 1F1EB                                ; fully-qualified     # 🇵🇫 flag: French Polynesia
+1F1F5 1F1EC                                ; fully-qualified     # 🇵🇬 flag: Papua New Guinea
+1F1F5 1F1ED                                ; fully-qualified     # 🇵🇭 flag: Philippines
+1F1F5 1F1F0                                ; fully-qualified     # 🇵🇰 flag: Pakistan
+1F1F5 1F1F1                                ; fully-qualified     # 🇵🇱 flag: Poland
+1F1F5 1F1F2                                ; fully-qualified     # 🇵🇲 flag: St. Pierre & Miquelon
+1F1F5 1F1F3                                ; fully-qualified     # 🇵🇳 flag: Pitcairn Islands
+1F1F5 1F1F7                                ; fully-qualified     # 🇵🇷 flag: Puerto Rico
+1F1F5 1F1F8                                ; fully-qualified     # 🇵🇸 flag: Palestinian Territories
+1F1F5 1F1F9                                ; fully-qualified     # 🇵🇹 flag: Portugal
+1F1F5 1F1FC                                ; fully-qualified     # 🇵🇼 flag: Palau
+1F1F5 1F1FE                                ; fully-qualified     # 🇵🇾 flag: Paraguay
+1F1F6 1F1E6                                ; fully-qualified     # 🇶🇦 flag: Qatar
+1F1F7 1F1EA                                ; fully-qualified     # 🇷🇪 flag: Réunion
+1F1F7 1F1F4                                ; fully-qualified     # 🇷🇴 flag: Romania
+1F1F7 1F1F8                                ; fully-qualified     # 🇷🇸 flag: Serbia
+1F1F7 1F1FA                                ; fully-qualified     # 🇷🇺 flag: Russia
+1F1F7 1F1FC                                ; fully-qualified     # 🇷🇼 flag: Rwanda
+1F1F8 1F1E6                                ; fully-qualified     # 🇸🇦 flag: Saudi Arabia
+1F1F8 1F1E7                                ; fully-qualified     # 🇸🇧 flag: Solomon Islands
+1F1F8 1F1E8                                ; fully-qualified     # 🇸🇨 flag: Seychelles
+1F1F8 1F1E9                                ; fully-qualified     # 🇸🇩 flag: Sudan
+1F1F8 1F1EA                                ; fully-qualified     # 🇸🇪 flag: Sweden
+1F1F8 1F1EC                                ; fully-qualified     # 🇸🇬 flag: Singapore
+1F1F8 1F1ED                                ; fully-qualified     # 🇸🇭 flag: St. Helena
+1F1F8 1F1EE                                ; fully-qualified     # 🇸🇮 flag: Slovenia
+1F1F8 1F1EF                                ; fully-qualified     # 🇸🇯 flag: Svalbard & Jan Mayen
+1F1F8 1F1F0                                ; fully-qualified     # 🇸🇰 flag: Slovakia
+1F1F8 1F1F1                                ; fully-qualified     # 🇸🇱 flag: Sierra Leone
+1F1F8 1F1F2                                ; fully-qualified     # 🇸🇲 flag: San Marino
+1F1F8 1F1F3                                ; fully-qualified     # 🇸🇳 flag: Senegal
+1F1F8 1F1F4                                ; fully-qualified     # 🇸🇴 flag: Somalia
+1F1F8 1F1F7                                ; fully-qualified     # 🇸🇷 flag: Suriname
+1F1F8 1F1F8                                ; fully-qualified     # 🇸🇸 flag: South Sudan
+1F1F8 1F1F9                                ; fully-qualified     # 🇸🇹 flag: São Tomé & Príncipe
+1F1F8 1F1FB                                ; fully-qualified     # 🇸🇻 flag: El Salvador
+1F1F8 1F1FD                                ; fully-qualified     # 🇸🇽 flag: Sint Maarten
+1F1F8 1F1FE                                ; fully-qualified     # 🇸🇾 flag: Syria
+1F1F8 1F1FF                                ; fully-qualified     # 🇸🇿 flag: Eswatini
+1F1F9 1F1E6                                ; fully-qualified     # 🇹🇦 flag: Tristan da Cunha
+1F1F9 1F1E8                                ; fully-qualified     # 🇹🇨 flag: Turks & Caicos Islands
+1F1F9 1F1E9                                ; fully-qualified     # 🇹🇩 flag: Chad
+1F1F9 1F1EB                                ; fully-qualified     # 🇹🇫 flag: French Southern Territories
+1F1F9 1F1EC                                ; fully-qualified     # 🇹🇬 flag: Togo
+1F1F9 1F1ED                                ; fully-qualified     # 🇹🇭 flag: Thailand
+1F1F9 1F1EF                                ; fully-qualified     # 🇹🇯 flag: Tajikistan
+1F1F9 1F1F0                                ; fully-qualified     # 🇹🇰 flag: Tokelau
+1F1F9 1F1F1                                ; fully-qualified     # 🇹🇱 flag: Timor-Leste
+1F1F9 1F1F2                                ; fully-qualified     # 🇹🇲 flag: Turkmenistan
+1F1F9 1F1F3                                ; fully-qualified     # 🇹🇳 flag: Tunisia
+1F1F9 1F1F4                                ; fully-qualified     # 🇹🇴 flag: Tonga
+1F1F9 1F1F7                                ; fully-qualified     # 🇹🇷 flag: Turkey
+1F1F9 1F1F9                                ; fully-qualified     # 🇹🇹 flag: Trinidad & Tobago
+1F1F9 1F1FB                                ; fully-qualified     # 🇹🇻 flag: Tuvalu
+1F1F9 1F1FC                                ; fully-qualified     # 🇹🇼 flag: Taiwan
+1F1F9 1F1FF                                ; fully-qualified     # 🇹🇿 flag: Tanzania
+1F1FA 1F1E6                                ; fully-qualified     # 🇺🇦 flag: Ukraine
+1F1FA 1F1EC                                ; fully-qualified     # 🇺🇬 flag: Uganda
+1F1FA 1F1F2                                ; fully-qualified     # 🇺🇲 flag: U.S. Outlying Islands
+1F1FA 1F1F3                                ; fully-qualified     # 🇺🇳 flag: United Nations
+1F1FA 1F1F8                                ; fully-qualified     # 🇺🇸 flag: United States
+1F1FA 1F1FE                                ; fully-qualified     # 🇺🇾 flag: Uruguay
+1F1FA 1F1FF                                ; fully-qualified     # 🇺🇿 flag: Uzbekistan
+1F1FB 1F1E6                                ; fully-qualified     # 🇻🇦 flag: Vatican City
+1F1FB 1F1E8                                ; fully-qualified     # 🇻🇨 flag: St. Vincent & Grenadines
+1F1FB 1F1EA                                ; fully-qualified     # 🇻🇪 flag: Venezuela
+1F1FB 1F1EC                                ; fully-qualified     # 🇻🇬 flag: British Virgin Islands
+1F1FB 1F1EE                                ; fully-qualified     # 🇻🇮 flag: U.S. Virgin Islands
+1F1FB 1F1F3                                ; fully-qualified     # 🇻🇳 flag: Vietnam
+1F1FB 1F1FA                                ; fully-qualified     # 🇻🇺 flag: Vanuatu
+1F1FC 1F1EB                                ; fully-qualified     # 🇼🇫 flag: Wallis & Futuna
+1F1FC 1F1F8                                ; fully-qualified     # 🇼🇸 flag: Samoa
+1F1FD 1F1F0                                ; fully-qualified     # 🇽🇰 flag: Kosovo
+1F1FE 1F1EA                                ; fully-qualified     # 🇾🇪 flag: Yemen
+1F1FE 1F1F9                                ; fully-qualified     # 🇾🇹 flag: Mayotte
+1F1FF 1F1E6                                ; fully-qualified     # 🇿🇦 flag: South Africa
+1F1FF 1F1F2                                ; fully-qualified     # 🇿🇲 flag: Zambia
+
 # subgroup: face-smiling
 1F600                                      ; fully-qualified     # 😀 grinning face
 1F603                                      ; fully-qualified     # 😃 grinning face with big eyes
@@ -3521,585 +4101,7 @@
 1F6C4                                      ; fully-qualified     # 🛄 baggage claim
 1F6C5                                      ; fully-qualified     # 🛅 left luggage
 
-# subgroup: warning
-26A0 FE0F                                  ; fully-qualified     # ⚠️ warning
-26A0                                       ; unqualified         # ⚠ warning
-1F6B8                                      ; fully-qualified     # 🚸 children crossing
-26D4                                       ; fully-qualified     # ⛔ no entry
-1F6AB                                      ; fully-qualified     # 🚫 prohibited
-1F6B3                                      ; fully-qualified     # 🚳 no bicycles
-1F6AD                                      ; fully-qualified     # 🚭 no smoking
-1F6AF                                      ; fully-qualified     # 🚯 no littering
-1F6B1                                      ; fully-qualified     # 🚱 non-potable water
-1F6B7                                      ; fully-qualified     # 🚷 no pedestrians
-1F4F5                                      ; fully-qualified     # 📵 no mobile phones
-1F51E                                      ; fully-qualified     # 🔞 no one under eighteen
-2622 FE0F                                  ; fully-qualified     # ☢️ radioactive
-2622                                       ; unqualified         # ☢ radioactive
-2623 FE0F                                  ; fully-qualified     # ☣️ biohazard
-2623                                       ; unqualified         # ☣ biohazard
 
-# subgroup: arrow
-2B06 FE0F                                  ; fully-qualified     # ⬆️ up arrow
-2B06                                       ; unqualified         # ⬆ up arrow
-2197 FE0F                                  ; fully-qualified     # ↗️ up-right arrow
-2197                                       ; unqualified         # ↗ up-right arrow
-27A1 FE0F                                  ; fully-qualified     # ➡️ right arrow
-27A1                                       ; unqualified         # ➡ right arrow
-2198 FE0F                                  ; fully-qualified     # ↘️ down-right arrow
-2198                                       ; unqualified         # ↘ down-right arrow
-2B07 FE0F                                  ; fully-qualified     # ⬇️ down arrow
-2B07                                       ; unqualified         # ⬇ down arrow
-2199 FE0F                                  ; fully-qualified     # ↙️ down-left arrow
-2199                                       ; unqualified         # ↙ down-left arrow
-2B05 FE0F                                  ; fully-qualified     # ⬅️ left arrow
-2B05                                       ; unqualified         # ⬅ left arrow
-2196 FE0F                                  ; fully-qualified     # ↖️ up-left arrow
-2196                                       ; unqualified         # ↖ up-left arrow
-2195 FE0F                                  ; fully-qualified     # ↕️ up-down arrow
-2195                                       ; unqualified         # ↕ up-down arrow
-2194 FE0F                                  ; fully-qualified     # ↔️ left-right arrow
-2194                                       ; unqualified         # ↔ left-right arrow
-21A9 FE0F                                  ; fully-qualified     # ↩️ right arrow curving left
-21A9                                       ; unqualified         # ↩ right arrow curving left
-21AA FE0F                                  ; fully-qualified     # ↪️ left arrow curving right
-21AA                                       ; unqualified         # ↪ left arrow curving right
-2934 FE0F                                  ; fully-qualified     # ⤴️ right arrow curving up
-2934                                       ; unqualified         # ⤴ right arrow curving up
-2935 FE0F                                  ; fully-qualified     # ⤵️ right arrow curving down
-2935                                       ; unqualified         # ⤵ right arrow curving down
-1F503                                      ; fully-qualified     # 🔃 clockwise vertical arrows
-1F504                                      ; fully-qualified     # 🔄 counterclockwise arrows button
-1F519                                      ; fully-qualified     # 🔙 BACK arrow
-1F51A                                      ; fully-qualified     # 🔚 END arrow
-1F51B                                      ; fully-qualified     # 🔛 ON! arrow
-1F51C                                      ; fully-qualified     # 🔜 SOON arrow
-1F51D                                      ; fully-qualified     # 🔝 TOP arrow
-
-# subgroup: religion
-1F6D0                                      ; fully-qualified     # 🛐 place of worship
-269B FE0F                                  ; fully-qualified     # ⚛️ atom symbol
-269B                                       ; unqualified         # ⚛ atom symbol
-1F549 FE0F                                 ; fully-qualified     # 🕉️ om
-1F549                                      ; unqualified         # 🕉 om
-2721 FE0F                                  ; fully-qualified     # ✡️ star of David
-2721                                       ; unqualified         # ✡ star of David
-2638 FE0F                                  ; fully-qualified     # ☸️ wheel of dharma
-2638                                       ; unqualified         # ☸ wheel of dharma
-262F FE0F                                  ; fully-qualified     # ☯️ yin yang
-262F                                       ; unqualified         # ☯ yin yang
-271D FE0F                                  ; fully-qualified     # ✝️ latin cross
-271D                                       ; unqualified         # ✝ latin cross
-2626 FE0F                                  ; fully-qualified     # ☦️ orthodox cross
-2626                                       ; unqualified         # ☦ orthodox cross
-262A FE0F                                  ; fully-qualified     # ☪️ star and crescent
-262A                                       ; unqualified         # ☪ star and crescent
-262E FE0F                                  ; fully-qualified     # ☮️ peace symbol
-262E                                       ; unqualified         # ☮ peace symbol
-1F54E                                      ; fully-qualified     # 🕎 menorah
-1F52F                                      ; fully-qualified     # 🔯 dotted six-pointed star
-
-# subgroup: zodiac
-2648                                       ; fully-qualified     # ♈ Aries
-2649                                       ; fully-qualified     # ♉ Taurus
-264A                                       ; fully-qualified     # ♊ Gemini
-264B                                       ; fully-qualified     # ♋ Cancer
-264C                                       ; fully-qualified     # ♌ Leo
-264D                                       ; fully-qualified     # ♍ Virgo
-264E                                       ; fully-qualified     # ♎ Libra
-264F                                       ; fully-qualified     # ♏ Scorpio
-2650                                       ; fully-qualified     # ♐ Sagittarius
-2651                                       ; fully-qualified     # ♑ Capricorn
-2652                                       ; fully-qualified     # ♒ Aquarius
-2653                                       ; fully-qualified     # ♓ Pisces
-26CE                                       ; fully-qualified     # ⛎ Ophiuchus
-
-# subgroup: av-symbol
-1F500                                      ; fully-qualified     # 🔀 shuffle tracks button
-1F501                                      ; fully-qualified     # 🔁 repeat button
-1F502                                      ; fully-qualified     # 🔂 repeat single button
-25B6 FE0F                                  ; fully-qualified     # ▶️ play button
-25B6                                       ; unqualified         # ▶ play button
-23E9                                       ; fully-qualified     # ⏩ fast-forward button
-23ED FE0F                                  ; fully-qualified     # ⏭️ next track button
-23ED                                       ; unqualified         # ⏭ next track button
-23EF FE0F                                  ; fully-qualified     # ⏯️ play or pause button
-23EF                                       ; unqualified         # ⏯ play or pause button
-25C0 FE0F                                  ; fully-qualified     # ◀️ reverse button
-25C0                                       ; unqualified         # ◀ reverse button
-23EA                                       ; fully-qualified     # ⏪ fast reverse button
-23EE FE0F                                  ; fully-qualified     # ⏮️ last track button
-23EE                                       ; unqualified         # ⏮ last track button
-1F53C                                      ; fully-qualified     # 🔼 upwards button
-23EB                                       ; fully-qualified     # ⏫ fast up button
-1F53D                                      ; fully-qualified     # 🔽 downwards button
-23EC                                       ; fully-qualified     # ⏬ fast down button
-23F8 FE0F                                  ; fully-qualified     # ⏸️ pause button
-23F8                                       ; unqualified         # ⏸ pause button
-23F9 FE0F                                  ; fully-qualified     # ⏹️ stop button
-23F9                                       ; unqualified         # ⏹ stop button
-23FA FE0F                                  ; fully-qualified     # ⏺️ record button
-23FA                                       ; unqualified         # ⏺ record button
-23CF FE0F                                  ; fully-qualified     # ⏏️ eject button
-23CF                                       ; unqualified         # ⏏ eject button
-1F3A6                                      ; fully-qualified     # 🎦 cinema
-1F505                                      ; fully-qualified     # 🔅 dim button
-1F506                                      ; fully-qualified     # 🔆 bright button
-1F4F6                                      ; fully-qualified     # 📶 antenna bars
-1F4F3                                      ; fully-qualified     # 📳 vibration mode
-1F4F4                                      ; fully-qualified     # 📴 mobile phone off
-
-# subgroup: gender
-2640 FE0F                                  ; fully-qualified     # ♀️ female sign
-2640                                       ; unqualified         # ♀ female sign
-2642 FE0F                                  ; fully-qualified     # ♂️ male sign
-2642                                       ; unqualified         # ♂ male sign
-
-# subgroup: other-symbol
-2695 FE0F                                  ; fully-qualified     # ⚕️ medical symbol
-2695                                       ; unqualified         # ⚕ medical symbol
-267E FE0F                                  ; fully-qualified     # ♾️ infinity
-267E                                       ; unqualified         # ♾ infinity
-267B FE0F                                  ; fully-qualified     # ♻️ recycling symbol
-267B                                       ; unqualified         # ♻ recycling symbol
-269C FE0F                                  ; fully-qualified     # ⚜️ fleur-de-lis
-269C                                       ; unqualified         # ⚜ fleur-de-lis
-1F531                                      ; fully-qualified     # 🔱 trident emblem
-1F4DB                                      ; fully-qualified     # 📛 name badge
-1F530                                      ; fully-qualified     # 🔰 Japanese symbol for beginner
-2B55                                       ; fully-qualified     # ⭕ hollow red circle
-2705                                       ; fully-qualified     # ✅ check mark button
-2611 FE0F                                  ; fully-qualified     # ☑️ check box with check
-2611                                       ; unqualified         # ☑ check box with check
-2714 FE0F                                  ; fully-qualified     # ✔️ check mark
-2714                                       ; unqualified         # ✔ check mark
-2716 FE0F                                  ; fully-qualified     # ✖️ multiplication sign
-2716                                       ; unqualified         # ✖ multiplication sign
-274C                                       ; fully-qualified     # ❌ cross mark
-274E                                       ; fully-qualified     # ❎ cross mark button
-2795                                       ; fully-qualified     # ➕ plus sign
-2796                                       ; fully-qualified     # ➖ minus sign
-2797                                       ; fully-qualified     # ➗ division sign
-27B0                                       ; fully-qualified     # ➰ curly loop
-27BF                                       ; fully-qualified     # ➿ double curly loop
-303D FE0F                                  ; fully-qualified     # 〽️ part alternation mark
-303D                                       ; unqualified         # 〽 part alternation mark
-2733 FE0F                                  ; fully-qualified     # ✳️ eight-spoked asterisk
-2733                                       ; unqualified         # ✳ eight-spoked asterisk
-2734 FE0F                                  ; fully-qualified     # ✴️ eight-pointed star
-2734                                       ; unqualified         # ✴ eight-pointed star
-2747 FE0F                                  ; fully-qualified     # ❇️ sparkle
-2747                                       ; unqualified         # ❇ sparkle
-203C FE0F                                  ; fully-qualified     # ‼️ double exclamation mark
-203C                                       ; unqualified         # ‼ double exclamation mark
-2049 FE0F                                  ; fully-qualified     # ⁉️ exclamation question mark
-2049                                       ; unqualified         # ⁉ exclamation question mark
-2753                                       ; fully-qualified     # ❓ question mark
-2754                                       ; fully-qualified     # ❔ white question mark
-2755                                       ; fully-qualified     # ❕ white exclamation mark
-2757                                       ; fully-qualified     # ❗ exclamation mark
-3030 FE0F                                  ; fully-qualified     # 〰️ wavy dash
-3030                                       ; unqualified         # 〰 wavy dash
-00A9 FE0F                                  ; fully-qualified     # ©️ copyright
-00A9                                       ; unqualified         # © copyright
-00AE FE0F                                  ; fully-qualified     # ®️ registered
-00AE                                       ; unqualified         # ® registered
-2122 FE0F                                  ; fully-qualified     # ™️ trade mark
-2122                                       ; unqualified         # ™ trade mark
-
-# subgroup: keycap
-0023 FE0F 20E3                             ; fully-qualified     # #️⃣ keycap: #
-0023 20E3                                  ; unqualified         # #⃣ keycap: #
-002A FE0F 20E3                             ; fully-qualified     # *️⃣ keycap: *
-002A 20E3                                  ; unqualified         # *⃣ keycap: *
-0030 FE0F 20E3                             ; fully-qualified     # 0️⃣ keycap: 0
-0030 20E3                                  ; unqualified         # 0⃣ keycap: 0
-0031 FE0F 20E3                             ; fully-qualified     # 1️⃣ keycap: 1
-0031 20E3                                  ; unqualified         # 1⃣ keycap: 1
-0032 FE0F 20E3                             ; fully-qualified     # 2️⃣ keycap: 2
-0032 20E3                                  ; unqualified         # 2⃣ keycap: 2
-0033 FE0F 20E3                             ; fully-qualified     # 3️⃣ keycap: 3
-0033 20E3                                  ; unqualified         # 3⃣ keycap: 3
-0034 FE0F 20E3                             ; fully-qualified     # 4️⃣ keycap: 4
-0034 20E3                                  ; unqualified         # 4⃣ keycap: 4
-0035 FE0F 20E3                             ; fully-qualified     # 5️⃣ keycap: 5
-0035 20E3                                  ; unqualified         # 5⃣ keycap: 5
-0036 FE0F 20E3                             ; fully-qualified     # 6️⃣ keycap: 6
-0036 20E3                                  ; unqualified         # 6⃣ keycap: 6
-0037 FE0F 20E3                             ; fully-qualified     # 7️⃣ keycap: 7
-0037 20E3                                  ; unqualified         # 7⃣ keycap: 7
-0038 FE0F 20E3                             ; fully-qualified     # 8️⃣ keycap: 8
-0038 20E3                                  ; unqualified         # 8⃣ keycap: 8
-0039 FE0F 20E3                             ; fully-qualified     # 9️⃣ keycap: 9
-0039 20E3                                  ; unqualified         # 9⃣ keycap: 9
-1F51F                                      ; fully-qualified     # 🔟 keycap: 10
-
-# subgroup: alphanum
-1F520                                      ; fully-qualified     # 🔠 input latin uppercase
-1F521                                      ; fully-qualified     # 🔡 input latin lowercase
-1F522                                      ; fully-qualified     # 🔢 input numbers
-1F523                                      ; fully-qualified     # 🔣 input symbols
-1F524                                      ; fully-qualified     # 🔤 input latin letters
-1F170 FE0F                                 ; fully-qualified     # 🅰️ A button (blood type)
-1F170                                      ; unqualified         # 🅰 A button (blood type)
-1F18E                                      ; fully-qualified     # 🆎 AB button (blood type)
-1F171 FE0F                                 ; fully-qualified     # 🅱️ B button (blood type)
-1F171                                      ; unqualified         # 🅱 B button (blood type)
-1F191                                      ; fully-qualified     # 🆑 CL button
-1F192                                      ; fully-qualified     # 🆒 COOL button
-1F193                                      ; fully-qualified     # 🆓 FREE button
-2139 FE0F                                  ; fully-qualified     # ℹ️ information
-2139                                       ; unqualified         # ℹ information
-1F194                                      ; fully-qualified     # 🆔 ID button
-24C2 FE0F                                  ; fully-qualified     # Ⓜ️ circled M
-24C2                                       ; unqualified         # Ⓜ circled M
-1F195                                      ; fully-qualified     # 🆕 NEW button
-1F196                                      ; fully-qualified     # 🆖 NG button
-1F17E FE0F                                 ; fully-qualified     # 🅾️ O button (blood type)
-1F17E                                      ; unqualified         # 🅾 O button (blood type)
-1F197                                      ; fully-qualified     # 🆗 OK button
-1F17F FE0F                                 ; fully-qualified     # 🅿️ P button
-1F17F                                      ; unqualified         # 🅿 P button
-1F198                                      ; fully-qualified     # 🆘 SOS button
-1F199                                      ; fully-qualified     # 🆙 UP! button
-1F19A                                      ; fully-qualified     # 🆚 VS button
-1F201                                      ; fully-qualified     # 🈁 Japanese “here” button
-1F202 FE0F                                 ; fully-qualified     # 🈂️ Japanese “service charge” button
-1F202                                      ; unqualified         # 🈂 Japanese “service charge” button
-1F237 FE0F                                 ; fully-qualified     # 🈷️ Japanese “monthly amount” button
-1F237                                      ; unqualified         # 🈷 Japanese “monthly amount” button
-1F236                                      ; fully-qualified     # 🈶 Japanese “not free of charge” button
-1F22F                                      ; fully-qualified     # 🈯 Japanese “reserved” button
-1F250                                      ; fully-qualified     # 🉐 Japanese “bargain” button
-1F239                                      ; fully-qualified     # 🈹 Japanese “discount” button
-1F21A                                      ; fully-qualified     # 🈚 Japanese “free of charge” button
-1F232                                      ; fully-qualified     # 🈲 Japanese “prohibited” button
-1F251                                      ; fully-qualified     # 🉑 Japanese “acceptable” button
-1F238                                      ; fully-qualified     # 🈸 Japanese “application” button
-1F234                                      ; fully-qualified     # 🈴 Japanese “passing grade” button
-1F233                                      ; fully-qualified     # 🈳 Japanese “vacancy” button
-3297 FE0F                                  ; fully-qualified     # ㊗️ Japanese “congratulations” button
-3297                                       ; unqualified         # ㊗ Japanese “congratulations” button
-3299 FE0F                                  ; fully-qualified     # ㊙️ Japanese “secret” button
-3299                                       ; unqualified         # ㊙ Japanese “secret” button
-1F23A                                      ; fully-qualified     # 🈺 Japanese “open for business” button
-1F235                                      ; fully-qualified     # 🈵 Japanese “no vacancy” button
-
-# subgroup: geometric
-1F534                                      ; fully-qualified     # 🔴 red circle
-1F7E0                                      ; fully-qualified     # 🟠 orange circle
-1F7E1                                      ; fully-qualified     # 🟡 yellow circle
-1F7E2                                      ; fully-qualified     # 🟢 green circle
-1F535                                      ; fully-qualified     # 🔵 blue circle
-1F7E3                                      ; fully-qualified     # 🟣 purple circle
-1F7E4                                      ; fully-qualified     # 🟤 brown circle
-26AB                                       ; fully-qualified     # ⚫ black circle
-26AA                                       ; fully-qualified     # ⚪ white circle
-1F7E5                                      ; fully-qualified     # 🟥 red square
-1F7E7                                      ; fully-qualified     # 🟧 orange square
-1F7E8                                      ; fully-qualified     # 🟨 yellow square
-1F7E9                                      ; fully-qualified     # 🟩 green square
-1F7E6                                      ; fully-qualified     # 🟦 blue square
-1F7EA                                      ; fully-qualified     # 🟪 purple square
-1F7EB                                      ; fully-qualified     # 🟫 brown square
-2B1B                                       ; fully-qualified     # ⬛ black large square
-2B1C                                       ; fully-qualified     # ⬜ white large square
-25FC FE0F                                  ; fully-qualified     # ◼️ black medium square
-25FC                                       ; unqualified         # ◼ black medium square
-25FB FE0F                                  ; fully-qualified     # ◻️ white medium square
-25FB                                       ; unqualified         # ◻ white medium square
-25FE                                       ; fully-qualified     # ◾ black medium-small square
-25FD                                       ; fully-qualified     # ◽ white medium-small square
-25AA FE0F                                  ; fully-qualified     # ▪️ black small square
-25AA                                       ; unqualified         # ▪ black small square
-25AB FE0F                                  ; fully-qualified     # ▫️ white small square
-25AB                                       ; unqualified         # ▫ white small square
-1F536                                      ; fully-qualified     # 🔶 large orange diamond
-1F537                                      ; fully-qualified     # 🔷 large blue diamond
-1F538                                      ; fully-qualified     # 🔸 small orange diamond
-1F539                                      ; fully-qualified     # 🔹 small blue diamond
-1F53A                                      ; fully-qualified     # 🔺 red triangle pointed up
-1F53B                                      ; fully-qualified     # 🔻 red triangle pointed down
-1F4A0                                      ; fully-qualified     # 💠 diamond with a dot
-1F518                                      ; fully-qualified     # 🔘 radio button
-1F533                                      ; fully-qualified     # 🔳 white square button
-1F532                                      ; fully-qualified     # 🔲 black square button
-
-# Symbols subtotal:		297
-# Symbols subtotal:		297	w/o modifiers
-
-# group: Flags
-
-# subgroup: flag
-1F3C1                                      ; fully-qualified     # 🏁 chequered flag
-1F6A9                                      ; fully-qualified     # 🚩 triangular flag
-1F38C                                      ; fully-qualified     # 🎌 crossed flags
-1F3F4                                      ; fully-qualified     # 🏴 black flag
-1F3F3 FE0F                                 ; fully-qualified     # 🏳️ white flag
-1F3F3                                      ; unqualified         # 🏳 white flag
-1F3F3 FE0F 200D 1F308                      ; fully-qualified     # 🏳️‍🌈 rainbow flag
-1F3F3 200D 1F308                           ; unqualified         # 🏳‍🌈 rainbow flag
-1F3F4 200D 2620 FE0F                       ; fully-qualified     # 🏴‍☠️ pirate flag
-1F3F4 200D 2620                            ; minimally-qualified # 🏴‍☠ pirate flag
-
-# subgroup: country-flag
-1F1E6 1F1E8                                ; fully-qualified     # 🇦🇨 flag: Ascension Island
-1F1E6 1F1E9                                ; fully-qualified     # 🇦🇩 flag: Andorra
-1F1E6 1F1EA                                ; fully-qualified     # 🇦🇪 flag: United Arab Emirates
-1F1E6 1F1EB                                ; fully-qualified     # 🇦🇫 flag: Afghanistan
-1F1E6 1F1EC                                ; fully-qualified     # 🇦🇬 flag: Antigua & Barbuda
-1F1E6 1F1EE                                ; fully-qualified     # 🇦🇮 flag: Anguilla
-1F1E6 1F1F1                                ; fully-qualified     # 🇦🇱 flag: Albania
-1F1E6 1F1F2                                ; fully-qualified     # 🇦🇲 flag: Armenia
-1F1E6 1F1F4                                ; fully-qualified     # 🇦🇴 flag: Angola
-1F1E6 1F1F6                                ; fully-qualified     # 🇦🇶 flag: Antarctica
-1F1E6 1F1F7                                ; fully-qualified     # 🇦🇷 flag: Argentina
-1F1E6 1F1F8                                ; fully-qualified     # 🇦🇸 flag: American Samoa
-1F1E6 1F1F9                                ; fully-qualified     # 🇦🇹 flag: Austria
-1F1E6 1F1FA                                ; fully-qualified     # 🇦🇺 flag: Australia
-1F1E6 1F1FC                                ; fully-qualified     # 🇦🇼 flag: Aruba
-1F1E6 1F1FD                                ; fully-qualified     # 🇦🇽 flag: Åland Islands
-1F1E6 1F1FF                                ; fully-qualified     # 🇦🇿 flag: Azerbaijan
-1F1E7 1F1E6                                ; fully-qualified     # 🇧🇦 flag: Bosnia & Herzegovina
-1F1E7 1F1E7                                ; fully-qualified     # 🇧🇧 flag: Barbados
-1F1E7 1F1E9                                ; fully-qualified     # 🇧🇩 flag: Bangladesh
-1F1E7 1F1EA                                ; fully-qualified     # 🇧🇪 flag: Belgium
-1F1E7 1F1EB                                ; fully-qualified     # 🇧🇫 flag: Burkina Faso
-1F1E7 1F1EC                                ; fully-qualified     # 🇧🇬 flag: Bulgaria
-1F1E7 1F1ED                                ; fully-qualified     # 🇧🇭 flag: Bahrain
-1F1E7 1F1EE                                ; fully-qualified     # 🇧🇮 flag: Burundi
-1F1E7 1F1EF                                ; fully-qualified     # 🇧🇯 flag: Benin
-1F1E7 1F1F1                                ; fully-qualified     # 🇧🇱 flag: St. Barthélemy
-1F1E7 1F1F2                                ; fully-qualified     # 🇧🇲 flag: Bermuda
-1F1E7 1F1F3                                ; fully-qualified     # 🇧🇳 flag: Brunei
-1F1E7 1F1F4                                ; fully-qualified     # 🇧🇴 flag: Bolivia
-1F1E7 1F1F6                                ; fully-qualified     # 🇧🇶 flag: Caribbean Netherlands
-1F1E7 1F1F7                                ; fully-qualified     # 🇧🇷 flag: Brazil
-1F1E7 1F1F8                                ; fully-qualified     # 🇧🇸 flag: Bahamas
-1F1E7 1F1F9                                ; fully-qualified     # 🇧🇹 flag: Bhutan
-1F1E7 1F1FB                                ; fully-qualified     # 🇧🇻 flag: Bouvet Island
-1F1E7 1F1FC                                ; fully-qualified     # 🇧🇼 flag: Botswana
-1F1E7 1F1FE                                ; fully-qualified     # 🇧🇾 flag: Belarus
-1F1E7 1F1FF                                ; fully-qualified     # 🇧🇿 flag: Belize
-1F1E8 1F1E6                                ; fully-qualified     # 🇨🇦 flag: Canada
-1F1E8 1F1E8                                ; fully-qualified     # 🇨🇨 flag: Cocos (Keeling) Islands
-1F1E8 1F1E9                                ; fully-qualified     # 🇨🇩 flag: Congo - Kinshasa
-1F1E8 1F1EB                                ; fully-qualified     # 🇨🇫 flag: Central African Republic
-1F1E8 1F1EC                                ; fully-qualified     # 🇨🇬 flag: Congo - Brazzaville
-1F1E8 1F1ED                                ; fully-qualified     # 🇨🇭 flag: Switzerland
-1F1E8 1F1EE                                ; fully-qualified     # 🇨🇮 flag: Côte d’Ivoire
-1F1E8 1F1F0                                ; fully-qualified     # 🇨🇰 flag: Cook Islands
-1F1E8 1F1F1                                ; fully-qualified     # 🇨🇱 flag: Chile
-1F1E8 1F1F2                                ; fully-qualified     # 🇨🇲 flag: Cameroon
-1F1E8 1F1F3                                ; fully-qualified     # 🇨🇳 flag: China
-1F1E8 1F1F4                                ; fully-qualified     # 🇨🇴 flag: Colombia
-1F1E8 1F1F5                                ; fully-qualified     # 🇨🇵 flag: Clipperton Island
-1F1E8 1F1F7                                ; fully-qualified     # 🇨🇷 flag: Costa Rica
-1F1E8 1F1FA                                ; fully-qualified     # 🇨🇺 flag: Cuba
-1F1E8 1F1FB                                ; fully-qualified     # 🇨🇻 flag: Cape Verde
-1F1E8 1F1FC                                ; fully-qualified     # 🇨🇼 flag: Curaçao
-1F1E8 1F1FD                                ; fully-qualified     # 🇨🇽 flag: Christmas Island
-1F1E8 1F1FE                                ; fully-qualified     # 🇨🇾 flag: Cyprus
-1F1E8 1F1FF                                ; fully-qualified     # 🇨🇿 flag: Czechia
-1F1E9 1F1EA                                ; fully-qualified     # 🇩🇪 flag: Germany
-1F1E9 1F1EC                                ; fully-qualified     # 🇩🇬 flag: Diego Garcia
-1F1E9 1F1EF                                ; fully-qualified     # 🇩🇯 flag: Djibouti
-1F1E9 1F1F0                                ; fully-qualified     # 🇩🇰 flag: Denmark
-1F1E9 1F1F2                                ; fully-qualified     # 🇩🇲 flag: Dominica
-1F1E9 1F1F4                                ; fully-qualified     # 🇩🇴 flag: Dominican Republic
-1F1E9 1F1FF                                ; fully-qualified     # 🇩🇿 flag: Algeria
-1F1EA 1F1E6                                ; fully-qualified     # 🇪🇦 flag: Ceuta & Melilla
-1F1EA 1F1E8                                ; fully-qualified     # 🇪🇨 flag: Ecuador
-1F1EA 1F1EA                                ; fully-qualified     # 🇪🇪 flag: Estonia
-1F1EA 1F1EC                                ; fully-qualified     # 🇪🇬 flag: Egypt
-1F1EA 1F1ED                                ; fully-qualified     # 🇪🇭 flag: Western Sahara
-1F1EA 1F1F7                                ; fully-qualified     # 🇪🇷 flag: Eritrea
-1F1EA 1F1F8                                ; fully-qualified     # 🇪🇸 flag: Spain
-1F1EA 1F1F9                                ; fully-qualified     # 🇪🇹 flag: Ethiopia
-1F1EA 1F1FA                                ; fully-qualified     # 🇪🇺 flag: European Union
-1F1EB 1F1EE                                ; fully-qualified     # 🇫🇮 flag: Finland
-1F1EB 1F1EF                                ; fully-qualified     # 🇫🇯 flag: Fiji
-1F1EB 1F1F0                                ; fully-qualified     # 🇫🇰 flag: Falkland Islands
-1F1EB 1F1F2                                ; fully-qualified     # 🇫🇲 flag: Micronesia
-1F1EB 1F1F4                                ; fully-qualified     # 🇫🇴 flag: Faroe Islands
-1F1EB 1F1F7                                ; fully-qualified     # 🇫🇷 flag: France
-1F1EC 1F1E6                                ; fully-qualified     # 🇬🇦 flag: Gabon
-1F1EC 1F1E7                                ; fully-qualified     # 🇬🇧 flag: United Kingdom
-1F1EC 1F1E9                                ; fully-qualified     # 🇬🇩 flag: Grenada
-1F1EC 1F1EA                                ; fully-qualified     # 🇬🇪 flag: Georgia
-1F1EC 1F1EB                                ; fully-qualified     # 🇬🇫 flag: French Guiana
-1F1EC 1F1EC                                ; fully-qualified     # 🇬🇬 flag: Guernsey
-1F1EC 1F1ED                                ; fully-qualified     # 🇬🇭 flag: Ghana
-1F1EC 1F1EE                                ; fully-qualified     # 🇬🇮 flag: Gibraltar
-1F1EC 1F1F1                                ; fully-qualified     # 🇬🇱 flag: Greenland
-1F1EC 1F1F2                                ; fully-qualified     # 🇬🇲 flag: Gambia
-1F1EC 1F1F3                                ; fully-qualified     # 🇬🇳 flag: Guinea
-1F1EC 1F1F5                                ; fully-qualified     # 🇬🇵 flag: Guadeloupe
-1F1EC 1F1F6                                ; fully-qualified     # 🇬🇶 flag: Equatorial Guinea
-1F1EC 1F1F7                                ; fully-qualified     # 🇬🇷 flag: Greece
-1F1EC 1F1F8                                ; fully-qualified     # 🇬🇸 flag: South Georgia & South Sandwich Islands
-1F1EC 1F1F9                                ; fully-qualified     # 🇬🇹 flag: Guatemala
-1F1EC 1F1FA                                ; fully-qualified     # 🇬🇺 flag: Guam
-1F1EC 1F1FC                                ; fully-qualified     # 🇬🇼 flag: Guinea-Bissau
-1F1EC 1F1FE                                ; fully-qualified     # 🇬🇾 flag: Guyana
-1F1ED 1F1F0                                ; fully-qualified     # 🇭🇰 flag: Hong Kong SAR China
-1F1ED 1F1F2                                ; fully-qualified     # 🇭🇲 flag: Heard & McDonald Islands
-1F1ED 1F1F3                                ; fully-qualified     # 🇭🇳 flag: Honduras
-1F1ED 1F1F7                                ; fully-qualified     # 🇭🇷 flag: Croatia
-1F1ED 1F1F9                                ; fully-qualified     # 🇭🇹 flag: Haiti
-1F1ED 1F1FA                                ; fully-qualified     # 🇭🇺 flag: Hungary
-1F1EE 1F1E8                                ; fully-qualified     # 🇮🇨 flag: Canary Islands
-1F1EE 1F1E9                                ; fully-qualified     # 🇮🇩 flag: Indonesia
-1F1EE 1F1EA                                ; fully-qualified     # 🇮🇪 flag: Ireland
-1F1EE 1F1F1                                ; fully-qualified     # 🇮🇱 flag: Israel
-1F1EE 1F1F2                                ; fully-qualified     # 🇮🇲 flag: Isle of Man
-1F1EE 1F1F3                                ; fully-qualified     # 🇮🇳 flag: India
-1F1EE 1F1F4                                ; fully-qualified     # 🇮🇴 flag: British Indian Ocean Territory
-1F1EE 1F1F6                                ; fully-qualified     # 🇮🇶 flag: Iraq
-1F1EE 1F1F7                                ; fully-qualified     # 🇮🇷 flag: Iran
-1F1EE 1F1F8                                ; fully-qualified     # 🇮🇸 flag: Iceland
-1F1EE 1F1F9                                ; fully-qualified     # 🇮🇹 flag: Italy
-1F1EF 1F1EA                                ; fully-qualified     # 🇯🇪 flag: Jersey
-1F1EF 1F1F2                                ; fully-qualified     # 🇯🇲 flag: Jamaica
-1F1EF 1F1F4                                ; fully-qualified     # 🇯🇴 flag: Jordan
-1F1EF 1F1F5                                ; fully-qualified     # 🇯🇵 flag: Japan
-1F1F0 1F1EA                                ; fully-qualified     # 🇰🇪 flag: Kenya
-1F1F0 1F1EC                                ; fully-qualified     # 🇰🇬 flag: Kyrgyzstan
-1F1F0 1F1ED                                ; fully-qualified     # 🇰🇭 flag: Cambodia
-1F1F0 1F1EE                                ; fully-qualified     # 🇰🇮 flag: Kiribati
-1F1F0 1F1F2                                ; fully-qualified     # 🇰🇲 flag: Comoros
-1F1F0 1F1F3                                ; fully-qualified     # 🇰🇳 flag: St. Kitts & Nevis
-1F1F0 1F1F5                                ; fully-qualified     # 🇰🇵 flag: North Korea
-1F1F0 1F1F7                                ; fully-qualified     # 🇰🇷 flag: South Korea
-1F1F0 1F1FC                                ; fully-qualified     # 🇰🇼 flag: Kuwait
-1F1F0 1F1FE                                ; fully-qualified     # 🇰🇾 flag: Cayman Islands
-1F1F0 1F1FF                                ; fully-qualified     # 🇰🇿 flag: Kazakhstan
-1F1F1 1F1E6                                ; fully-qualified     # 🇱🇦 flag: Laos
-1F1F1 1F1E7                                ; fully-qualified     # 🇱🇧 flag: Lebanon
-1F1F1 1F1E8                                ; fully-qualified     # 🇱🇨 flag: St. Lucia
-1F1F1 1F1EE                                ; fully-qualified     # 🇱🇮 flag: Liechtenstein
-1F1F1 1F1F0                                ; fully-qualified     # 🇱🇰 flag: Sri Lanka
-1F1F1 1F1F7                                ; fully-qualified     # 🇱🇷 flag: Liberia
-1F1F1 1F1F8                                ; fully-qualified     # 🇱🇸 flag: Lesotho
-1F1F1 1F1F9                                ; fully-qualified     # 🇱🇹 flag: Lithuania
-1F1F1 1F1FA                                ; fully-qualified     # 🇱🇺 flag: Luxembourg
-1F1F1 1F1FB                                ; fully-qualified     # 🇱🇻 flag: Latvia
-1F1F1 1F1FE                                ; fully-qualified     # 🇱🇾 flag: Libya
-1F1F2 1F1E6                                ; fully-qualified     # 🇲🇦 flag: Morocco
-1F1F2 1F1E8                                ; fully-qualified     # 🇲🇨 flag: Monaco
-1F1F2 1F1E9                                ; fully-qualified     # 🇲🇩 flag: Moldova
-1F1F2 1F1EA                                ; fully-qualified     # 🇲🇪 flag: Montenegro
-1F1F2 1F1EB                                ; fully-qualified     # 🇲🇫 flag: St. Martin
-1F1F2 1F1EC                                ; fully-qualified     # 🇲🇬 flag: Madagascar
-1F1F2 1F1ED                                ; fully-qualified     # 🇲🇭 flag: Marshall Islands
-1F1F2 1F1F0                                ; fully-qualified     # 🇲🇰 flag: Macedonia
-1F1F2 1F1F1                                ; fully-qualified     # 🇲🇱 flag: Mali
-1F1F2 1F1F2                                ; fully-qualified     # 🇲🇲 flag: Myanmar (Burma)
-1F1F2 1F1F3                                ; fully-qualified     # 🇲🇳 flag: Mongolia
-1F1F2 1F1F4                                ; fully-qualified     # 🇲🇴 flag: Macao SAR China
-1F1F2 1F1F5                                ; fully-qualified     # 🇲🇵 flag: Northern Mariana Islands
-1F1F2 1F1F6                                ; fully-qualified     # 🇲🇶 flag: Martinique
-1F1F2 1F1F7                                ; fully-qualified     # 🇲🇷 flag: Mauritania
-1F1F2 1F1F8                                ; fully-qualified     # 🇲🇸 flag: Montserrat
-1F1F2 1F1F9                                ; fully-qualified     # 🇲🇹 flag: Malta
-1F1F2 1F1FA                                ; fully-qualified     # 🇲🇺 flag: Mauritius
-1F1F2 1F1FB                                ; fully-qualified     # 🇲🇻 flag: Maldives
-1F1F2 1F1FC                                ; fully-qualified     # 🇲🇼 flag: Malawi
-1F1F2 1F1FD                                ; fully-qualified     # 🇲🇽 flag: Mexico
-1F1F2 1F1FE                                ; fully-qualified     # 🇲🇾 flag: Malaysia
-1F1F2 1F1FF                                ; fully-qualified     # 🇲🇿 flag: Mozambique
-1F1F3 1F1E6                                ; fully-qualified     # 🇳🇦 flag: Namibia
-1F1F3 1F1E8                                ; fully-qualified     # 🇳🇨 flag: New Caledonia
-1F1F3 1F1EA                                ; fully-qualified     # 🇳🇪 flag: Niger
-1F1F3 1F1EB                                ; fully-qualified     # 🇳🇫 flag: Norfolk Island
-1F1F3 1F1EC                                ; fully-qualified     # 🇳🇬 flag: Nigeria
-1F1F3 1F1EE                                ; fully-qualified     # 🇳🇮 flag: Nicaragua
-1F1F3 1F1F1                                ; fully-qualified     # 🇳🇱 flag: Netherlands
-1F1F3 1F1F4                                ; fully-qualified     # 🇳🇴 flag: Norway
-1F1F3 1F1F5                                ; fully-qualified     # 🇳🇵 flag: Nepal
-1F1F3 1F1F7                                ; fully-qualified     # 🇳🇷 flag: Nauru
-1F1F3 1F1FA                                ; fully-qualified     # 🇳🇺 flag: Niue
-1F1F3 1F1FF                                ; fully-qualified     # 🇳🇿 flag: New Zealand
-1F1F4 1F1F2                                ; fully-qualified     # 🇴🇲 flag: Oman
-1F1F5 1F1E6                                ; fully-qualified     # 🇵🇦 flag: Panama
-1F1F5 1F1EA                                ; fully-qualified     # 🇵🇪 flag: Peru
-1F1F5 1F1EB                                ; fully-qualified     # 🇵🇫 flag: French Polynesia
-1F1F5 1F1EC                                ; fully-qualified     # 🇵🇬 flag: Papua New Guinea
-1F1F5 1F1ED                                ; fully-qualified     # 🇵🇭 flag: Philippines
-1F1F5 1F1F0                                ; fully-qualified     # 🇵🇰 flag: Pakistan
-1F1F5 1F1F1                                ; fully-qualified     # 🇵🇱 flag: Poland
-1F1F5 1F1F2                                ; fully-qualified     # 🇵🇲 flag: St. Pierre & Miquelon
-1F1F5 1F1F3                                ; fully-qualified     # 🇵🇳 flag: Pitcairn Islands
-1F1F5 1F1F7                                ; fully-qualified     # 🇵🇷 flag: Puerto Rico
-1F1F5 1F1F8                                ; fully-qualified     # 🇵🇸 flag: Palestinian Territories
-1F1F5 1F1F9                                ; fully-qualified     # 🇵🇹 flag: Portugal
-1F1F5 1F1FC                                ; fully-qualified     # 🇵🇼 flag: Palau
-1F1F5 1F1FE                                ; fully-qualified     # 🇵🇾 flag: Paraguay
-1F1F6 1F1E6                                ; fully-qualified     # 🇶🇦 flag: Qatar
-1F1F7 1F1EA                                ; fully-qualified     # 🇷🇪 flag: Réunion
-1F1F7 1F1F4                                ; fully-qualified     # 🇷🇴 flag: Romania
-1F1F7 1F1F8                                ; fully-qualified     # 🇷🇸 flag: Serbia
-1F1F7 1F1FA                                ; fully-qualified     # 🇷🇺 flag: Russia
-1F1F7 1F1FC                                ; fully-qualified     # 🇷🇼 flag: Rwanda
-1F1F8 1F1E6                                ; fully-qualified     # 🇸🇦 flag: Saudi Arabia
-1F1F8 1F1E7                                ; fully-qualified     # 🇸🇧 flag: Solomon Islands
-1F1F8 1F1E8                                ; fully-qualified     # 🇸🇨 flag: Seychelles
-1F1F8 1F1E9                                ; fully-qualified     # 🇸🇩 flag: Sudan
-1F1F8 1F1EA                                ; fully-qualified     # 🇸🇪 flag: Sweden
-1F1F8 1F1EC                                ; fully-qualified     # 🇸🇬 flag: Singapore
-1F1F8 1F1ED                                ; fully-qualified     # 🇸🇭 flag: St. Helena
-1F1F8 1F1EE                                ; fully-qualified     # 🇸🇮 flag: Slovenia
-1F1F8 1F1EF                                ; fully-qualified     # 🇸🇯 flag: Svalbard & Jan Mayen
-1F1F8 1F1F0                                ; fully-qualified     # 🇸🇰 flag: Slovakia
-1F1F8 1F1F1                                ; fully-qualified     # 🇸🇱 flag: Sierra Leone
-1F1F8 1F1F2                                ; fully-qualified     # 🇸🇲 flag: San Marino
-1F1F8 1F1F3                                ; fully-qualified     # 🇸🇳 flag: Senegal
-1F1F8 1F1F4                                ; fully-qualified     # 🇸🇴 flag: Somalia
-1F1F8 1F1F7                                ; fully-qualified     # 🇸🇷 flag: Suriname
-1F1F8 1F1F8                                ; fully-qualified     # 🇸🇸 flag: South Sudan
-1F1F8 1F1F9                                ; fully-qualified     # 🇸🇹 flag: São Tomé & Príncipe
-1F1F8 1F1FB                                ; fully-qualified     # 🇸🇻 flag: El Salvador
-1F1F8 1F1FD                                ; fully-qualified     # 🇸🇽 flag: Sint Maarten
-1F1F8 1F1FE                                ; fully-qualified     # 🇸🇾 flag: Syria
-1F1F8 1F1FF                                ; fully-qualified     # 🇸🇿 flag: Eswatini
-1F1F9 1F1E6                                ; fully-qualified     # 🇹🇦 flag: Tristan da Cunha
-1F1F9 1F1E8                                ; fully-qualified     # 🇹🇨 flag: Turks & Caicos Islands
-1F1F9 1F1E9                                ; fully-qualified     # 🇹🇩 flag: Chad
-1F1F9 1F1EB                                ; fully-qualified     # 🇹🇫 flag: French Southern Territories
-1F1F9 1F1EC                                ; fully-qualified     # 🇹🇬 flag: Togo
-1F1F9 1F1ED                                ; fully-qualified     # 🇹🇭 flag: Thailand
-1F1F9 1F1EF                                ; fully-qualified     # 🇹🇯 flag: Tajikistan
-1F1F9 1F1F0                                ; fully-qualified     # 🇹🇰 flag: Tokelau
-1F1F9 1F1F1                                ; fully-qualified     # 🇹🇱 flag: Timor-Leste
-1F1F9 1F1F2                                ; fully-qualified     # 🇹🇲 flag: Turkmenistan
-1F1F9 1F1F3                                ; fully-qualified     # 🇹🇳 flag: Tunisia
-1F1F9 1F1F4                                ; fully-qualified     # 🇹🇴 flag: Tonga
-1F1F9 1F1F7                                ; fully-qualified     # 🇹🇷 flag: Turkey
-1F1F9 1F1F9                                ; fully-qualified     # 🇹🇹 flag: Trinidad & Tobago
-1F1F9 1F1FB                                ; fully-qualified     # 🇹🇻 flag: Tuvalu
-1F1F9 1F1FC                                ; fully-qualified     # 🇹🇼 flag: Taiwan
-1F1F9 1F1FF                                ; fully-qualified     # 🇹🇿 flag: Tanzania
-1F1FA 1F1E6                                ; fully-qualified     # 🇺🇦 flag: Ukraine
-1F1FA 1F1EC                                ; fully-qualified     # 🇺🇬 flag: Uganda
-1F1FA 1F1F2                                ; fully-qualified     # 🇺🇲 flag: U.S. Outlying Islands
-1F1FA 1F1F3                                ; fully-qualified     # 🇺🇳 flag: United Nations
-1F1FA 1F1F8                                ; fully-qualified     # 🇺🇸 flag: United States
-1F1FA 1F1FE                                ; fully-qualified     # 🇺🇾 flag: Uruguay
-1F1FA 1F1FF                                ; fully-qualified     # 🇺🇿 flag: Uzbekistan
-1F1FB 1F1E6                                ; fully-qualified     # 🇻🇦 flag: Vatican City
-1F1FB 1F1E8                                ; fully-qualified     # 🇻🇨 flag: St. Vincent & Grenadines
-1F1FB 1F1EA                                ; fully-qualified     # 🇻🇪 flag: Venezuela
-1F1FB 1F1EC                                ; fully-qualified     # 🇻🇬 flag: British Virgin Islands
-1F1FB 1F1EE                                ; fully-qualified     # 🇻🇮 flag: U.S. Virgin Islands
-1F1FB 1F1F3                                ; fully-qualified     # 🇻🇳 flag: Vietnam
-1F1FB 1F1FA                                ; fully-qualified     # 🇻🇺 flag: Vanuatu
-1F1FC 1F1EB                                ; fully-qualified     # 🇼🇫 flag: Wallis & Futuna
-1F1FC 1F1F8                                ; fully-qualified     # 🇼🇸 flag: Samoa
-1F1FD 1F1F0                                ; fully-qualified     # 🇽🇰 flag: Kosovo
-1F1FE 1F1EA                                ; fully-qualified     # 🇾🇪 flag: Yemen
-1F1FE 1F1F9                                ; fully-qualified     # 🇾🇹 flag: Mayotte
-1F1FF 1F1E6                                ; fully-qualified     # 🇿🇦 flag: South Africa
-1F1FF 1F1F2                                ; fully-qualified     # 🇿🇲 flag: Zambia
 1F1FF 1F1FC                                ; fully-qualified     # 🇿🇼 flag: Zimbabwe
 
 # subgroup: subdivision-flag

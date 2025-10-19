@@ -1,0 +1,550 @@
+# Playwright JS 自动化表单操作类，包含完善的定位、操作、交互和反爬规避方法
+
+本类作为 Playwright JS 的使用示例和说明文档，涵盖核心功能、示例和最佳实践。基于 Playwright 官方文档（https://playwright.dev/docs/intro）、Chromium DevTools Protocol 和相关浏览器文档整理。文档已进一步扩展，新增移动设备模拟、多浏览器支持、CI/CD 集成、安全最佳实践、性能监控、组件测试和与其他工具的集成等内容，使其适用于企业级自动化、跨平台测试和大规模爬虫部署。支持 Playwright v1.45+（截至 2025 年 9 月）的新特性，如组件测试和实验性 API。
+
+### 1. 元素定位策略 (Locator 方法)
+Locator 通过 CSS 选择器、XPath、文本等定位元素，支持链式调用和过滤。示例: `page.locator('#username')`。提示: Locator 是惰性评估的，直到执行操作才会查找元素。支持过滤器如 `.filter({ hasText: 'text' })` 或 `.first()`、`.last()`、`.nth(index)`。新特性: 支持 `locator.or(locator2)` 逻辑或定位。
+
+- **通过角色**: 通过 ARIA 角色定位，如 button、textbox。示例: `page.getByRole('button', { name: 'Submit' })`。提示: 更语义化，推荐用于可访问性，支持 `exact: true` 精确匹配名称、`max=1` 限制数量。
+- **通过文本**: 通过可见文本定位。示例: `page.getByText('Login')`。提示: 支持精确匹配 `{ exact: true }`，或通过 `page.getByTitle('Tooltip')` 获取标题文本。
+- **通过占位符**: 通过输入框的 placeholder 定位。示例: `page.getByPlaceholder('Enter email')`。提示: 支持正则表达式 `{ exact: false }`。
+- **通过标签**: 通过标签名定位。示例: `page.getByLabel('Username')`。提示: 用于表单标签关联，支持关联的 `for` 属性。
+- **通过测试 ID**: 通过 data-testid 属性定位。示例: `page.getByTestId('submit-button')`。提示: 适合测试环境，优先于 CSS 以避免 UI 变化影响。
+- **通过 CSS 选择器**: 最灵活。示例: `page.locator('div.form > input#email')`。提示: 支持伪选择器如 `:visible`、`nth-child(n)`、`has(~ selector)`（CSS4）。
+- **通过 XPath**: 支持复杂路径。示例: `page.locator('xpath=//input[@type="submit"]')`。提示: 性能较低，优先 CSS；支持相对 XPath 如 `xpath=../following-sibling::div`。
+- **通过链式 Locator**: 嵌套定位。示例: `page.locator('form').locator('input[name="email"]')`。提示: 提高定位精度，避免全局搜索。
+- **通过 Alt 文本**: 图片定位。示例: `page.getByAltText('Logo')`。提示: 提升可访问性测试。
+- **高级过滤**: 示例: `page.locator('button').filter({ has: page.locator('span.icon') })`（包含子元素）或 `.filter({ hasText: /regex/ })`（正则匹配）。扩展: `.locator('>> css=selector')` 相对定位。
+
+#### 获取元素内容相关
+```javascript
+text = await locator.textContent();            // 获取可见文本内容（去除HTML标签）
+inner_html = await locator.innerHTML();        // 获取元素内部的HTML代码
+outer_html = await locator.outerHTML();        // 获取包括自身的完整HTML代码
+allTexts = await locator.allTextContents();    // 获取所有匹配元素的文本数组
+innerText = await locator.innerText();         // 获取渲染文本（扩展，忽略隐藏元素）
+```
+
+#### 获取标准属性
+```javascript
+value = await locator.inputValue();            // 表单元素的值（针对输入框）
+href = await locator.getAttribute('href');     // 链接地址
+src = await locator.getAttribute('src');       // 图片等资源的源地址
+alt = await locator.getAttribute('alt');       // 图片的替代文本
+title = await locator.getAttribute('title');   // 标题属性（悬停提示）
+type = await locator.getAttribute('type');     // 输入框类型
+placeholder = await locator.getAttribute('placeholder');  // 占位符文本
+name = await locator.getAttribute('name');     // 表单名称（扩展）
+```
+
+#### 获取状态属性
+```javascript
+disabled = await locator.isDisabled();         // 是否禁用
+readonly = await locator.getAttribute('readonly');  // 是否只读（返回字符串或null）
+checked = await locator.isChecked();           // 是否选中（复选框/单选框）
+selected = await locator.isSelected();         // 是否选择（下拉选项，使用 selectOption 检查）
+visible = await locator.isVisible();           // 是否可见（支持异步检查）
+enabled = await locator.isEnabled();           // 是否启用
+focused = await locator.isFocused();           // 是否获得焦点（扩展）
+```
+
+#### 获取自定义数据属性
+```javascript
+data_id = await locator.getAttribute('data-id');    // data-id属性
+data_value = await locator.getAttribute('data-value');  // data-value属性
+// 支持任何 data-* 属性，如 data-testid
+dataset = await locator.evaluate(el => el.dataset); // 整个 dataset 对象（扩展）
+```
+
+#### 获取样式和类相关
+```javascript
+class_name = await locator.getAttribute('class');   // class属性值
+id_value = await locator.getAttribute('id');        // id属性值
+style = await locator.getAttribute('style');        // 内联样式
+classes = await locator.evaluate(el => Array.from(el.classList));  // 类名数组
+hasClass = await locator.evaluate(el => el.classList.contains('active')); // 检查类存在（扩展）
+```
+
+#### 获取CSS计算样式
+```javascript
+computed_style = await page.evaluate((el) => window.getComputedStyle(el), await locator.elementHandle());
+color = computed_style.color;
+background_color = computed_style.backgroundColor;
+font_size = computed_style.fontSize;
+font_weight = computed_style.fontWeight;
+display = computed_style.display;
+visibility = computed_style.visibility;
+opacity = computed_style.opacity;                  // 不透明度
+transform = computed_style.transform;              // 变换样式
+zIndex = computed_style.zIndex;                    // 层级（扩展）
+```
+
+#### 获取元素元信息
+```javascript
+tag_name = await locator.evaluate((el) => el.tagName.toLowerCase());  // 标签名（小写）
+bounding_box = await locator.boundingBox();    // 位置和尺寸：{ x, y, width, height }
+screenshot = await locator.screenshot();       // 截取元素截图
+count = await locator.count();                 // 匹配元素数量
+elementHandle = await locator.elementHandle(); // 获取 ElementHandle（用于高级操作）
+parent = await locator.locator('..').elementHandle(); // 父元素（扩展）
+```
+
+#### 获取表单特定属性
+```javascript
+max_length = await locator.getAttribute('maxlength');  // 最大输入长度
+min = await locator.getAttribute('min');            // 最小值
+max = await locator.getAttribute('max');            // 最大值
+pattern = await locator.getAttribute('pattern');    // 验证模式
+required = await locator.getAttribute('required');  // 是否必填
+validity = await locator.evaluate(el => el.validity); // 表单有效性状态
+validationMessage = await locator.evaluate(el => el.validationMessage); // 验证消息（扩展）
+```
+
+#### 获取链接特定属性
+```javascript
+target = await locator.getAttribute('target');      // 链接打开方式
+rel = await locator.getAttribute('rel');            // 链接关系
+download = await locator.getAttribute('download');  // 下载属性
+ping = await locator.getAttribute('ping');          // ping URL（扩展）
+```
+
+#### 获取图片特定属性
+```javascript
+width = await locator.getAttribute('width');        // 图片宽度
+height = await locator.getAttribute('height');      // 图片高度
+naturalWidth = await locator.evaluate(el => el.naturalWidth);  // 原始宽度
+loading = await locator.getAttribute('loading');    // 加载模式 (lazy/eager)（扩展）
+```
+
+```javascript
+page.content()  // page的html
+```
+
+#### 按标签名
+```javascript
+await page.locator('a');                       // 所有<a>标签
+await page.locator('input');                   // 所有<input>标签
+elements = await page.locator('div.post').all();  // 所有div.post元素
+```
+
+#### 按ID
+```javascript
+await page.locator('#username');               // id="username"
+await page.locator('div#header');              // <div id="header">
+```
+
+#### 按类名
+```javascript
+await page.locator('.btn');                    // class="btn"
+await page.locator('button.primary');          // <button class="primary">
+```
+
+#### 精确匹配属性
+```javascript
+await page.locator('[name="email"]');          // name="email"
+await page.locator('input[type="submit"]');    // <input type="submit">
+```
+
+#### 包含特定值
+```javascript
+await page.locator('[href*="login"]');         // href包含"login"
+await page.locator('[class*="btn"]');          // class包含"btn"
+```
+
+#### 开头匹配
+```javascript
+await page.locator('[href^="https"]');         // href以"https"开头
+```
+
+#### 结尾匹配
+```javascript
+await page.locator('[src$=".png"]');           // src以".png"结尾
+```
+
+#### 包含单词
+```javascript
+await page.locator('[class~="active"]');       // class包含单词"active"
+```
+
+#### 后代选择器（空格）
+```javascript
+await page.locator('div.container p');         // div内的所有p元素
+```
+
+#### 直接子元素（>）
+```javascript
+await page.locator('form > input');            // form的直接子input
+```
+
+#### 相邻兄弟（+）
+```javascript
+await page.locator('label + input');           // label后面的第一个input
+```
+
+#### 后续兄弟（~）
+```javascript
+await page.locator('h1 ~ p');                  // h1后面的所有p元素
+```
+
+#### 状态伪类
+```javascript
+await page.locator('input:disabled');          // 禁用的input
+await page.locator('a:visited');               // 访问过的链接
+await page.locator('input:focus');             // 获得焦点的元素
+await page.locator(':hover');                  // 悬停状态（需结合 mouse）
+await page.locator('input:invalid');           // 无效表单（扩展）
+```
+
+#### 结构伪类
+```javascript
+await page.locator('tr:first-child');          // 第一个tr
+await page.locator('li:last-child');           // 最后一个li
+await page.locator('div:nth-child(2)');        // 第二个div子元素
+await page.locator('p:nth-of-type(1)');        // 第一个p元素
+await page.locator('input:only-child');        // 唯一子元素
+await page.locator('li:empty');                // 空元素（扩展）
+```
+
+#### 复杂的组合选择器
+```javascript
+await page.locator('form#login > input[type="text"][name="username"]');
+await page.locator('div.user-panel > input[name="login"]');
+await page.locator('a[href*="download"].btn.primary:not([disabled])');
+await page.locator('div:has(> button.active)');  // 包含子元素的父元素（CSS4 支持）
+await page.locator('input:matches([type="email"], [type="tel"])'); // 匹配多个（扩展）
+```
+
+#### 表格操作
+```javascript
+await page.locator('table.data > tbody > tr:nth-child(3) > td:nth-child(2)');
+```
+
+#### 导航菜单
+```javascript
+await page.locator('nav > ul.menu > li.active > a[href^="/home"]');
+```
+
+#### 登录表单
+```javascript
+username = page.locator('form#login input[type="text"]');
+password = page.locator('form#login input[type="password"]');
+submit = page.locator('form#login button[type="submit"]');
+```
+
+### 2. 元素交互方法
+- `await locator.fill('text')`: 输入文本到输入框。示例: `await locator.fill('username')`。提示: 自动清空并输入，支持慢速输入 `{ force: true }` 绕过只读、`{ delay: 50 }` 模拟打字。
+- `await locator.clear()`: 清空输入框内容。
+- `await locator.click()`: 点击元素。示例: `await locator.click()`。异常: `TimeoutError`, `Error`。选项: `{ button: 'right' }` 右键，`{ position: { x: 10, y: 10 } }` 偏移点击，`{ trial: true }` 预检查。
+- `await locator.getAttribute('attr')`: 获取元素属性。
+- `await locator.textContent()`: 获取元素可见文本。
+- `await locator.isVisible()`: 检查元素是否可见。
+- `await locator.isEnabled()`: 检查元素是否启用。
+- `await locator.isChecked()`: 检查是否选中（复选框/单选）。
+- **扩展交互**:
+  - `await locator.hover()`: 鼠标悬停。选项: `{ position: { x: 0, y: 0 } }`。
+  - `await locator.focus()`: 聚焦元素。
+  - `await locator.blur()`: 移除焦点。
+  - `await locator.check()`: 选中复选框。选项: `{ force: true }`。
+  - `await locator.uncheck()`: 取消选中。
+  - `await locator.press('Key')`: 按下键盘键。示例: `await locator.press('Enter', { delay: 100 })`。
+  - `await locator.dblclick()`: 双击。
+  - `await locator.scrollIntoViewIfNeeded()`: 滚动到视图中。选项: `{ rect: { x, y, width, height } }`。
+  - `await locator.waitFor({ state: 'attached' })`: 等待元素附加到 DOM（扩展）。
+
+### 3. 等待机制 (内置等待 和 expect)
+- **自动等待**: Playwright 内置自动等待元素出现、可交互。示例: `await locator.click(); // 自动等待元素可见和启用`。默认超时 30s，可全局配置 `timeout: 5000`。
+- **显式等待**: 使用 expect 断言等待条件。示例: `await expect(locator).toBeVisible({ timeout: 10000 })`。提示: expect 支持 polling 间隔 `{ polling: 'raf' }`（requestAnimationFrame）。
+- **常见期望 (expect)**:
+  - `toBeVisible`: 元素可见。
+  - `toBeEnabled`: 元素启用。
+  - `toHaveText`: 元素包含指定文本。示例: `await expect(locator).toHaveText('Welcome', { useInnerText: true })`。
+  - `toBeHidden`: 元素隐藏。
+  - `toHaveAttribute`: 元素有指定属性。示例: `await expect(locator).toHaveAttribute('href', /regex/)` 支持正则。
+  - `toHaveValue`: 输入框值匹配。示例: `await expect(locator).toHaveValue('user')`。
+  - `toHaveCount(n)`: 元素数量匹配。
+  - `toContainText('partial')`: 部分文本匹配。
+  - `toHaveClass(/regex/ )`: 类匹配（扩展）。
+  - `toHaveCSS('color', 'rgb(255, 0, 0)')`: CSS 属性匹配。
+- **其他等待方法**:
+  - `await locator.waitFor({ state: 'visible' })`: 等待特定状态。状态: 'attached', 'detached', 'visible', 'hidden'。
+  - `await page.waitForLoadState('networkidle')`: 等待页面加载完成（idle 状态）。选项: 'load', 'domcontentloaded', 'commit'。
+  - `await page.waitForURL('/dashboard', { waitUntil: 'networkidle' })`: 等待 URL 变化。
+  - `await page.waitForSelector('selector', { state: 'visible' })`: 等待选择器出现（旧 API，推荐 Locator）。
+  - `await page.waitForFunction('() => window.ready')`: 等待 JS 条件（扩展）。
+
+### 4. 弹窗处理 (Dialogs)
+- `page.on('dialog', async dialog => { ... })`: 监听弹窗事件。示例: `page.on('dialog', dialog => dialog.accept())`。提示: 在 `page.goto()` 前注册监听。
+- `dialog.accept('text')`: 接受弹窗并输入文本（prompt）。
+- `dialog.dismiss()`: 取消弹窗。
+- `dialog.message()`: 获取弹窗文本。
+- `dialog.type()`: 获取类型（alert, confirm, prompt）。
+- **扩展**: `page.on('filechooser', async fileChooser => { await fileChooser.setFiles('/path') })` 处理文件选择弹窗。`page.on('download', async download => { await download.path(); })` 下载处理。
+
+### 5. 框架处理 (Frames 和 IFrames)
+- `page.frameLocator('selector')`: 定位框架。示例: `const frame = page.frameLocator('#iframe_id')`。
+- `frame.locator('selector')`: 在框架内定位元素。
+- `page.mainFrame()`: 返回主框架。
+- **扩展**:
+  - `page.frames()`: 获取所有框架列表。示例: `for (const frame of page.frames()) { console.log(frame.name()); }`。
+  - `frame.waitForSelector('selector')`: 在框架内等待元素。
+  - `await frame.evaluate('js')`: 在框架内执行 JS。
+  - `frame.frameElement()`: 获取框架元素（扩展，用于嵌套）。
+
+### 6. 窗口和标签处理 (Contexts 和 Pages)
+- `browser.contexts()`: 获取所有浏览器上下文列表。
+- `await browser.newContext()`: 创建新上下文（类似于隐身窗口）。
+- `await context.newPage()`: 在上下文中创建新页面（标签）。
+- `await page.bringToFront()`: 激活页面。
+- `await page.close()`: 关闭页面。
+- `await context.close()`: 关闭上下文。
+- **扩展**:
+  - `await browser.newPage()`: 在默认上下文中创建页面。
+  - `await page.waitForEvent('popup')`: 等待新窗口弹出，并获取 `popup = await page.waitForEvent('popup')`。
+  - `context.setExtraHTTPHeaders({ 'Authorization': 'Bearer token' })`: 设置上下文级 HTTP 头。
+  - `await context.grantPermissions(['geolocation'])`: 授予权限。
+  - `await context.clearPermissions()`: 清空权限（扩展）。
+
+### 7. 高级交互 (Keyboard, Mouse)
+- `await page.mouse.move(x, y)`: 鼠标移动到坐标。选项: `{ steps: 10 }` 平滑移动。
+- `await page.mouse.click(x, y)`: 点击坐标。选项: `{ clickCount: 2 }` 双击。
+- `await page.mouse.dblclick(x, y)`: 双击。
+- `await page.mouse.down()`: 按下鼠标。选项: `{ button: 'left' }`。
+- `await page.mouse.up()`: 释放鼠标。
+- `await page.keyboard.press('Enter')`: 按键。示例: `{ delay: 100 }` 添加延迟。
+- `await page.keyboard.type('text')`: 输入文本。示例: `{ delay: 50 }` 模拟人类输入。
+- `await page.dragAndDrop('source', 'target')`: 拖拽。示例: `await page.dragAndDrop('#draggable', '#dropzone', { targetPosition: { x: 100, y: 100 } })`。
+- **扩展**:
+  - `await page.keyboard.down('Shift') / up('Shift')`: 修饰键。
+  - `await page.touchscreen.tap(x, y)`: 触摸事件（移动设备模拟）。
+  - `await locator.tap()`: 触摸点击。
+  - `await page.keyboard.insertText('text')`: 直接插入文本（无事件）。
+
+### 8. 浏览器操作和导航
+- `await page.goto('url')`: 打开网页。选项: `{ waitUntil: 'networkidle' }` 等待加载，`{ referer: 'prev.com' }`。
+- `await page.reload()`: 刷新页面。选项: `{ waitUntil: 'domcontentloaded' }`。
+- `await page.goBack()`: 返回上一页。
+- `await page.goForward()`: 前进到下一页。
+- `await page.setViewportSize({ width, height })`: 设置视口大小。
+- `await page.evaluate('js')`: 执行 JavaScript。示例: `await page.evaluate(() => localStorage.setItem('key', 'value'))`。返回: `returnValue`。
+- `await page.screenshot({ path: 'path.png' })`: 保存截图。选项: `{ fullPage: true }` 全页，`{ clip: { x, y, width, height } }` 裁剪，`{ type: 'jpeg', quality: 80 }`。
+- **扩展**:
+  - `await page.pdf({ path: 'page.pdf' })`: 生成 PDF。选项: `{ format: 'A4', printBackground: true, margin: { top: '1cm' } }`。
+  - `await page.emulateMedia({ media: 'print' })`: 模拟打印媒体。
+  - `await page.emulateTimezone('America/New_York')`: 模拟时区。
+  - `await page.route('**/api/**', route => route.continue())`: 路由拦截（见第15节）。
+  - `await page.bringToFront({ noWaitAfter: false })`: 激活页面（扩展）。
+
+### 9. 文件上传
+- `await locator.setInputFiles('/path/to/file')`: 上传文件。提示: 需 `<input type="file">`，支持数组上传多个文件。示例: `await locator.setInputFiles(['/file1.jpg', { name: 'file2.txt', buffer: Buffer.from('content') }])`。
+- **扩展**: `await fileChooser.setFiles({ buffer: Buffer.from(data), mimeType: 'image/png' })` 从内存上传，支持 MIME 类型。
+
+### 10. 下拉框处理
+- `await locator.selectOption('value')`: 通过 value 属性选择。
+- `await locator.selectOption({ label: 'text' })`: 通过可见文本选择。
+- `await locator.selectOption({ index: 1 })`: 通过索引选择。
+- `await locator.options()`: 获取所有选项。示例: `const options = await locator.evaluate(el => Array.from(el.options).map(o => ({ value: o.value, label: o.textContent })))`。
+- `await locator.selectOption(['value1', 'value2'])`: 多选。
+- **扩展**: `await expect(locator).toHaveValue('selected')` 验证选择。`await locator.selectOption({ value: /regex/ })` 正则匹配。
+
+### 11. 临时目录清理
+- Playwright 使用系统临时目录存储浏览器数据（如 `/tmp/playwright`）。
+- `await browser.close()`: 理论上清理临时目录，但可能残留。
+- 解决方案: 使用 `playwright.launch({ args: ['--user-data-dir=/custom/path'] })` 指定目录，并在会话结束时用 `fs.rm` 清理。
+- 重试机制: 处理文件锁问题。示例: 使用 `try-catch` 包裹 `fs.rmSync(dir, { recursive: true, force: true })`。
+- 进程检查: 使用 `process.kill` 或外部工具确保浏览器进程退出。示例: `child_process.exec('pkill -f playwright')`（Linux）。
+- 初始化前清理: 检查并清理残留临时目录，避免冲突。示例: `if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true })`。
+- **扩展**: 使用 `playwright.launchPersistentContext(userDataDir, { bypassCSP: true })` 持久上下文，结束后手动清理。集成 `rimraf` 库简化跨平台删除。
+
+### 12. BrowserContextOptions 和 LaunchOptions 配置
+- `playwright.chromium.launch({ ... })`: 启动浏览器，通过 args 和其他选项设置。
+- **常用命令行参数 (args)**:
+  - `--headless`: 无头模式。
+  - `--disable-gpu`: 禁用 GPU 加速。
+  - `--no-sandbox`: 禁用沙箱（Linux/Docker）。
+  - `--disable-extensions`: 禁用扩展。
+  - `--disable-dev-shm-usage`: 禁用 `/dev/shm`。
+  - `--window-size=width,height`: 设置窗口大小。
+  - `--user-agent='string'`: 自定义 User-Agent。
+  - `--disable-notifications`: 禁用浏览器通知。
+  - `--disable-popup-blocking`: 禁用弹窗拦截。
+  - `--incognito`: 隐身模式。
+  - `--user-data-dir=path`: 指定用户数据目录。
+  - `--lang=locale`: 设置浏览器语言。
+  - `--proxy-server=host:port`: 设置代理。
+  - `--ignore-certificate-errors`: 忽略 SSL 证书错误。
+  - `--disable-web-security`: 禁用同源策略。
+  - `--disable-features=VizDisplayCompositor`: 优化渲染。
+  - `--enable-automation=false`: 隐藏自动化标志（扩展，反爬）。
+  - `--remote-debugging-port=9222`: 启用远程调试。
+- **常用上下文选项 (newContext)**:
+  - `viewport: { width, height }`: 设置视口。
+  - `userAgent: 'custom UA'`: 自定义 UA。
+  - `extraHTTPHeaders: { 'Accept-Language': 'zh-CN' }`: 设置额外头。
+  - `geolocation: { latitude: 37.7749, longitude: -122.4194 }`: 模拟位置。
+  - `permissions: ['geolocation', 'notifications']`: 授予权限。
+  - `colorScheme: 'light' 或 'dark'`: 主题。
+  - `reducedMotion: true`: 减少动画。
+  - `deviceScaleFactor: 1`: 设备像素比。
+  - `httpCredentials: { username: 'user', password: 'pass' }`: HTTP 认证。
+  - `ignoreHTTPSErrors: true`: 忽略 HTTPS 错误。
+  - `offline: false`: 模拟离线。
+  - `storageState: { cookies: [...] }`: 加载存储状态。示例: 从 JSON 文件加载 `await context.newPage({ storageState: 'state.json' })`。
+  - `recordVideo: { dir: 'videos/', size: { width: 640, height: 480 } }`: 录制视频。
+  - `recordHar: { path: 'network.har' }`: 录制 HAR 文件（扩展）。
+  - `bypassCSP: true`: 绕过内容安全策略。
+- **扩展**: `channel: 'chrome'` 指定浏览器通道。`executablePath: '/path/to/chrome'` 自定义可执行文件。
+
+### 13. 反爬机制规避
+- **目的**: 防止网站检测 Playwright 自动化（如 `navigator.webdriver`）。
+- **方法**:
+  - 使用 `playwright-extra` 和 `stealth-plugin` 库，通过 `addStealthPlugin()` 简化。
+  - 修改浏览器属性：`navigator.webdriver: undefined`、`navigator.languages: ['zh-CN', 'zh', 'en']`、`navigator.plugins: []`、`navigator.platform: 'Win32'`、`window.screen: { width: 1920, height: 1080 }`、WebGL 修改、Canvas 随机化、`navigator.hardwareConcurrency: 4`、`navigator.deviceMemory: 8`、`navigator.maxTouchPoints: 0`。
+  - 设置额外 HTTP 头。
+  - 自定义 JS 注入，通过 `page.evaluateOnNewDocument()`。
+- **stealth 配置参数**:
+  - `platform`、`vendor`、`webglVendor/renderer`、`languages`、`fixHairline`、`mockHardware`、`runOnInsecureOrigins`、`hideWebdriver`。
+- **自定义脚本**:
+  - `page.addInitScript(() => { Object.defineProperty(navigator, 'vendor', { get: () => 'Google Inc.' }); })`。
+- **提示**:
+  - 确保一致性。测试: https://intoli.com/blog/not-possible-to-block-chrome-headless/test.html 或 https://bot.sannysoft.com/。
+  - 参考: Puppeteer-extra-stealth（适配 Playwright）。
+- **扩展技巧**:
+  - 随机延迟: `await page.waitForTimeout(Math.random() * 1000 + 500)`。
+  - 代理旋转: 结合 `proxy` 选项和代理池。
+  - 指纹随机化: 修改 `window.chrome = { runtime: {} }`、`navigator.permissions.query` 模拟。
+  - 行为模拟: 随机滚动 `await page.mouse.wheel(0, 100)`、鼠标轨迹曲线移动。
+  - 检测规避: 覆盖 `MutationObserver`、`IntersectionObserver` 以隐藏自动化痕迹。
+
+### 14. Logging and Tracing (执行日志和追踪)
+- **目的**: 捕获日志、网络、错误和追踪，用于调试。
+- **Console Logging**: `page.on('console', msg => console.log(`Console: ${msg.type()} - ${msg.text()}`));`。支持 `msg.args()`、`msg.location()`。
+- **Page Errors**: `page.on('pageerror', error => console.log(`Page error: ${error.message}`));`。
+- **Network Logging**: `page.on('request', request => console.log(`Request: ${request.url()}`));` `page.on('response', response => console.log(`Response: ${response.status()}`));`。扩展: `request.postDataJSON()`、`response.body()`。
+- **Tracing API**:
+  ```javascript
+  await context.tracing.start({ screenshots: true, snapshots: true, sources: true, actions: true }); // 开始
+  // 执行...
+  await context.tracing.stop({ path: 'trace.zip' });
+  ```
+- **查看 Trace**: `npx playwright show-trace trace.zip`。
+- **Test-Level Logging**: `await test.step('Step', async () => { ... });`。
+- **配置**: `playwright.config.js` `{ trace: 'on' }`。
+- **扩展**: `page.on('websocket', ws => ws.on('framesent', frame => console.log(frame.payload)));` WebSocket 日志。`context.on('requestfailed', req => console.error(req.error()));` 失败日志。集成 `pino` 或 `winston` 结构化日志。
+
+### 15. 网络拦截和路由处理 (Network Interception)
+- **目的**: 拦截、修改或模拟网络，用于测试或规避。
+- **Route 拦截**: `await page.route('**/api/users', route => route.fulfill({ status: 200, body: JSON.stringify({ users: [] }), headers: { 'content-type': 'application/json' } }));`。
+- **继续请求**: `route.continue({ url: 'new-url', method: 'POST', postData: 'data' })`。
+- **阻止请求**: `route.abort('failed')`。原因: 'aborted', 'accessdenied', 'addressunreachable', 'connectionclosed', 'connectionfailed', 'connectionrefused', 'failed', 'internetdisconnected', 'namenotresolved', 'timeout'。
+- **监听事件**: `page.on('requestfinished', req => { const res = req.response(); if (res.ok()) console.log(res.json()); })`。
+- **扩展**: `await page.routeFromHAR('requests.har', { update: true })` 从 HAR 重放/更新。`await page.expectRequest('/api', { timeout: 5000 })` 期望请求。
+
+### 16. Cookies 和存储管理
+- **Cookies 操作**:
+  - `await context.addCookies([{ name: 'session', value: 'token', domain: '.example.com', path: '/', expires: -1, httpOnly: true, secure: true, sameSite: 'Lax' }])`。
+  - `const cookies = await context.cookies(['/path'])` 获取指定路径。
+  - `await context.clearCookies()` 清空。
+  - `await context.cookiesForURL('https://example.com')` URL 特定 Cookies。
+- **LocalStorage/SessionStorage**:
+  - `await page.evaluate(() => localStorage.setItem('key', 'value'))`。
+  - `const items = await page.evaluate(() => Object.fromEntries(localStorage))` 获取所有。
+  - `await page.evaluate(() => localStorage.clear())` 清空。
+- **扩展**: `await context.storageState({ path: 'state.json' })` 保存状态。`await page.context().addInitScript(() => { localStorage.setItem('theme', 'dark'); })` 初始化脚本设置存储。
+
+### 17. 错误处理和重试机制
+- **异常捕获**: `try { await locator.click(); } catch (e) { if (e.name === 'TimeoutError') { await page.reload(); } }`。
+- **重试装饰器**:
+  ```javascript
+  async function retry(fn, retries = 3, delay = 1000) {
+    for (let i = 0; i < retries; i++) {
+      try { return await fn(); } catch (e) {
+        if (i === retries - 1) throw e;
+        console.warn(`Retry ${i + 1}/${retries}: ${e.message}`);
+        await page.waitForTimeout(delay * (i + 1)); // 指数退避
+      }
+    }
+  }
+  await retry(() => locator.click());
+  ```
+- **全局错误处理**: `playwright.config.js` `{ reporter: [['html'], ['json', { outputFile: 'report.json' }]] }`。
+- **扩展**: 使用 `expect.poll(() => condition, { timeout: 10000 })` 轮询重试。集成 `retry-axios` 对于网络请求。
+
+### 18. 性能优化和视频/截图录制
+- **视频录制**: `newContext({ recordVideo: { dir: 'videos/', size: { width: 1280, height: 720 }, pixelFormat: 'yuv420p' } })`。获取: `const video = await page.video(); await video.saveAs('test.mp4');`。
+- **截图自动化**: `await page.screenshot({ fullPage: true, path: `screenshot-${Date.now()}.png`, animations: 'disabled' })`。
+- **优化提示**: `slowMo: 100` 减速；避免不必要等待；使用 `locator.all()` 批量；`page.setDefaultTimeout(15000)` 调整超时。
+- **扩展**: `await context.tracing.start({ screenshots: true })` 结合 Tracing。性能指标: `await page.evaluate(() => performance.now())` 计时。使用 `chrome://tracing/` 分析（需 `--enable-tracing`）。
+
+### 19. 移动设备模拟
+- **目的**: 模拟移动浏览器，用于响应式测试。
+- **设备预设**: `const { devices } = require('playwright'); const context = await browser.newContext({ ...devices['iPhone 12'] });`。设备: 'iPhone 11', 'Pixel 5', 'Desktop Chrome' 等。
+- **自定义模拟**: `newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 3, userAgent: 'iPhone UA' })`。
+- **触摸交互**: `await page.touchscreen.tap(x, y)`、`await page.touchscreen.tap(locator)`。
+- **扩展**: `await page.emulateMedia({ reducedMotion: 'no-preference' })` 模拟偏好。测试: `await expect(page).toHaveTitle('Mobile View')`。
+
+### 20. 多浏览器支持和并行执行
+- **多浏览器**: `const { chromium, firefox, webkit } = playwright;`。示例: `const browser = await chromium.launch();` / `firefox.launch()` / `webkit.launch()`。
+- **并行上下文**: `await Promise.all([context1.newPage(), context2.newPage()])` 并行页面。
+- **扩展**: `playwright.config.js` `{ projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }, { name: 'firefox', use: { ...devices['Desktop Firefox'] } }] }` 跨浏览器测试。
+
+### 21. CI/CD 集成
+- **GitHub Actions/Jenkins**: 示例 YAML:
+  ```yaml
+  - uses: microsoft/playwright-github-action@v1
+    with:
+      playwright-version: '1.45.0'
+      args: --headed --no-sandbox
+  - run: npx playwright test
+  ```
+- **Docker**: Dockerfile: `FROM mcr.microsoft.com/playwright:v1.45.0-focal`。运行: `docker run -v ${PWD}:/tests -w /tests mcr.microsoft.com/playwright test`。
+- **扩展**: 环境变量: `process.env.CI = true` 启用 headless。报告: `--reporter=html,junit` 生成 CI 报告。缓存: `--cache-dir=/cache`。
+
+### 22. 组件测试 (Component Testing)
+- **目的**: 测试 React/Vue/Angular 组件隔离。
+- **设置**: `npx playwright test --ct`。配置: `playwright.config.js` `{ use: { ctPort: 3000 } }`。
+- **示例**:
+  ```javascript
+  import { test, expect } from '@playwright/experimental-ct-react'; // React 示例
+  test('Button click', async ({ mount }) => {
+    const component = await mount(<Button>Click</Button>);
+    await component.click();
+    await expect(component).toContainText('Clicked');
+  });
+  ```
+- **扩展**: 支持框架: React, Vue, Svelte, Angular。`playwright-ct-react` 等插件。
+
+### 23. 安全性考虑
+- **凭证管理**: 使用 `dotenv` 加载环境变量，避免硬编码。`httpCredentials` 加密密码。
+- **数据保护**: 避免日志敏感数据: `page.on('console', msg => { if (!msg.text().includes('password')) console.log(msg.text()); })`。
+- **CSP 绕过**: `bypassCSP: true` 但仅测试用。
+- **扩展**: 集成 `keytar` 安全存储凭证。扫描: 使用 `playwright-security` 插件检查 XSS/CSRF。
+
+### 24. 性能监控和基准
+- **指标收集**: `await page.evaluate(() => { const metrics = performance.getEntriesByType('navigation')[0]; return { loadTime: metrics.loadEventEnd - metrics.startTime }; })`。
+- **Lighthouse 集成**: `const lighthouse = require('lighthouse'); const report = await lighthouse('url', { port: browser.wsEndpoint(), output: 'json' });`。
+- **扩展**: `playwright.config.js` `{ use: { launchOptions: { args: ['--enable-blink-features=IdleDetection'] } }`。基准: 使用 `benchmark.js` 比较执行时间。
+
+### 25. 与其他工具的集成
+- **Appium**: 混合 web/mobile 测试。示例: Playwright 启动 Appium 会话。
+- **Selenium**: 迁移: 使用 `playwright-selenium` 桥接。
+- **Cypress**: 比较: Playwright 更快，支持多浏览器。集成: `cypress-playwright` 插件。
+- **API 测试**: 结合 `supertest` 或 `playwright.request`。示例: `const apiRequest = await context.newRequest(); const response = await apiRequest.post('/api', { data: { key: 'value' } });`。
+- **扩展**: `playwright-test` 与 Mocha/Jest 集成。监控: Datadog/New Relic 插件。
+
+### 最佳实践
+- 使用自定义 `user-data-dir` 隔离临时文件。
+- 在 `finally` 块中 `await browser.close()` 和清理。
+- 结合 headless 和反爬优化性能。
+- 初始化前清理残留进程。
+- 测试反爬: 验证 `navigator.webdriver`。
+- **扩展最佳实践**:
+  - 优先语义定位，提升可维护性。
+  - Page Object Model (POM): 封装 Locator 操作成类。
+  - 环境管理: `process.env` 存储 URL/凭证。
+  - CI/CD: Docker + 无沙箱。
+  - 安全: 加密敏感数据，避免日志泄露。
+  - 版本控制: Pin Playwright 版本，监控 breaking changes。
+  - 文档化: JSDoc 注解方法。
+  - 规模化: Sharding 测试 `npx playwright test --shard=1/3`。
+
+参考资源：Playwright 官方文档、GitHub 示例、社区插件仓库。建议根据项目需求自定义扩展。

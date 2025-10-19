@@ -97,6 +97,7 @@ class WebFormAutomation:
     width = element.get_attribute("width")        # 图片宽度
     height = element.get_attribute("height")      # 图片高度
 
+    driver.page_source  driverd的html
     # 按标签名
     driver.find_element(By.CSS_SELECTOR, "a")          # 所有<a>标签
     driver.find_element(By.CSS_SELECTOR, "input")      # 所有<input>标签
