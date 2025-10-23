@@ -173,9 +173,8 @@ create_feed() {
 }
 
 clone_dir() {
-	create_directory "package/A"
-	[[ $# -lt 1 ]] && return
-	local repo_url branch temp_dir=$(mktemp -d)
+	[[ $# -lt 1 ]] && return 1
+	local repo_url branch temp_dir=$(mktemp -d) find_dir="package feeds target"
 	trap 'rm -rf "$temp_dir"' EXIT INT TERM
 	if [[ $1 == */* ]]; then
 		repo_url="$1"
@@ -185,6 +184,10 @@ clone_dir() {
 		repo_url="$2"
 		shift 2
 	fi
+	if [[ $1 =~ ^(package|feeds|target)$ ]]; then
+		find_dir="$1"
+		shift
+	fi
 	[[ $repo_url =~ ^https?:// ]] || repo_url="https://github.com/$repo_url"
 
 	git clone -q $branch --depth 1 "$repo_url" $temp_dir 2>/dev/null || {
@@ -192,27 +195,9 @@ clone_dir() {
 		return 1
 	}
 
-	# [[ $repo_url =~ Entware/entware-packages ]] && {
-	# 	rm -rf feeds/packages/lang/python/MarkupSafe
-	# 	create_feed feeds/packages/lang/python python-build python-installer python-wheel \
-	# 				python-pathspec python-pyproject-hooks python-hatchling python-hatch-fancy-pypi-readme \
-	# 				python-semantic-version python-setuptools-rust python-setuptools-scm python-editables \
-	# 				python-trove-classifiers python-calver python-markupsafe python-flit-core
-	# 	set -- "$@" python-build python-installer python-wheel python-markupsafe python-pathspec \
-	# 				python-pyproject-hooks python-hatchling python-hatch-fancy-pypi-readme \
-	# 				python-semantic-version python-setuptools-rust python-setuptools-scm python-editables \
-	# 				python-trove-classifiers python-calver \
-	# 				python-pyopenssl python-cffi python-pycparser python-incremental python-cryptography \
-	# 				python-typing-extensions python-packaging python-pluggy python-ifaddr python-twisted \
-	# 				python-ply
-
-	# 	curl -sSo feeds/packages/lang/python/python3-host-build.mk \
-	# 		https://raw.githubusercontent.com/openwrt/packages/refs/heads/openwrt-24.10/lang/python/python3-host-build.mk
-	# }
-
 	for target_dir in $@; do
 		local source_dir current_dir destination_dir
-		[[ $target_dir =~ ^luci-app ]] && create_feed feeds/luci/applications $target_dir
+		# [[ $target_dir =~ ^luci-app ]] && create_feed feeds/luci/applications $target_dir
 		if [[ ${repo_url##*/} == ${target_dir} ]]; then
 			mv -f ${temp_dir} ${target_dir}
 			source_dir=${target_dir}
@@ -220,16 +205,13 @@ clone_dir() {
 			source_dir=$(find_first_dir "$temp_dir" "$target_dir")
 		fi
 		[[ -d "$source_dir" ]] || continue
-		current_dir=$(find_first_dir "package feeds target" "$target_dir")
+		current_dir=$(find_first_dir "$find_dir" "$target_dir")
 		destination_dir="${current_dir:-package/A/$target_dir}"
 
-		[[ -d "$current_dir" ]] && mv -f "$current_dir" ../
+		[[ -d "$current_dir" ]] && rm -rf "../$(basename "$current_dir")" && mv -f "$current_dir" ../
 		if mv -f "$source_dir" "${destination_dir%/*}"; then
 			if [[ -d "$current_dir" ]]; then
 				_printf "$(color cg 替换) $target_dir [ $(color cg ✔) ]"
-				[[ $destination_dir =~ feeds/packages/lang/python ]] && {
-					sed -i 's|python3-host-build.mk|python3-host.mk|' $destination_dir/Makefile
-				}
 			else
 				_printf "$(color cb 添加) $target_dir [ $(color cb ✔) ]"
 			fi
@@ -306,7 +288,7 @@ set_config (){
 			EOF
 			lan_ip "192.168.2.150"
 			echo "FIRMWARE_TYPE=squashfs-combined" >> $GITHUB_ENV
-			# add_busybox "lsusb lspci lsscsi lsof"
+			add_busybox "lsusb lspci lsscsi lsof"
 			;;
 		r[124]*)
 			cat >>.config<<-EOF
@@ -433,6 +415,7 @@ git_clone() {
 	./scripts/feeds update -a 1>/dev/null 2>&1
 	./scripts/feeds install -a 1>/dev/null 2>&1
 	status
+	create_directory "package/A"
 	color cy "自定义设置.... "
 	set_config
 	wget -qO package/base-files/files/etc/banner git.io/JoNK8
@@ -446,26 +429,29 @@ git_clone
 clone_dir vernesong/OpenClash luci-app-openclash
 clone_dir xiaorouji/openwrt-passwall luci-app-passwall
 clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
-clone_dir hong0980/build ddnsto luci-app-ddnsto luci-app-diskman luci-app-dockerman \
-	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
-	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-easymesh luci-lib-docker \
-	aria2 luci-app-aria2 sunpanel lsscsi axel luci-app-taskplan luci-app-watchdog luci-app-miaplus \
-	# deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle python-pyasn1 \
-	# libtorrent-rasterbar
+clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
+		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
+		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
+		luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
+		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-lib-docker \
+		python-pyasn1 python-pyxdg python-rencode python-setproctitle python-twisted \
+		sunpanel transmission qBittorrent-static
 clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box luci-app-homeproxy \
 	#luci-app-openclash luci-app-passwall luci-app-passwall2
 clone_dir kiddin9/kwrt-packages chinadns-ng geoview lua-maxminddb luci-app-bypass luci-app-nlbwmon luci-app-arpbind \
 	luci-app-pushbot luci-app-store luci-app-syncdial luci-lib-taskd luci-lib-xterm qBittorrent-static taskd trojan-plus \
 	gecoosac luci-app-gecoosac luci-app-quickstart luci-app-advancedplus luci-app-istorex
 clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
-clone_dir openwrt-24.10 openwrt/packages docker dockerd containerd docker-compose runc
-clone_dir Entware/entware-packages
 
 REPO_BRANCH=$(sed -En 's/^src-git luci.*;(.*)/\1/p' feeds.conf.default)
 REPO_BRANCH=${REPO_BRANCH:-18.06}
 # https://github.com/userdocs/qbittorrent-nox-static/releases
-xc=$(find_first_dir "package/A feeds/packages/net" "qBittorrent-static")
-[[ -d $xc ]] && sed -Ei "s/(PKG_VERSION:=).*/\1${qb_version:-4.5.2_v2.0.8}/" $xc/Makefile
+xc=$(find_first_dir "package/A feeds" "qBittorrent-static")
+pkg_version=$(echo $qb_version | cut -d'_' -f1 )
+[[ -d $xc ]] && sed -Ei \
+		-e "s/(PKG_VERSION:=).*/\1${pkg_version}/" \
+		-e "s/(PKG_FULL_VERSION:=).*/\1${qb_version}/" \
+	$xc/Makefile
 # sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
 # sed -i 's/invalid users = root/#&/g' feeds/*/*/*/files/smb.conf.template
 sed -i 's|/bin/login|/bin/login -f root|' feeds/*/*/*/files/ttyd.config

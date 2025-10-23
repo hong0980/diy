@@ -411,6 +411,8 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal r8152
 		add_package "default-settings-chn default-settings luci-app-cpufreq luci-app-package-manager"
 		git clone -q https://github.com/immortalwrt/homeproxy package/A/luci-app-homeproxy
+	else
+		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 	fi
 	#add_package "axel luci-app-gecoosac" luci-app-istorex luci-app-partexp
 	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
@@ -432,6 +434,7 @@ else
 		https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/include/openssl-module.mk
 fi
 
+[[ $REPO_BRANCH =~ master ]] || clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang #nlbwmon
 delpackage "luci-app-filetransfer luci-app-turboacc"
 clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box
 clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb \
@@ -441,10 +444,10 @@ clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb \
 		luci-lib-xterm taskd #luci-theme-argon
 clone_dir xiaorouji/openwrt-passwall-packages chinadns-ng geoview trojan-plus
 
-wget -qO package/base-files/files/etc/banner git.io/JoNK8
 color cy "自定义设置.... "
+wget -qO package/base-files/files/etc/banner git.io/JoNK8
+sed -i "/ONLY/ s/^/#/g" feeds/packages/lang/python/python-mako/Makefile
 # sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
-[[ $REPO =~ openwrt ]] || sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 sed -i 's|/bin/login|/bin/login -f root|' feeds/packages/utils/ttyd/files/ttyd.config
 REPLACEMENT=$([[ $SOURCE_NAME == openwrt ]] && echo "" || echo "${SOURCE_NAME}/")
 sed -i "s|^\(OPENWRT_RELEASE.*%C\)\(.*\)|\1 ${REPLACEMENT}$(TZ=UTC-8 date +%m月%d日)\2|" package/*/*/*/lib/os-release || true
@@ -470,9 +473,6 @@ pkg_version=$(echo $qb_version | cut -d'_' -f1 )
 		-e "s/(PKG_VERSION:=).*/\1${pkg_version}/" \
 		-e "s/(PKG_FULL_VERSION:=).*/\1${qb_version}/" \
 	$xc/Makefile
-[[ $REPO_BRANCH =~ master ]] || clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang #nlbwmon
-
-sed -i "/ONLY/ s/^/#/g" feeds/packages/lang/python/python-mako/Makefile
 
 find {package/A,feeds/luci/applications}/luci-app-*/po -type d 2>/dev/null | while read p; do
 	if [[ -d $p/zh-cn && ! -e $p/zh_Hans ]]; then
@@ -497,7 +497,6 @@ done
 [ -f feeds/luci/applications/luci-app-transmission/Makefile ] && \
 	sed -i 's/transmission-daemon/transmission-daemon +transmission-web-control/' feeds/luci/applications/luci-app-transmission/Makefile
 
-# [[ "$REPO_BRANCH" =~ master ]] && sed -Ei '/deluge/d' .config
 [[ "$TARGET_DEVICE" =~ armvirt ]] && sed -i '/qbittorrent/d' .config
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
