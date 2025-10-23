@@ -429,6 +429,12 @@ git_clone
 clone_dir vernesong/OpenClash luci-app-openclash
 clone_dir xiaorouji/openwrt-passwall luci-app-passwall
 clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
+clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
+clone_dir immortalwrt/packages libdeflate libdht libutp libb64
+clone_dir xiaorouji/openwrt-passwall-packages chinadns-ng geoview trojan-plus
+clone_dir kiddin9/kwrt-packages lua-maxminddb luci-app-bypass luci-app-nlbwmon luci-app-arpbind \
+	luci-app-pushbot luci-app-store luci-app-syncdial luci-lib-taskd luci-lib-xterm taskd \
+	gecoosac luci-app-gecoosac luci-app-quickstart luci-app-advancedplus luci-app-istorex luci-app-homeproxy
 clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
 		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
@@ -436,12 +442,6 @@ clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
 		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-lib-docker \
 		python-pyasn1 python-pyxdg python-rencode python-setproctitle python-twisted \
 		sunpanel transmission qBittorrent-static
-clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box luci-app-homeproxy \
-	#luci-app-openclash luci-app-passwall luci-app-passwall2
-clone_dir kiddin9/kwrt-packages chinadns-ng geoview lua-maxminddb luci-app-bypass luci-app-nlbwmon luci-app-arpbind \
-	luci-app-pushbot luci-app-store luci-app-syncdial luci-lib-taskd luci-lib-xterm qBittorrent-static taskd trojan-plus \
-	gecoosac luci-app-gecoosac luci-app-quickstart luci-app-advancedplus luci-app-istorex
-clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
 
 REPO_BRANCH=$(sed -En 's/^src-git luci.*;(.*)/\1/p' feeds.conf.default)
 REPO_BRANCH=${REPO_BRANCH:-18.06}
