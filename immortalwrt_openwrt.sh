@@ -45,6 +45,7 @@ find_first_dir() {
 create_directory() {
 	for dir in "$@"; do
 		mkdir -p "$dir" 2>/dev/null || return 1
+		return 0
 	done
 }
 
@@ -77,7 +78,7 @@ _printf() {
 }
 
 lan_ip() {
-	sed -i '/lan) ipad/s/".*"/"'"${IP:-$1}"'"/' $config_generate
+	sed -i "/lan) ipad/s/192.168.1.1/${IP:-$1}/" $config_generate
 }
 
 git_diff() {
@@ -123,12 +124,10 @@ git_apply() {
 
 create_feed() {
 	local patch="$1"
-	shift
-	for z in $@; do
-		local dir_path="$patch/$z"
-		create_directory "$dir_path"
-		ln -sf $(pwd)/$dir_path package/feeds/packages/$z 2>/dev/null
-	done
+	local dir_path="$patch/$2"
+	create_directory "$dir_path"
+	ln -sf $(pwd)/$dir_path package/feeds/packages/$2 2>/dev/null && return 0
+	return 1
 }
 
 clone_dir() {
@@ -159,13 +158,13 @@ clone_dir() {
 		[[ $repo_url =~ coolsnowwolf/packages ]] && set -- "$@" "bash" \
 				"btrfs-progs" "gawk" "jq" "nginx-util" "pciutils" "curl"
 	}
-	[[ $repo_url =~ sbwml && $REPO =~ openwrt ]] && set -- "$@" "dns2socks" "dns2tcp" "hysteria" "ipt2socks" \
-		"microsocks" "naiveproxy" "pdnsd" "redsocks2" "simple-obfs" "tcping" "trojan" \
-		"tuic-client" "v2ray-core" "v2ray-geodata" "v2ray-plugin" "xray-plugin"
+	[[ $repo_url =~ sbwml && $REPO =~ openwrt ]] && set -- "$@" "dns2socks" "dns2tcp" \
+		"ipt2socks" "microsocks" "naiveproxy" "pdnsd" "redsocks2" "tcping" "tuic-client" \
+		"v2ray-core" "v2ray-geodata" "v2ray-plugin" "xray-plugin" "hysteria"
 
 	for target_dir in $@; do
 		local source_dir current_dir destination_dir
-		[[ $target_dir =~ ^luci-app ]] && create_feed feeds/luci/applications $target_dir
+		# [[ $target_dir =~ ^luci-app ]] && create_feed feeds/luci/applications $target_dir
 		if [[ ${repo_url##*/} == ${target_dir} ]]; then
 			mv -f ${temp_dir} ${target_dir}
 			source_dir=${target_dir}
@@ -260,7 +259,7 @@ set_config (){
 			lan_ip "192.168.2.150"
 			echo "FIRMWARE_TYPE=squashfs-combined" >> $GITHUB_ENV
 			add_busybox "lsusb lspci lsscsi lsof"
-			add_package "kmod-r8101 kmod-r8125 kmod-r8126 kmod-r8152 kmod-r8186"
+			add_package "kmod-r8101 kmod-r8125 kmod-r8126 kmod-r8152 kmod-r8168"
 			;;
 		r[124]*)
 			cat >>.config<<-EOF
@@ -335,10 +334,9 @@ set_config (){
 		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter \
 		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2
 
-	add_package \
-				autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall \
+	add_package autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall \
 				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-ksmbd luci-app-wizard \
-				luci-app-miaplus luci-app-watchdog luci-theme-argon
+				luci-app-miaplus luci-app-watchdog #luci-theme-argon
 }
 
 deploy_cache() {
@@ -395,102 +393,88 @@ REPO_BRANCH=${REPO_BRANCH/main/master}
 echo "REPO_BRANCH=$REPO_BRANCH" >> $GITHUB_ENV
 git_clone
 
-clone_dir vernesong/OpenClash luci-app-openclash
-clone_dir xiaorouji/openwrt-passwall luci-app-passwall
-clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
-clone_dir hong0980/build ddnsto luci-app-ddnsto luci-app-diskman luci-app-dockerman \
-	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
-	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-easymesh luci-lib-docker \
-	aria2 luci-app-aria2 sunpanel lsscsi axel luci-app-taskplan luci-app-watchdog \
-	deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle python-pyasn1 python-twisted \
-	libtorrent-rasterbar luci-app-miaplus transmission luci-app-transmission
-clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang nlbwmon
+clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
+clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus mosdns \
+		shadow-tls shadowsocks-libev shadowsocksr-libev simple-obfs trojan
+clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
+		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
+		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
+		luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
+		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-lib-docker \
+		python-pyasn1 python-pyxdg python-rencode python-setproctitle python-twisted \
+		sunpanel transmission qBittorrent-static
 
-if [[ $REPO_BRANCH =~ 23|24 ]]; then
+if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
 		delpackage "dnsmasq"
 		create_directory "package/emortal"
-		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal bcm27xx-utils
-		# clone_dir "$REPO_BRANCH" immortalwrt/luci luci-base luci-mod-status luci-app-homeproxy
+		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal r8152
 		add_package "default-settings-chn default-settings luci-app-cpufreq luci-app-package-manager"
+		git clone -q https://github.com/immortalwrt/homeproxy package/A/luci-app-homeproxy
 	fi
-	clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
-	add_package "axel luci-app-gecoosac" #luci-app-istorex luci-app-partexp
+	#add_package "axel luci-app-gecoosac" luci-app-istorex luci-app-partexp
 	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
-	clone_dir fw876/helloworld luci-app-ssr-plus shadow-tls shadowsocks-libev shadowsocksr-libev mosdns lua-neturl dns2socks-rust
+
 	grep -q -- '--ci false \\' feeds/packages/lang/rust/Makefile || sed -i '/x\.py \\/a \        --ci false \\' feeds/packages/lang/rust/Makefile
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy luci-app-nikki"
-	[[ $REPO_BRANCH =~ master ]] && {
-		rm package/*/luci-app-passwall2/htdocs/luci-static/resources/qrcode.min.js
-		curl -sSo package/base-files/files/bin/config_generate \
-			https://raw.githubusercontent.com/openwrt/openwrt/refs/heads/openwrt-24.10/package/base-files/files/bin/config_generate
+else
+	create_directory "package/network/config/firewall4" "package/utils/ucode" "package/network/utils/fullconenat-nft" "package/libs/libmd" "package/kernel/bpf-headers"
+	clone_dir coolsnowwolf/lede automount ppp busybox parted r8152 firewall openssl \
+		# bpf-headers firewall4 ucode fullconenat fullconenat-nft libmd
+	# clone_dir coolsnowwolf/packages bash btrfs-progs gawk jq nginx-util pciutils curl
+	[[ "$REPO_BRANCH" =~ 21 ]] && {
+		git_apply "https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/openwrt-21.02-dmesg.js.patch" "feeds/luci"
+		git_apply "https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/openwrt-21.02-syslog.js.patch" "feeds/luci"
 	}
-# else
-# 	clone_url "fw876/helloworld xiaorouji/openwrt-passwall-packages"
-# 	create_directory "package/network/config/firewall4" "package/utils/ucode" "package/network/utils/fullconenat-nft" "package/libs/libmd" "package/kernel/bpf-headers"
-# 	clone_dir coolsnowwolf/lede automount ppp busybox parted r8101 r8125 r8168 firewall openssl \
-# 		# bpf-headers firewall4 ucode fullconenat fullconenat-nft libmd
-# 	# clone_dir coolsnowwolf/packages bash btrfs-progs gawk jq nginx-util pciutils curl
-# 	[[ "$REPO_BRANCH" =~ 21 ]] && {
-# 		git_apply "https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/openwrt-21.02-dmesg.js.patch" "feeds/luci"
-# 		git_apply "https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/openwrt-21.02-syslog.js.patch" "feeds/luci"
-# 	}
-# 	curl -sSo package/kernel/linux/modules/netfilter.mk \
-# 		https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/package/kernel/linux/modules/netfilter.mk
-# 	curl -sSo include/openssl-module.mk \
-# 		https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/include/openssl-module.mk
-
-	delpackage "luci-app-filetransfer luci-app-turboacc"
-	clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box luci-app-homeproxy
-	clone_dir kiddin9/kwrt-packages chinadns-ng geoview lua-maxminddb luci-app-bypass luci-app-nlbwmon luci-app-arpbind \
-		luci-app-pushbot luci-app-store luci-app-syncdial luci-lib-taskd luci-lib-xterm qBittorrent-static taskd trojan-plus \
-		gecoosac luci-app-gecoosac luci-app-quickstart luci-app-advancedplus \
-		luci-app-istorex luci-theme-argon ddns-go luci-app-ddns-go
-
-	wget -qO package/base-files/files/etc/banner git.io/JoNK8
-	color cy "自定义设置.... "
-	# sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
-	sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
-	sed -i 's|/bin/login|/bin/login -f root|' feeds/packages/utils/ttyd/files/ttyd.config
-	REPLACEMENT=$([[ $SOURCE_NAME == openwrt ]] && echo "" || echo "${SOURCE_NAME}/")
-	sed -i "s|^\(OPENWRT_RELEASE.*%C\)\(.*\)|\1 ${REPLACEMENT}$(TZ=UTC-8 date +%m月%d日)\2|" package/*/*/*/lib/os-release || true
-	# sed -i "/VERSION_NUMBER/ s/if.*/if \$(VERSION_NUMBER),\$(VERSION_NUMBER),${REPO_BRANCH#*-}-SNAPSHOT)/" include/version.mk || true
-
-	settings="
-	uci -q set upnpd.config.enabled='1'
-	uci -q commit upnpd
-	uci -q set system.@system[0].hostname='OpenWrt'
-	uci -q commit system
-	uci -q set luci.main.lang='zh_cn'
-	uci -q set luci.main.mediaurlbase='/luci-static/bootstrap'
-	uci -q commit luci
-	sed -Ei 's/^(root:).*/\1\$5\$920qxtdc.ivTdd2R\$LHAFosdPCdYpPJiNnz3k7i.6VKiPnfFVPvXIj2pQth2:20227:0:99999:7:::/' /etc/shadow
-	exit 0
-	"
-	sed -i '/^exit/d' package/emortal/default-settings/files/99-default-settings-chinese
-	echo -e "$settings" >> package/emortal/default-settings/files/99-default-settings-chinese
-
-	xc=$(find_first_dir "package/A feeds" "qBittorrent-static")
-	[[ -d $xc ]] && sed -Ei "s/(PKG_VERSION:=).*/\1${qb_version:-4.5.2_v2.0.8}/" $xc/Makefile
-	sed -Ei \
-		-e 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|' \
-		-e 's?include ../(lang|devel)?include $(TOPDIR)/feeds/packages/\1?' \
-		-e "s/((^| |    )(PKG_HASH|PKG_MD5SUM|PKG_MIRROR_HASH|HASH):=).*/\1skip/" \
-		-e 's|include \.\./py(.*)\.mk|include $(TOPDIR)/feeds/packages/lang/python/py\1.mk|' \
-		package/A/*/Makefile 2>/dev/null
-
-	[ -f feeds/packages/net/ariang/Makefile ] && \
-		sed -Ei -e 's/(PKG_HASH:=).*/\1skip/' \
-				-e 's/(PKG_VERSION:=).*/\11.3.11/' \
-				feeds/packages/net/ariang/Makefile
-
-	[ -f feeds/luci/applications/luci-app-transmission/Makefile ] && \
-		sed -i 's/transmission-daemon/transmission-daemon +transmission-web-control/' feeds/luci/applications/luci-app-transmission/Makefile
-
-	sed -i "/ONLY/ s/^/#/g" feeds/packages/lang/python/python-mako/Makefile
-
+	curl -sSo package/kernel/linux/modules/netfilter.mk \
+		https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/package/kernel/linux/modules/netfilter.mk
+	curl -sSo include/openssl-module.mk \
+		https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/include/openssl-module.mk
 fi
-find {package/A,feeds/luci/applications}/luci-app*/po -type d 2>/dev/null | while read p; do
+
+delpackage "luci-app-filetransfer luci-app-turboacc"
+clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box
+clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb \
+		luci-app-advancedplus luci-app-arpbind luci-app-ddns-go luci-app-gecoosac \
+		luci-app-istorex luci-app-nlbwmon luci-app-openclash luci-app-passwall luci-app-passwall2 \
+		luci-app-pushbot luci-app-quickstart luci-app-store luci-app-syncdial luci-lib-taskd \
+		luci-lib-xterm taskd #luci-theme-argon
+clone_dir xiaorouji/openwrt-passwall-packages chinadns-ng geoview trojan-plus
+
+wget -qO package/base-files/files/etc/banner git.io/JoNK8
+color cy "自定义设置.... "
+# sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
+[[ $REPO =~ openwrt ]] || sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
+sed -i 's|/bin/login|/bin/login -f root|' feeds/packages/utils/ttyd/files/ttyd.config
+REPLACEMENT=$([[ $SOURCE_NAME == openwrt ]] && echo "" || echo "${SOURCE_NAME}/")
+sed -i "s|^\(OPENWRT_RELEASE.*%C\)\(.*\)|\1 ${REPLACEMENT}$(TZ=UTC-8 date +%m月%d日)\2|" package/*/*/*/lib/os-release || true
+# sed -i "/VERSION_NUMBER/ s/if.*/if \$(VERSION_NUMBER),\$(VERSION_NUMBER),${REPO_BRANCH#*-}-SNAPSHOT)/" include/version.mk || true
+
+settings="
+uci -q set upnpd.config.enabled='1'
+uci -q commit upnpd
+uci -q set system.@system[0].hostname='OpenWrt'
+uci -q commit system
+uci -q set luci.main.lang='zh_cn'
+uci -q set luci.main.mediaurlbase='/luci-static/bootstrap'
+uci -q commit luci
+sed -Ei 's/^(root:).*/\1\$5\$920qxtdc.ivTdd2R\$LHAFosdPCdYpPJiNnz3k7i.6VKiPnfFVPvXIj2pQth2:20227:0:99999:7:::/' /etc/shadow
+exit 0
+"
+sed -i '/^exit/d' package/emortal/default-settings/files/99-default-settings-chinese
+echo -e "$settings" >> package/emortal/default-settings/files/99-default-settings-chinese
+
+xc=$(find_first_dir "package/A feeds" "qBittorrent-static")
+pkg_version=$(echo $qb_version | cut -d'_' -f1 )
+[[ -d $xc ]] && sed -Ei \
+		-e "s/(PKG_VERSION:=).*/\1${pkg_version}/" \
+		-e "s/(PKG_FULL_VERSION:=).*/\1${qb_version}/" \
+	$xc/Makefile
+[[ $REPO_BRANCH =~ master ]] || clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang #nlbwmon
+
+sed -i "/ONLY/ s/^/#/g" feeds/packages/lang/python/python-mako/Makefile
+
+find {package/A,feeds/luci/applications}/luci-app-*/po -type d 2>/dev/null | while read p; do
 	if [[ -d $p/zh-cn && ! -e $p/zh_Hans ]]; then
 		ln -s zh-cn "$p/zh_Hans" 2>/dev/null
 	elif [[ -d $p/zh_Hans && ! -e $p/zh-cn ]]; then
@@ -498,7 +482,23 @@ find {package/A,feeds/luci/applications}/luci-app*/po -type d 2>/dev/null | whil
 	fi
 done
 
-[[ "$REPO_BRANCH" =~ master|armvirt ]] && sed -i '/qbittorrent/d' .config
+# sed -Ei \
+# 	-e 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|' \
+# 	-e 's?include ../(lang|devel)?include $(TOPDIR)/feeds/packages/\1?' \
+# 	-e "s/((^| |    )(PKG_HASH|PKG_MD5SUM|PKG_MIRROR_HASH|HASH):=).*/\1skip/" \
+# 	-e 's|include \.\./py(.*)\.mk|include $(TOPDIR)/feeds/packages/lang/python/py\1.mk|' \
+# 	package/A/*/Makefile 2>/dev/null
+
+[ -f feeds/packages/net/ariang/Makefile ] && \
+	sed -Ei -e 's/(PKG_HASH:=).*/\1skip/' \
+			-e 's/(PKG_VERSION:=).*/\11.3.11/' \
+			feeds/packages/net/ariang/Makefile
+
+[ -f feeds/luci/applications/luci-app-transmission/Makefile ] && \
+	sed -i 's/transmission-daemon/transmission-daemon +transmission-web-control/' feeds/luci/applications/luci-app-transmission/Makefile
+
+# [[ "$REPO_BRANCH" =~ master ]] && sed -Ei '/deluge/d' .config
+[[ "$TARGET_DEVICE" =~ armvirt ]] && sed -i '/qbittorrent/d' .config
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
 make defconfig 1>/dev/null 2>&1
