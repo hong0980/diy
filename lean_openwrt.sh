@@ -375,7 +375,7 @@ set_config (){
 
 deploy_cache() {
 	local TOOLS_HASH=$(git log --pretty=tformat:"%h" -n1 tools toolchain)
-	export CACHE_NAME="$SOURCE_NAME-23.05-$TOOLS_HASH-$ARCH"
+	export CACHE_NAME="$SOURCE_NAME-$repo_branch-$TOOLS_HASH-$ARCH"
 	echo "CACHE_NAME=$CACHE_NAME" >> $GITHUB_ENV
 	if grep -q "$CACHE_NAME" ../xa ../xc; then
 		ls ../*"$CACHE_NAME"* >/dev/null 2>&1 || {
@@ -411,6 +411,7 @@ git_clone() {
 
 	echo -e "$(color cy '更新软件....')\c"
 	begin_time=$(date '+%H:%M:%S')
+	export repo_branch=$(sed -En 's/^src-git luci.*;(.*)/\1/p' feeds.conf.default)
 	sed -i 's/23.05/24.10/' feeds.conf.default
 	sed -i '/#.*helloworld/ s/^#//' feeds.conf.default
 	./scripts/feeds update -a 1>/dev/null 2>&1
