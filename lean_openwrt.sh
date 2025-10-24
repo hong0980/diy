@@ -369,7 +369,7 @@ set_config (){
 	esac
 	[[ $TARGET_DEVICE =~ k2p ]] || \
 		add_package "automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils patch" "luci-app-qbittorrent luci-app-nikki luci-app-homeproxy" luci-app-deluge luci-app-transmission luci-app-aria2
-	add_package "luci-app-filebrowser luci-app-passwall luci-app-ttyd luci-app-wizard luci-app-taskplan luci-app-ksmbd luci-app-miaplus" luci-app-watchdog #luci-app-gecoosac
+	add_package "luci-app-filebrowser luci-app-passwall luci-app-ttyd luci-app-wizard luci-app-taskplan luci-app-ksmbd luci-app-miaplus" luci-app-watchdog luci-theme-bootstrap #luci-app-gecoosac
 	delpackage "luci-app-ddns luci-app-autoreboot luci-app-wol luci-app-vlmcsd luci-app-filetransfer"
 }
 
@@ -441,7 +441,7 @@ clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
 		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
 		luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
-		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-lib-docker \
+		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
 		python-pyasn1 python-pyxdg python-rencode python-setproctitle python-twisted \
 		sunpanel transmission qBittorrent-static
 

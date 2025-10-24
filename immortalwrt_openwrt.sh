@@ -334,9 +334,9 @@ set_config (){
 		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter \
 		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2
 
-	add_package autocore luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall \
+	add_package autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall \
 				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-ksmbd luci-app-wizard \
-				luci-app-miaplus luci-app-watchdog #luci-theme-argon
+				luci-app-miaplus luci-app-watchdog luci-theme-bootstrap #luci-theme-argon
 }
 
 deploy_cache() {
@@ -400,7 +400,7 @@ clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
 		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
 		luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
-		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-lib-docker \
+		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
 		python-pyasn1 python-pyxdg python-rencode python-setproctitle python-twisted \
 		sunpanel transmission qBittorrent-static
 
