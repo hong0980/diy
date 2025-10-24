@@ -334,9 +334,9 @@ set_config (){
 		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter \
 		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2
 
-	add_package autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall \
+	add_package autocore opkg luci luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall \
 				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-ksmbd luci-app-wizard \
-				luci-app-miaplus luci-app-watchdog luci-theme-bootstrap #luci-theme-argon
+				luci-app-miaplus luci-app-watchdog #luci-theme-argon
 }
 
 deploy_cache() {
