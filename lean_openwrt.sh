@@ -411,7 +411,7 @@ git_clone() {
 
 	echo -e "$(color cy '更新软件....')\c"
 	begin_time=$(date '+%H:%M:%S')
-	# sed -i 's/23.05/24.10/' feeds.conf.default
+	sed -i 's/23.05/24.10/' feeds.conf.default
 	sed -i '/#.*helloworld/ s/^#//' feeds.conf.default
 	./scripts/feeds update -a 1>/dev/null 2>&1
 	./scripts/feeds install -a 1>/dev/null 2>&1
@@ -467,6 +467,7 @@ sed -i "{
 	}" package/lean/*/*/*default-settings
 # git_apply "https://raw.githubusercontent.com/sbwml/openwrt_helloworld/refs/heads/v5/patch-luci-app-ssr-plus.patch" "feeds/helloworld"
 # git_apply "https://raw.githubusercontent.com/sbwml/openwrt_helloworld/refs/heads/v5/patch-luci-app-passwall.patch" "feeds/luci/applications"
+sed -i "/ONLY/ s/^/#/g" feeds/packages/lang/python/python-mako/Makefile
 sed -Ei '{
 		s|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|
 		s?include ../(lang|devel)?include $(TOPDIR)/feeds/packages/\1?
