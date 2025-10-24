@@ -334,7 +334,7 @@ set_config (){
 		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter \
 		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2
 
-	add_package autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall \
+	add_package autocore luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall \
 				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-ksmbd luci-app-wizard \
 				luci-app-miaplus luci-app-watchdog #luci-theme-argon
 }
@@ -409,7 +409,7 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 		delpackage "dnsmasq"
 		create_directory "package/emortal"
 		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal r8152
-		add_package "default-settings-chn default-settings luci-app-cpufreq luci-app-package-manager"
+		add_package "opkg default-settings-chn default-settings"
 		git clone -q https://github.com/immortalwrt/homeproxy package/A/luci-app-homeproxy
 	else
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
@@ -459,7 +459,7 @@ uci -q commit upnpd
 uci -q set system.@system[0].hostname='OpenWrt'
 uci -q commit system
 uci -q set luci.main.lang='zh_cn'
-uci -q set luci.main.mediaurlbase='/luci-static/bootstrap'
+#uci -q set luci.main.mediaurlbase='/luci-static/bootstrap'
 uci -q commit luci
 sed -Ei 's/^(root:).*/\1\$5\$920qxtdc.ivTdd2R\$LHAFosdPCdYpPJiNnz3k7i.6VKiPnfFVPvXIj2pQth2:20227:0:99999:7:::/' /etc/shadow
 exit 0
