@@ -334,9 +334,10 @@ set_config (){
 		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter \
 		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2
 
-	add_package autocore opkg luci luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall \
+	add_package autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall \
 				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-ksmbd luci-app-wizard \
-				luci-app-miaplus luci-app-watchdog #luci-theme-argon
+				luci-app-miaplus luci-app-watchdog default-settings-chn kmod-nft-offload kmod-nf-nathelpe \
+				ppp-mod-pppoe block-mount  #luci-theme-argon
 }
 
 deploy_cache() {
@@ -409,7 +410,6 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 		delpackage "dnsmasq"
 		create_directory "package/emortal"
 		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal r8152
-		add_package "opkg default-settings-chn default-settings"
 		git clone -q https://github.com/immortalwrt/homeproxy package/A/luci-app-homeproxy
 	else
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
