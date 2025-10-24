@@ -375,7 +375,7 @@ set_config (){
 
 deploy_cache() {
 	local TOOLS_HASH=$(git log --pretty=tformat:"%h" -n1 tools toolchain)
-	export CACHE_NAME="$SOURCE_NAME-$REPO_BRANCH-$TOOLS_HASH-$ARCH"
+	export CACHE_NAME="$SOURCE_NAME-23.05-$TOOLS_HASH-$ARCH"
 	echo "CACHE_NAME=$CACHE_NAME" >> $GITHUB_ENV
 	if grep -q "$CACHE_NAME" ../xa ../xc; then
 		ls ../*"$CACHE_NAME"* >/dev/null 2>&1 || {
