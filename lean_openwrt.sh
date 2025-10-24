@@ -288,7 +288,7 @@ set_config (){
 			EOF
 			lan_ip "192.168.2.150"
 			echo "FIRMWARE_TYPE=squashfs-combined" >> $GITHUB_ENV
-			add_busybox "lsusb lspci lsscsi lsof"
+			# add_busybox "lsusb lspci lsscsi lsof"
 			;;
 		r[124]*)
 			cat >>.config<<-EOF
@@ -411,6 +411,7 @@ git_clone() {
 
 	echo -e "$(color cy '更新软件....')\c"
 	begin_time=$(date '+%H:%M:%S')
+	# sed -i 's/23.05/24.10/' feeds.conf.default
 	sed -i '/#.*helloworld/ s/^#//' feeds.conf.default
 	./scripts/feeds update -a 1>/dev/null 2>&1
 	./scripts/feeds install -a 1>/dev/null 2>&1
