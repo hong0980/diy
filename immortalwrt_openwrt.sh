@@ -485,7 +485,6 @@ done
 sed -Ei '{
     s|../../lang/|$(TOPDIR)/feeds/packages/lang/|;
     s|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|;
-    s/((^| |    )(PKG_HASH|PKG_MD5SUM|HASH):=).*/\1skip/;
     s|include ../py(.*).mk|include $(TOPDIR)/feeds/packages/lang/python/py\1.mk|
 }' package/A/*/Makefile 2>/dev/null
 
