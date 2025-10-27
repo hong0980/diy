@@ -395,6 +395,7 @@ REPO_BRANCH=${REPO_BRANCH/main/master}
 echo "REPO_BRANCH=$REPO_BRANCH" >> $GITHUB_ENV
 git_clone
 
+clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
 clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus mosdns \
 		shadow-tls shadowsocks-libev shadowsocksr-libev simple-obfs trojan
 clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
@@ -441,7 +442,7 @@ clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb \
 		luci-app-advancedplus luci-app-arpbind luci-app-ddns-go luci-app-gecoosac \
 		luci-app-istorex luci-app-pushbot luci-app-quickstart luci-app-store \
 		luci-app-syncdial luci-lib-taskd luci-lib-xterm taskd \
-		 luci-app-openclash luci-app-passwall luci-app-passwall2 nikki luci-app-nikki
+		luci-app-openclash luci-app-passwall luci-app-passwall2
 clone_dir xiaorouji/openwrt-passwall-packages chinadns-ng geoview trojan-plus
 
 color cy "自定义设置.... "
@@ -482,12 +483,12 @@ find {package/A,feeds/luci/applications}/luci-app-*/po -type d 2>/dev/null | whi
 	fi
 done
 
-# sed -Ei '{
-#     s|../../lang/|$(TOPDIR)/feeds/packages/lang/|;
-#     s|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|;
-#     s/((^| |    )(PKG_HASH|PKG_MD5SUM|HASH):=).*/\1skip/;
-#     s|include ../py(.*).mk|include $(TOPDIR)/feeds/packages/lang/python/py\1.mk|
-# }' package/A/*/Makefile 2>/dev/null
+sed -Ei '{
+    s|../../lang/|$(TOPDIR)/feeds/packages/lang/|;
+    s|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|;
+    s/(^(PKG_HASH|PKG_MD5SUM|HASH):=).*/\1skip/;
+    s|include ../py(.*).mk|include $(TOPDIR)/feeds/packages/lang/python/py\1.mk|
+}' package/A/*/Makefile 2>/dev/null
 
 [ -f feeds/packages/net/ariang/Makefile ] && \
 	sed -Ei -e 's/(PKG_HASH:=).*/\1skip/' \

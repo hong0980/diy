@@ -430,12 +430,13 @@ SOURCE_NAME=$(basename $(dirname $REPO_URL))
 git_clone
 
 # git diff ./ >> ../output/t.patch || true
+clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
 clone_dir immortalwrt/packages libdeflate libdht libutp libb64
 clone_dir xiaorouji/openwrt-passwall-packages chinadns-ng geoview trojan-plus
 clone_dir kiddin9/kwrt-packages lua-maxminddb luci-app-bypass luci-app-arpbind \
 	luci-app-pushbot luci-app-store luci-app-syncdial luci-lib-taskd luci-lib-xterm taskd \
 	gecoosac luci-app-gecoosac luci-app-quickstart luci-app-advancedplus luci-app-istorex \
-	luci-app-homeproxy luci-app-openclash luci-app-passwall luci-app-passwall2 nikki luci-app-nikki
+	luci-app-homeproxy luci-app-openclash luci-app-passwall luci-app-passwall2
 clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
 		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
@@ -471,7 +472,7 @@ sed -i "/ONLY/ s/^/#/g" feeds/packages/lang/python/python-mako/Makefile
 sed -Ei '{
     s|../../lang/|$(TOPDIR)/feeds/packages/lang/|;
     s|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|;
-    s/((^| |    )(PKG_HASH|PKG_MD5SUM|HASH):=).*/\1skip/;
+    s/(^(PKG_HASH|PKG_MD5SUM|HASH):=).*/\1skip/;
     s|include ../py(.*).mk|include $(TOPDIR)/feeds/packages/lang/python/py\1.mk|
 }' package/A/*/Makefile 2>/dev/null
 
