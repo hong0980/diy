@@ -413,7 +413,8 @@ git_clone() {
 	echo -e "$(color cy '更新软件....')\c"
 	begin_time=$(date '+%H:%M:%S')
 	export repo_branch=$(sed -En 's/^src-git luci.*;(.*)/\1/p' feeds.conf.default)
-	sed -i 's/23.05/24.10/' feeds.conf.default
+	sed -i 's/openwrt-23.05/master/' feeds.conf.default
+	# sed -i 's/openwrt-23.05/openwrt-24.10/' feeds.conf.default
 	sed -i '/#.*helloworld/ s/^#//' feeds.conf.default
 	./scripts/feeds update -a 1>/dev/null 2>&1
 	./scripts/feeds install -a 1>/dev/null 2>&1
