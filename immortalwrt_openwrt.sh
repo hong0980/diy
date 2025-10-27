@@ -482,11 +482,12 @@ find {package/A,feeds/luci/applications}/luci-app-*/po -type d 2>/dev/null | whi
 	fi
 done
 
-sed -Ei '{
-    s|../../lang/|$(TOPDIR)/feeds/packages/lang/|;
-    s|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|;
-    s|include ../py(.*).mk|include $(TOPDIR)/feeds/packages/lang/python/py\1.mk|
-}' package/A/*/Makefile 2>/dev/null
+# sed -Ei '{
+#     s|../../lang/|$(TOPDIR)/feeds/packages/lang/|;
+#     s|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|;
+#     s/((^| |    )(PKG_HASH|PKG_MD5SUM|HASH):=).*/\1skip/;
+#     s|include ../py(.*).mk|include $(TOPDIR)/feeds/packages/lang/python/py\1.mk|
+# }' package/A/*/Makefile 2>/dev/null
 
 [ -f feeds/packages/net/ariang/Makefile ] && \
 	sed -Ei -e 's/(PKG_HASH:=).*/\1skip/' \
