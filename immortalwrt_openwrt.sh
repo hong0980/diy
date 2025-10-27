@@ -78,7 +78,7 @@ _printf() {
 }
 
 lan_ip() {
-	sed -i "/lan) ipad/s/192.168.1.1/${IP:-$1}/" $config_generate
+	sed -i '/lan) ipad/s/".*"/"'"${IP:-$1}"'"/' $config_generate
 }
 
 git_diff() {
@@ -254,7 +254,9 @@ set_config (){
 			CONFIG_BUILD_PATENTED=y
 			CONFIG_TARGET_IMAGES_GZIP=y
 			CONFIG_GRUB_IMAGES=y
+			CONFIG_GRUB_TIMEOUT="2"
 			# CONFIG_GRUB_EFI_IMAGES is not set
+			CONFIG_PACKAGE_luci-lib-xterm=y
 			EOF
 			lan_ip "192.168.2.150"
 			echo "FIRMWARE_TYPE=squashfs-combined" >> $GITHUB_ENV
@@ -336,7 +338,7 @@ set_config (){
 
 	add_package autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall \
 				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-ksmbd luci-app-wizard \
-				luci-app-miaplus luci-app-watchdog #luci-theme-argon
+				luci-app-miaplus luci-app-watchdog default-settings-chn luci-app-package-manager
 }
 
 deploy_cache() {
@@ -393,14 +395,13 @@ REPO_BRANCH=${REPO_BRANCH/main/master}
 echo "REPO_BRANCH=$REPO_BRANCH" >> $GITHUB_ENV
 git_clone
 
-clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
 clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus mosdns \
 		shadow-tls shadowsocks-libev shadowsocksr-libev simple-obfs trojan
 clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
 		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
 		luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
-		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-lib-docker \
+		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
 		python-pyasn1 python-pyxdg python-rencode python-setproctitle python-twisted \
 		sunpanel transmission qBittorrent-static
 
@@ -409,8 +410,9 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 		delpackage "dnsmasq"
 		create_directory "package/emortal"
 		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal r8152
-		add_package "default-settings-chn default-settings luci-app-cpufreq luci-app-package-manager"
 		git clone -q https://github.com/immortalwrt/homeproxy package/A/luci-app-homeproxy
+	else
+		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 	fi
 	#add_package "axel luci-app-gecoosac" luci-app-istorex luci-app-partexp
 	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
@@ -432,19 +434,20 @@ else
 		https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/include/openssl-module.mk
 fi
 
+[[ $REPO_BRANCH =~ master ]] || clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang #nlbwmon
 delpackage "luci-app-filetransfer luci-app-turboacc"
 clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box
 clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb \
 		luci-app-advancedplus luci-app-arpbind luci-app-ddns-go luci-app-gecoosac \
-		luci-app-istorex luci-app-nlbwmon luci-app-openclash luci-app-passwall luci-app-passwall2 \
-		luci-app-pushbot luci-app-quickstart luci-app-store luci-app-syncdial luci-lib-taskd \
-		luci-lib-xterm taskd #luci-theme-argon
+		luci-app-istorex luci-app-pushbot luci-app-quickstart luci-app-store \
+		luci-app-syncdial luci-lib-taskd luci-lib-xterm taskd \
+		 luci-app-openclash luci-app-passwall luci-app-passwall2 nikki luci-app-nikki
 clone_dir xiaorouji/openwrt-passwall-packages chinadns-ng geoview trojan-plus
 
-wget -qO package/base-files/files/etc/banner git.io/JoNK8
 color cy "自定义设置.... "
+wget -qO package/base-files/files/etc/banner git.io/JoNK8
+sed -i "/ONLY/ s/^/#/g" feeds/packages/lang/python/python-mako/Makefile
 # sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
-[[ $REPO =~ openwrt ]] || sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 sed -i 's|/bin/login|/bin/login -f root|' feeds/packages/utils/ttyd/files/ttyd.config
 REPLACEMENT=$([[ $SOURCE_NAME == openwrt ]] && echo "" || echo "${SOURCE_NAME}/")
 sed -i "s|^\(OPENWRT_RELEASE.*%C\)\(.*\)|\1 ${REPLACEMENT}$(TZ=UTC-8 date +%m月%d日)\2|" package/*/*/*/lib/os-release || true
@@ -470,9 +473,6 @@ pkg_version=$(echo $qb_version | cut -d'_' -f1 )
 		-e "s/(PKG_VERSION:=).*/\1${pkg_version}/" \
 		-e "s/(PKG_FULL_VERSION:=).*/\1${qb_version}/" \
 	$xc/Makefile
-[[ $REPO_BRANCH =~ master ]] || clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang #nlbwmon
-
-sed -i "/ONLY/ s/^/#/g" feeds/packages/lang/python/python-mako/Makefile
 
 find {package/A,feeds/luci/applications}/luci-app-*/po -type d 2>/dev/null | while read p; do
 	if [[ -d $p/zh-cn && ! -e $p/zh_Hans ]]; then
@@ -482,12 +482,12 @@ find {package/A,feeds/luci/applications}/luci-app-*/po -type d 2>/dev/null | whi
 	fi
 done
 
-# sed -Ei \
-# 	-e 's|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|' \
-# 	-e 's?include ../(lang|devel)?include $(TOPDIR)/feeds/packages/\1?' \
-# 	-e "s/((^| |    )(PKG_HASH|PKG_MD5SUM|PKG_MIRROR_HASH|HASH):=).*/\1skip/" \
-# 	-e 's|include \.\./py(.*)\.mk|include $(TOPDIR)/feeds/packages/lang/python/py\1.mk|' \
-# 	package/A/*/Makefile 2>/dev/null
+sed -Ei '{
+    s|../../lang/|$(TOPDIR)/feeds/packages/lang/|;
+    s|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|;
+    s/((^| |    )(PKG_HASH|PKG_MD5SUM|HASH):=).*/\1skip/;
+    s|include ../py(.*).mk|include $(TOPDIR)/feeds/packages/lang/python/py\1.mk|
+}' package/A/*/Makefile 2>/dev/null
 
 [ -f feeds/packages/net/ariang/Makefile ] && \
 	sed -Ei -e 's/(PKG_HASH:=).*/\1skip/' \
@@ -497,7 +497,6 @@ done
 [ -f feeds/luci/applications/luci-app-transmission/Makefile ] && \
 	sed -i 's/transmission-daemon/transmission-daemon +transmission-web-control/' feeds/luci/applications/luci-app-transmission/Makefile
 
-# [[ "$REPO_BRANCH" =~ master ]] && sed -Ei '/deluge/d' .config
 [[ "$TARGET_DEVICE" =~ armvirt ]] && sed -i '/qbittorrent/d' .config
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')

@@ -173,9 +173,8 @@ create_feed() {
 }
 
 clone_dir() {
-	create_directory "package/A"
-	[[ $# -lt 1 ]] && return
-	local repo_url branch temp_dir=$(mktemp -d)
+	[[ $# -lt 1 ]] && return 1
+	local repo_url branch temp_dir=$(mktemp -d) find_dir="package feeds target"
 	trap 'rm -rf "$temp_dir"' EXIT INT TERM
 	if [[ $1 == */* ]]; then
 		repo_url="$1"
@@ -185,6 +184,10 @@ clone_dir() {
 		repo_url="$2"
 		shift 2
 	fi
+	if [[ $1 =~ ^(package|feeds|target)$ ]]; then
+		find_dir="$1"
+		shift
+	fi
 	[[ $repo_url =~ ^https?:// ]] || repo_url="https://github.com/$repo_url"
 
 	git clone -q $branch --depth 1 "$repo_url" $temp_dir 2>/dev/null || {
@@ -192,27 +195,9 @@ clone_dir() {
 		return 1
 	}
 
-	# [[ $repo_url =~ Entware/entware-packages ]] && {
-	# 	rm -rf feeds/packages/lang/python/MarkupSafe
-	# 	create_feed feeds/packages/lang/python python-build python-installer python-wheel \
-	# 				python-pathspec python-pyproject-hooks python-hatchling python-hatch-fancy-pypi-readme \
-	# 				python-semantic-version python-setuptools-rust python-setuptools-scm python-editables \
-	# 				python-trove-classifiers python-calver python-markupsafe python-flit-core
-	# 	set -- "$@" python-build python-installer python-wheel python-markupsafe python-pathspec \
-	# 				python-pyproject-hooks python-hatchling python-hatch-fancy-pypi-readme \
-	# 				python-semantic-version python-setuptools-rust python-setuptools-scm python-editables \
-	# 				python-trove-classifiers python-calver \
-	# 				python-pyopenssl python-cffi python-pycparser python-incremental python-cryptography \
-	# 				python-typing-extensions python-packaging python-pluggy python-ifaddr python-twisted \
-	# 				python-ply
-
-	# 	curl -sSo feeds/packages/lang/python/python3-host-build.mk \
-	# 		https://raw.githubusercontent.com/openwrt/packages/refs/heads/openwrt-24.10/lang/python/python3-host-build.mk
-	# }
-
 	for target_dir in $@; do
 		local source_dir current_dir destination_dir
-		[[ $target_dir =~ ^luci-app ]] && create_feed feeds/luci/applications $target_dir
+		# [[ $target_dir =~ ^luci-app ]] && create_feed feeds/luci/applications $target_dir
 		if [[ ${repo_url##*/} == ${target_dir} ]]; then
 			mv -f ${temp_dir} ${target_dir}
 			source_dir=${target_dir}
@@ -220,16 +205,13 @@ clone_dir() {
 			source_dir=$(find_first_dir "$temp_dir" "$target_dir")
 		fi
 		[[ -d "$source_dir" ]] || continue
-		current_dir=$(find_first_dir "package feeds target" "$target_dir")
+		current_dir=$(find_first_dir "$find_dir" "$target_dir")
 		destination_dir="${current_dir:-package/A/$target_dir}"
 
-		[[ -d "$current_dir" ]] && mv -f "$current_dir" ../
+		[[ -d "$current_dir" ]] && rm -rf "../$(basename "$current_dir")" && mv -f "$current_dir" ../
 		if mv -f "$source_dir" "${destination_dir%/*}"; then
 			if [[ -d "$current_dir" ]]; then
 				_printf "$(color cg 替换) $target_dir [ $(color cg ✔) ]"
-				[[ $destination_dir =~ feeds/packages/lang/python ]] && {
-					sed -i 's|python3-host-build.mk|python3-host.mk|' $destination_dir/Makefile
-				}
 			else
 				_printf "$(color cb 添加) $target_dir [ $(color cb ✔) ]"
 			fi
@@ -301,6 +283,7 @@ set_config (){
 			CONFIG_TARGET_ROOTFS_PARTSIZE=$PARTSIZE
 			CONFIG_BUILD_NLS=y
 			CONFIG_GRUB_IMAGES=y
+			CONFIG_GRUB_TIMEOUT="2"
 			CONFIG_BUILD_PATENTED=y
 			# CONFIG_GRUB_EFI_IMAGES is not set
 			EOF
@@ -387,13 +370,13 @@ set_config (){
 	esac
 	[[ $TARGET_DEVICE =~ k2p ]] || \
 		add_package "automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils patch" "luci-app-qbittorrent luci-app-nikki luci-app-homeproxy" luci-app-deluge luci-app-transmission luci-app-aria2
-	add_package "luci-app-filebrowser luci-app-passwall luci-app-ttyd luci-app-wizard luci-app-taskplan luci-app-ksmbd luci-app-miaplus" luci-app-watchdog #luci-app-gecoosac
+	add_package "luci-app-filebrowser luci-app-passwall luci-app-ttyd luci-app-wizard luci-app-taskplan luci-app-ksmbd luci-app-miaplus" luci-app-watchdog luci-theme-bootstrap #luci-app-gecoosac
 	delpackage "luci-app-ddns luci-app-autoreboot luci-app-wol luci-app-vlmcsd luci-app-filetransfer"
 }
 
 deploy_cache() {
 	local TOOLS_HASH=$(git log --pretty=tformat:"%h" -n1 tools toolchain)
-	export CACHE_NAME="$SOURCE_NAME-$REPO_BRANCH-$TOOLS_HASH-$ARCH"
+	export CACHE_NAME="$SOURCE_NAME-$repo_branch-$TOOLS_HASH-$ARCH"
 	echo "CACHE_NAME=$CACHE_NAME" >> $GITHUB_ENV
 	if grep -q "$CACHE_NAME" ../xa ../xc; then
 		ls ../*"$CACHE_NAME"* >/dev/null 2>&1 || {
@@ -429,10 +412,13 @@ git_clone() {
 
 	echo -e "$(color cy '更新软件....')\c"
 	begin_time=$(date '+%H:%M:%S')
+	export repo_branch=$(sed -En 's/^src-git luci.*;(.*)/\1/p' feeds.conf.default)
+	sed -i 's/23.05/24.10/' feeds.conf.default
 	sed -i '/#.*helloworld/ s/^#//' feeds.conf.default
 	./scripts/feeds update -a 1>/dev/null 2>&1
 	./scripts/feeds install -a 1>/dev/null 2>&1
 	status
+	create_directory "package/A"
 	color cy "自定义设置.... "
 	set_config
 	wget -qO package/base-files/files/etc/banner git.io/JoNK8
@@ -446,26 +432,29 @@ git_clone
 clone_dir vernesong/OpenClash luci-app-openclash
 clone_dir xiaorouji/openwrt-passwall luci-app-passwall
 clone_dir xiaorouji/openwrt-passwall2 luci-app-passwall2
-clone_dir hong0980/build ddnsto luci-app-ddnsto luci-app-diskman luci-app-dockerman \
-	luci-app-filebrowser luci-app-poweroff luci-app-qbittorrent luci-app-softwarecenter \
-	luci-app-timedtask luci-app-tinynote luci-app-wizard luci-app-easymesh luci-lib-docker \
-	aria2 luci-app-aria2 sunpanel lsscsi axel luci-app-taskplan luci-app-watchdog luci-app-miaplus \
-	# deluge luci-app-deluge python-pyxdg python-rencode python-setproctitle python-pyasn1 \
-	# libtorrent-rasterbar
-clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box luci-app-homeproxy \
-	#luci-app-openclash luci-app-passwall luci-app-passwall2
-clone_dir kiddin9/kwrt-packages chinadns-ng geoview lua-maxminddb luci-app-bypass luci-app-nlbwmon luci-app-arpbind \
-	luci-app-pushbot luci-app-store luci-app-syncdial luci-lib-taskd luci-lib-xterm qBittorrent-static taskd trojan-plus \
-	gecoosac luci-app-gecoosac luci-app-quickstart luci-app-advancedplus luci-app-istorex
 clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
-clone_dir openwrt-24.10 openwrt/packages docker dockerd containerd docker-compose runc
-clone_dir Entware/entware-packages
+clone_dir immortalwrt/packages libdeflate libdht libutp libb64
+clone_dir xiaorouji/openwrt-passwall-packages chinadns-ng geoview trojan-plus
+clone_dir kiddin9/kwrt-packages lua-maxminddb luci-app-bypass luci-app-arpbind \
+	luci-app-pushbot luci-app-store luci-app-syncdial luci-lib-taskd luci-lib-xterm taskd \
+	gecoosac luci-app-gecoosac luci-app-quickstart luci-app-advancedplus luci-app-istorex luci-app-homeproxy
+clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
+		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
+		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
+		luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
+		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
+		python-pyasn1 python-pyxdg python-rencode python-setproctitle python-twisted \
+		sunpanel transmission qBittorrent-static
 
 REPO_BRANCH=$(sed -En 's/^src-git luci.*;(.*)/\1/p' feeds.conf.default)
 REPO_BRANCH=${REPO_BRANCH:-18.06}
 # https://github.com/userdocs/qbittorrent-nox-static/releases
-xc=$(find_first_dir "package/A feeds/packages/net" "qBittorrent-static")
-[[ -d $xc ]] && sed -Ei "s/(PKG_VERSION:=).*/\1${qb_version:-4.5.2_v2.0.8}/" $xc/Makefile
+xc=$(find_first_dir "package/A feeds" "qBittorrent-static")
+pkg_version=$(echo $qb_version | cut -d'_' -f1 )
+[[ -d $xc ]] && sed -Ei \
+		-e "s/(PKG_VERSION:=).*/\1${pkg_version}/" \
+		-e "s/(PKG_FULL_VERSION:=).*/\1${qb_version}/" \
+	$xc/Makefile
 # sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
 # sed -i 's/invalid users = root/#&/g' feeds/*/*/*/files/smb.conf.template
 sed -i 's|/bin/login|/bin/login -f root|' feeds/*/*/*/files/ttyd.config
@@ -480,12 +469,13 @@ sed -i "{
 	}" package/lean/*/*/*default-settings
 # git_apply "https://raw.githubusercontent.com/sbwml/openwrt_helloworld/refs/heads/v5/patch-luci-app-ssr-plus.patch" "feeds/helloworld"
 # git_apply "https://raw.githubusercontent.com/sbwml/openwrt_helloworld/refs/heads/v5/patch-luci-app-passwall.patch" "feeds/luci/applications"
+sed -i "/ONLY/ s/^/#/g" feeds/packages/lang/python/python-mako/Makefile
 sed -Ei '{
-		s|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|
-		s?include ../(lang|devel)?include $(TOPDIR)/feeds/packages/\1?
-		s/((^| |    )(PKG_HASH|PKG_MD5SUM|PKG_MIRROR_HASH|HASH):=).*/\1skip/
-		s|include \.\./py(.*)\.mk|include $(TOPDIR)/feeds/packages/lang/python/py\1.mk|
-	}' package/A/*/Makefile 2>/dev/null
+    s|../../lang/|$(TOPDIR)/feeds/packages/lang/|;
+    s|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|;
+    s/((^| |    )(PKG_HASH|PKG_MD5SUM|HASH):=).*/\1skip/;
+    s|include ../py(.*).mk|include $(TOPDIR)/feeds/packages/lang/python/py\1.mk|
+}' package/A/*/Makefile 2>/dev/null
 
 find {package/A,feeds/luci/applications}/luci-app*/po -type d 2>/dev/null | while read p; do
 	if [[ -d $p/zh-cn && ! -e $p/zh_Hans ]]; then
