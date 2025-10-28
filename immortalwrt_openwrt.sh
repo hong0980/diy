@@ -343,6 +343,8 @@ set_config (){
 
 deploy_cache() {
 	local TOOLS_HASH=$(git log --pretty=tformat:"%h" -n1 tools toolchain)
+	[[ $REPO_BRANCH =~ master ]] && [[ $TARGET_DEVICE =~ x86_64 ]] && [[ $REPO =~ openwrt ]] && TOOLS_HASH=f596ae7b85
+	[[ $REPO_BRANCH =~ master ]] && [[ $TARGET_DEVICE =~ x86_64 ]] && [[ $REPO =~ immortalwrt ]] && TOOLS_HASH=c876ca9e57
 	CACHE_NAME="$SOURCE_NAME-${REPO_BRANCH#*-}-$TOOLS_HASH-$ARCH"
 	echo "CACHE_NAME=$CACHE_NAME" >> $GITHUB_ENV
 	if grep -q "$CACHE_NAME" ../xa ../xc; then
