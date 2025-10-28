@@ -158,6 +158,7 @@ clone_dir() {
 		[[ $repo_url =~ coolsnowwolf/packages ]] && set -- "$@" "bash" \
 				"btrfs-progs" "gawk" "jq" "nginx-util" "pciutils" "curl"
 	}
+	[[ $REPO_BRANCH =~ 23|24 && $repo_url =~ hong0980/build ]] && set -- "$@" "luci-app-dockerman luci-lib-docker"
 	[[ $repo_url =~ sbwml && $REPO =~ openwrt ]] && set -- "$@" "dns2socks" "dns2tcp" \
 		"ipt2socks" "microsocks" "naiveproxy" "pdnsd" "redsocks2" "tcping" "tuic-client" \
 		"v2ray-core" "v2ray-geodata" "v2ray-plugin" "xray-plugin" "hysteria"
@@ -256,7 +257,6 @@ set_config (){
 			CONFIG_GRUB_IMAGES=y
 			CONFIG_GRUB_TIMEOUT="2"
 			# CONFIG_GRUB_EFI_IMAGES is not set
-			CONFIG_PACKAGE_luci-lib-xterm=y
 			EOF
 			lan_ip "192.168.2.150"
 			echo "FIRMWARE_TYPE=squashfs-combined" >> $GITHUB_ENV
@@ -343,8 +343,10 @@ set_config (){
 
 deploy_cache() {
 	local TOOLS_HASH=$(git log --pretty=tformat:"%h" -n1 tools toolchain)
-	[[ $REPO_BRANCH =~ master ]] && [[ $TARGET_DEVICE =~ x86_64 ]] && [[ $REPO =~ openwrt ]] && TOOLS_HASH=f596ae7b85
-	[[ $REPO_BRANCH =~ master ]] && [[ $TARGET_DEVICE =~ x86_64 ]] && [[ $REPO =~ immortalwrt ]] && TOOLS_HASH=c876ca9e57
+	case "$REPO_BRANCH $TARGET_DEVICE $REPO" in
+	    master*x86_64*openwrt*)     TOOLS_HASH=f596ae7b85 ;;
+	    master*x86_64*immortalwrt*) TOOLS_HASH=c876ca9e57 ;;
+	esac
 	CACHE_NAME="$SOURCE_NAME-${REPO_BRANCH#*-}-$TOOLS_HASH-$ARCH"
 	echo "CACHE_NAME=$CACHE_NAME" >> $GITHUB_ENV
 	if grep -q "$CACHE_NAME" ../xa ../xc; then
@@ -401,10 +403,10 @@ clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
 clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus mosdns \
 		shadow-tls shadowsocks-libev shadowsocksr-libev simple-obfs trojan
 clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
-		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
+		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
 		luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
-		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
+		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard \
 		python-pyasn1 python-pyxdg python-rencode python-setproctitle python-twisted \
 		sunpanel transmission qBittorrent-static
 
