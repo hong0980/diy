@@ -413,8 +413,7 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 		delpackage "dnsmasq"
 		create_directory "package/emortal"
 		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal r8152
-		clone_dir "$REPO_BRANCH" immortalwrt/luci luci-app-homeproxy luci-mod-status luci-mod-system
-		# git clone -q https://github.com/immortalwrt/homeproxy package/A/luci-app-homeproxy
+		git clone -q https://github.com/immortalwrt/homeproxy package/A/luci-app-homeproxy
 	else
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 	fi
