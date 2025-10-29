@@ -343,7 +343,6 @@ set_config (){
 deploy_cache() {
 	local TOOLS_HASH=$(git log --pretty=tformat:"%h" -n1 tools toolchain)
 	case "$REPO_BRANCH $TARGET_DEVICE $REPO" in
-	    # master*x86_64*openwrt*)     TOOLS_HASH=f596ae7b85 ;;
 	    master*x86_64*immortalwrt*) [[ $TOOLS_HASH =~ 14d864fd72 ]] && TOOLS_HASH=c876ca9e57 ;;
 	esac
 	CACHE_NAME="$SOURCE_NAME-${REPO_BRANCH#*-}-$TOOLS_HASH-$ARCH"
@@ -414,7 +413,8 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 		delpackage "dnsmasq"
 		create_directory "package/emortal"
 		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal r8152
-		git clone -q https://github.com/immortalwrt/homeproxy package/A/luci-app-homeproxy
+		clone_dir "$REPO_BRANCH" immortalwrt/luci luci-app-homeproxy luci-mod-status luci-mod-system
+		# git clone -q https://github.com/immortalwrt/homeproxy package/A/luci-app-homeproxy
 	else
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 	fi
