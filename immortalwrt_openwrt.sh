@@ -244,7 +244,6 @@ set_config (){
 	case "$TARGET_DEVICE" in
 		x86_64)
 			cat >>.config<<-EOF
-			# CONFIG_LUCI_JSMIN is not set  #压缩 JavaScript 源代码
 			CONFIG_TARGET_x86=y
 			CONFIG_TARGET_x86_64=y
 			CONFIG_TARGET_x86_64_DEVICE_generic=y
@@ -342,9 +341,9 @@ set_config (){
 
 deploy_cache() {
 	local TOOLS_HASH=$(git log --pretty=tformat:"%h" -n1 tools toolchain)
-	case "$REPO_BRANCH $TARGET_DEVICE $REPO" in
-	    master*x86_64*immortalwrt*) [[ $TOOLS_HASH =~ 14d864fd72 ]] && TOOLS_HASH=c876ca9e57 ;;
-	esac
+	# case "$REPO_BRANCH $TARGET_DEVICE $REPO" in
+	#     master*x86_64*immortalwrt*) [[ $TOOLS_HASH =~ 14d864fd72 ]] && TOOLS_HASH=c876ca9e57 ;;
+	# esac
 	CACHE_NAME="$SOURCE_NAME-${REPO_BRANCH#*-}-$TOOLS_HASH-$ARCH"
 	echo "CACHE_NAME=$CACHE_NAME" >> $GITHUB_ENV
 	if grep -q "$CACHE_NAME" ../xa ../xc; then
@@ -417,11 +416,11 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 	else
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 	fi
-	#add_package "axel luci-app-gecoosac" luci-app-istorex luci-app-partexp
-	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
 
 	grep -q -- '--ci false \\' feeds/packages/lang/rust/Makefile || sed -i '/x\.py \\/a \        --ci false \\' feeds/packages/lang/rust/Makefile
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy luci-app-nikki"
+	#add_package "axel luci-app-gecoosac" luci-app-istorex luci-app-partexp
+	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
 else
 	create_directory "package/network/config/firewall4" "package/utils/ucode" "package/network/utils/fullconenat-nft" "package/libs/libmd" "package/kernel/bpf-headers"
 	clone_dir coolsnowwolf/lede automount ppp busybox parted r8152 firewall openssl \
@@ -450,6 +449,9 @@ clone_dir xiaorouji/openwrt-passwall-packages chinadns-ng geoview trojan-plus
 color cy "自定义设置.... "
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
 sed -i "/ONLY/ s/^/#/g" feeds/packages/lang/python/python-mako/Makefile
+profile='package/base-files/files/etc/profile'
+grep -Fq '[ -x /usr/bin/apk ]' "$profile" && sed -i 's|\[ -x /usr/bin/apk \]|false|' "$profile"
+
 # sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
 sed -i 's|/bin/login|/bin/login -f root|' feeds/packages/utils/ttyd/files/ttyd.config
 REPLACEMENT=$([[ $SOURCE_NAME == openwrt ]] && echo "" || echo "${SOURCE_NAME}/")

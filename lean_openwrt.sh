@@ -369,8 +369,12 @@ set_config (){
 			;;
 	esac
 	[[ $TARGET_DEVICE =~ k2p ]] || \
-		add_package automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils patch luci-app-qbittorrent luci-app-nikki luci-app-homeproxy luci-app-deluge luci-app-transmission luci-app-aria2
-	add_package luci-app-filebrowser luci-app-passwall luci-app-ttyd luci-app-wizard luci-app-taskplan luci-app-ksmbd luci-app-miaplus luci-app-watchdog luci-theme-bootstrap #luci-app-gecoosac
+		add_package automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser \
+			luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote \
+			luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils \
+			patch luci-app-qbittorrent luci-app-nikki luci-app-homeproxy luci-app-deluge luci-app-transmission luci-app-aria2
+	add_package luci-app-filebrowser luci-app-passwall luci-app-ttyd luci-app-wizard luci-app-taskplan \
+			luci-app-ksmbd luci-app-miaplus luci-app-watchdog luci-theme-bootstrap #luci-app-gecoosac
 	delpackage luci-app-ddns luci-app-autoreboot luci-app-wol luci-app-vlmcsd luci-app-filetransfer
 }
 
@@ -409,11 +413,11 @@ git_clone() {
 	git clone -q $cmd $REPO_URL $REPO_FLODER # --depth 1
 	status
 	[[ -d $REPO_FLODER ]] && cd $REPO_FLODER || exit
+	git reset --hard 89e46be
 
 	echo -e "$(color cy '更新软件....')\c"
 	begin_time=$(date '+%H:%M:%S')
 	export repo_branch=$(sed -En 's/^src-git luci.*;(.*)/\1/p' feeds.conf.default)
-	# sed -i 's/openwrt-23.05/master/' feeds.conf.default
 	sed -i 's/openwrt-23.05/openwrt-24.10/' feeds.conf.default
 	sed -i '/#.*helloworld/ s/^#//' feeds.conf.default
 	./scripts/feeds update -a 1>/dev/null 2>&1
@@ -434,9 +438,9 @@ clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
 clone_dir immortalwrt/packages libdeflate libdht libutp libb64
 clone_dir xiaorouji/openwrt-passwall-packages chinadns-ng geoview trojan-plus
 clone_dir kiddin9/kwrt-packages lua-maxminddb luci-app-bypass luci-app-arpbind \
-	luci-app-pushbot luci-app-store luci-app-syncdial luci-lib-taskd luci-lib-xterm taskd \
-	gecoosac luci-app-gecoosac luci-app-quickstart luci-app-advancedplus luci-app-istorex \
-	luci-app-homeproxy luci-app-openclash luci-app-passwall luci-app-passwall2
+		luci-app-pushbot luci-app-store luci-app-syncdial luci-lib-taskd luci-lib-xterm taskd \
+		gecoosac luci-app-gecoosac luci-app-quickstart luci-app-advancedplus luci-app-istorex \
+		luci-app-homeproxy luci-app-openclash luci-app-passwall luci-app-passwall2
 clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
 		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
