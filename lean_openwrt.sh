@@ -413,7 +413,6 @@ git_clone() {
 	git clone -q $cmd $REPO_URL $REPO_FLODER # --depth 1
 	status
 	[[ -d $REPO_FLODER ]] && cd $REPO_FLODER || exit
-	git reset --hard 89e46be
 
 	echo -e "$(color cy '更新软件....')\c"
 	begin_time=$(date '+%H:%M:%S')

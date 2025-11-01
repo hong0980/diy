@@ -413,6 +413,7 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 		create_directory "package/emortal"
 		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal r8152
 		git clone -q https://github.com/immortalwrt/homeproxy package/A/luci-app-homeproxy
+		sed -i '/^$(eval $(call Py3Package,python3-pillow))/i define Build/Compile\n\texport PILLOW_BUILD_DISABLE_RUST=1; \\\n\t$(call Py3Build/Compile/Default)\nendef\n' feeds/packages/lang/python/pillow/Makefile
 	else
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 	fi
