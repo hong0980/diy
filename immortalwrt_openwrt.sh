@@ -413,10 +413,9 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 		create_directory "package/emortal"
 		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal r8152
 		git clone -q https://github.com/immortalwrt/homeproxy package/A/luci-app-homeproxy
-		sed -i '/^define Python3\/DeleteNonSourceFiles/,/^endef/ {
-		    /^endef/i \
-		\t# Workaround for python-installer >=0.7 duplicate metadata bug\n\t$(FIND) $(1) -type f \( -name AUTHORS -o -name LICENSE -o -name COPYING \) -delete || true
-		}' feeds/packages/lang/python/python3-package.mk
+		sed -i '/^define Py3Build\/Install\/Default/a \
+		\t# Clean duplicated metadata and license files before python -m installer\n\t$(FIND) $(PKG_INSTALL_DIR) -type f \\( -name AUTHORS -o -name LICENSE -o -name COPYING \\) -delete || true\n\t$(FIND) $(PKG_INSTALL_DIR) -type f -path "*/.dist-info/licenses/*" -delete || true
+		' feeds/packages/lang/python/python3-package.mk
 	else
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 	fi
