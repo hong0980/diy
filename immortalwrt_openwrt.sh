@@ -416,6 +416,7 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 		sed -i '/^define Py3Build\/Install\/Default/a \
 		\t# Clean duplicated metadata and license files before python -m installer\n\t$(FIND) $(PKG_INSTALL_DIR) -type f \\( -name AUTHORS -o -name LICENSE -o -name COPYING \\) -delete || true\n\t$(FIND) $(PKG_INSTALL_DIR) -type f -path "*/.dist-info/licenses/*" -delete || true
 		' feeds/packages/lang/python/python3-package.mk
+		sed -i '/deluge/d' .config
 	else
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 	fi
