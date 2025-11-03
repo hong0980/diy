@@ -393,7 +393,7 @@ deploy_cache() {
 			echo -e "$(color cy '部署tz-cache')\c"; begin_time=$(date '+%H:%M:%S')
 			if tar -I unzstd -xf ../*.tzst || tar -xf ../*.tzst; then
 				grep -q "$CACHE_NAME" ../xa || {
-					cp ../$CACHE_NAME-cache.tzst ../output
+					cp ../*"$CACHE_NAME"*../output
 					echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
 				}
 				sed -i 's/ $(tool.*\/stamp-compile)//' Makefile

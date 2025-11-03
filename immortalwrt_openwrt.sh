@@ -357,7 +357,7 @@ deploy_cache() {
 			echo -e "$(color cy '部署tz-cache')\c"; begin_time=$(date '+%H:%M:%S')
 			if tar -I unzstd -xf ../*.tzst || tar -xf ../*.tzst; then
 				grep -q "$CACHE_NAME" ../xa || {
-					cp ../$CACHE_NAME-cache.tzst ../output
+					cp ../*"$CACHE_NAME"* ../output
 					echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
 				}
 				sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
@@ -417,7 +417,10 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 		\t# Clean duplicated metadata and license files before python -m installer\n\t$(FIND) $(PKG_INSTALL_DIR) -type f \\( -name AUTHORS -o -name LICENSE -o -name COPYING \\) -delete || true\n\t$(FIND) $(PKG_INSTALL_DIR) -type f -path "*/.dist-info/licenses/*" -delete || true
 		' feeds/packages/lang/python/python3-package.mk
 		sed -i 's#"\$(PYTHON3_PKG_BUILD_DIR)"/openwrt-build/\$(PYTHON3_PKG_WHEEL_NAME)-\$(PYTHON3_PKG_WHEEL_VERSION)-\*.whl#$(PYTHON3_PKG_BUILD_DIR)/openwrt-build/*\$(PYTHON3_PKG_WHEEL_VERSION)*.whl#' feeds/packages/lang/python/python3-package.mk
-
+		sed -Ei '
+			s/^(PKG_VERSION:=).*/\169.0.2/;
+			s/^(PKG_HASH:=).*/\1735896e78a4742605974de002ac60562d286fa8051a7e2299445e8e8fbb01aa6/
+		' feeds/packages/lang/python/setuptools/Makefile
 	else
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 	fi
@@ -500,9 +503,7 @@ sed -Ei '{
 }' package/A/*/Makefile 2>/dev/null
 
 [ -f feeds/packages/net/ariang/Makefile ] && \
-	sed -Ei -e 's/(PKG_HASH:=).*/\1skip/' \
-			-e 's/(PKG_VERSION:=).*/\11.3.11/' \
-			feeds/packages/net/ariang/Makefile
+	sed -Ei 's/(PKG_HASH:=).*/\1skip/; s/(PKG_VERSION:=).*/\11.3.11/' feeds/packages/net/ariang/Makefile
 
 [ -f feeds/luci/applications/luci-app-transmission/Makefile ] && \
 	sed -i 's/transmission-daemon/transmission-daemon +transmission-web-control/' feeds/luci/applications/luci-app-transmission/Makefile
