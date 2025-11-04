@@ -5,7 +5,7 @@ for page in 1 2 3 4; do
 	curl -sL "$GITHUB_API_URL/repos/hong0980/Actions-OpenWrt/releases?page=$page"
 done | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' > xa
 curl -sL https://api.github.com/repos/hong0980/OpenWrt-Cache/releases | \
-	grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' > xc
+	grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' >> xa
 
 if [[ $cache_Release == 'true' ]]; then
 	count=0
@@ -379,25 +379,20 @@ set_config (){
 }
 
 deploy_cache() {
-	local TOOLS_HASH=$(git log --pretty=tformat:"%h" -n1 tools toolchain)
+	TOOLS_HASH=$(git log --pretty=tformat:"%h" -n1 tools toolchain)
 	export CACHE_NAME="$SOURCE_NAME-$repo_branch-$TOOLS_HASH-$ARCH"
 	echo "CACHE_NAME=$CACHE_NAME" >> $GITHUB_ENV
-	if grep -q "$CACHE_NAME" ../xa ../xc; then
-		ls ../*"$CACHE_NAME"* >/dev/null 2>&1 || {
-			echo -e "$(color cy '下载tz-cache')\c"; begin_time=$(date '+%H:%M:%S')
-			wget -qc -t=3 -P ../ "$(grep -l "$CACHE_NAME" ../xa ../xc | head -1 | xargs grep -m1 "$CACHE_NAME")"
-			status
-		}
+	if grep -q "$CACHE_NAME" ../xa 2>/dev/null; then
+		echo -e "$(color cy '下载tz-cache')\c"
+		begin_time=$(date '+%H:%M:%S')
+		CACHE_URL=$(grep -m1 "$CACHE_NAME" ../xa | sed -n '/\S/p')
+		wget -qc -t=3 -P ../ "$CACHE_URL"
+		status
 
 		if ls ../*"$CACHE_NAME"* >/dev/null 2>&1; then
-			echo -e "$(color cy '部署tz-cache')\c"; begin_time=$(date '+%H:%M:%S')
-			if tar -I unzstd -xf ../*.tzst || tar -xf ../*.tzst; then
-				grep -q "$CACHE_NAME" ../xa || {
-					cp ../*"$CACHE_NAME"*../output
-					echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
-				}
-				sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
-			fi
+			echo -e "$(color cy '部署tz-cache')\c"
+			begin_time=$(date '+%H:%M:%S')
+			(tar -I unzstd -xf ../*.tzst || tar -xf ../*.tzst) && sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
 			[ -d staging_dir ]; status
 		fi
 	else

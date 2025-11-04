@@ -5,7 +5,7 @@ curl -sL https://raw.githubusercontent.com/klever1988/nanopi-openwrt/zstd-bin/zs
 for page in 1 2 3 4; do
 	curl -sL "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases?page=$page"
 done | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' > xa
-curl -sL https://api.github.com/repos/hong0980/OpenWrt-Cache/releases | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' >xc
+curl -sL https://api.github.com/repos/hong0980/OpenWrt-Cache/releases | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' >>xa
 # curl -s https://api.github.com/repos/kiddin9/kwrt-packages/contents/ | jq -r '.[] | select(.type == "dir" and (.name | startswith(".") | not)) | .name' > kiddin9_packages
 
 color() {
@@ -340,28 +340,20 @@ set_config (){
 }
 
 deploy_cache() {
-	local TOOLS_HASH=$(git log --pretty=tformat:"%h" -n1 tools toolchain)
-	# case "$REPO_BRANCH $TARGET_DEVICE $REPO" in
-	#     master*x86_64*immortalwrt*) [[ $TOOLS_HASH =~ 14d864fd72 ]] && TOOLS_HASH=c876ca9e57 ;;
-	# esac
+	TOOLS_HASH=$(git log --pretty=tformat:"%h" -n1 tools toolchain)
 	CACHE_NAME="$SOURCE_NAME-${REPO_BRANCH#*-}-$TOOLS_HASH-$ARCH"
 	echo "CACHE_NAME=$CACHE_NAME" >> $GITHUB_ENV
-	if grep -q "$CACHE_NAME" ../xa ../xc; then
-		ls ../*"$CACHE_NAME"* >/dev/null 2>&1 || {
-			echo -e "$(color cy '下载tz-cache')\c"; begin_time=$(date '+%H:%M:%S')
-			wget -qc -t=3 -P ../ "$(grep -l "$CACHE_NAME" ../xa ../xc | head -1 | xargs grep -m1 "$CACHE_NAME")"
-			status
-		}
+	if grep -q "$CACHE_NAME" ../xa 2>/dev/null; then
+		echo -e "$(color cy '下载tz-cache')\c"
+		begin_time=$(date '+%H:%M:%S')
+		CACHE_URL=$(grep -m1 "$CACHE_NAME" ../xa | sed -n '/\S/p')
+		wget -qc -t=3 -P ../ "$CACHE_URL"
+		status
 
 		if ls ../*"$CACHE_NAME"* >/dev/null 2>&1; then
-			echo -e "$(color cy '部署tz-cache')\c"; begin_time=$(date '+%H:%M:%S')
-			if tar -I unzstd -xf ../*.tzst || tar -xf ../*.tzst; then
-				grep -q "$CACHE_NAME" ../xa || {
-					cp ../*"$CACHE_NAME"* ../output
-					echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
-				}
-				sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
-			fi
+			echo -e "$(color cy '部署tz-cache')\c"
+			begin_time=$(date '+%H:%M:%S')
+			(tar -I unzstd -xf ../*.tzst || tar -xf ../*.tzst) && sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
 			[ -d staging_dir ]; status
 		fi
 	else
