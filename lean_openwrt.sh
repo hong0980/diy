@@ -404,12 +404,12 @@ deploy_cache() {
 			echo -e "$(color cy '部署tz-cache')\c"
 			begin_time=$(date '+%H:%M:%S')
 			(tar -I unzstd -xf ../*.tzst || tar -xf ../*.tzst) && sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
-			[[ $CACHE_URL =~ hong0980/OpenWrt-Cache ]] && {
-				ls -la ../*"$CACHE_NAME"*
-				cp ../*"$CACHE_NAME"* ../output
+			[ -d staging_dir ]; status
+			[[ $CACHE_URL == *"hong0980/OpenWrt-Cache"* ]] && {
+				cp -v ../*.tzst ../output
+				ls -la ../output
 				echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
 			}
-			[ -d staging_dir ]; status
 		fi
 	else
 		echo "CACHE_ACTIONS=true" >> $GITHUB_ENV
