@@ -355,8 +355,7 @@ deploy_cache() {
 			(tar -I unzstd -xf ../*.tzst || tar -xf ../*.tzst) && sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
 			[ -d staging_dir ]; status
 			[[ $CACHE_URL == *"hong0980/OpenWrt-Cache"* ]] && {
-				cp -v ../*.tzst ../output
-				ls -la ../output
+				cp ../*.tzst ../output/
 				echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
 			}
 		fi
@@ -407,7 +406,8 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
 		delpackage "dnsmasq"
 		create_directory "package/emortal"
-		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal r8152
+		[[ $REPO_BRANCH =~ 23 ]] && ucode=ucode || ucode=''
+		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal r8152 $ucode
 		git clone -q https://github.com/immortalwrt/homeproxy package/A/luci-app-homeproxy
 		sed -i '/^define Py3Build\/Install\/Default/a \
 		\t# Clean duplicated metadata and license files before python -m installer\n\t$(FIND) $(PKG_INSTALL_DIR) -type f \\( -name AUTHORS -o -name LICENSE -o -name COPYING \\) -delete || true\n\t$(FIND) $(PKG_INSTALL_DIR) -type f -path "*/.dist-info/licenses/*" -delete || true
