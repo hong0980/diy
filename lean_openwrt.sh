@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-
 mkdir firmware output &>/dev/null
-
 for page in {1..4}; do
   curl -sL "https://api.github.com/repos/hong0980/Actions-OpenWrt/releases?page=$page&per_page=100" \
   | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' > xa
@@ -75,11 +73,11 @@ if [[ $CACHE_ACTIONS == 'true' ]]; then
 		ccache=".ccache"
 		ls -alh .ccache
 	}
-	du -h --max-depth=1 ./staging_dir
-	du -h --max-depth=1 ./ --exclude=staging_dir
 	tar -I zstdmt -cf ../output/$CACHE_NAME-cache-$time.tzst staging_dir/host* staging_dir/tool* $ccache || \
 	tar --zstd -cf ../output/$CACHE_NAME-cache-$time.zst staging_dir/host* staging_dir/tool* $ccache
 	status
+	du -h --max-depth=1 ./staging_dir
+	du -h --max-depth=1 ./ --exclude=staging_dir
 	if [[ $(du -sm "../output" | cut -f1) -ge 150 ]]; then
 		ls -lh ../output
 		echo "SAVE_CACHE=true" >> $GITHUB_ENV

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+mkdir firmware output &>/dev/null
 # sudo bash -c 'bash <(curl -s https://build-scripts.immortalwrt.eu.org/init_build_environment.sh)'
 qb_version=$(curl -sL https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K(.*?)(?=/)' | sort -Vr | uniq | awk 'NR==1')
 for page in 1 2 3 4; do
@@ -382,7 +383,6 @@ git_clone() {
 	set_config
 }
 
-create_directory "firmware" "output"
 REPO=${REPO:-immortalwrt}
 REPO_URL="https://github.com/$REPO/$REPO"
 SOURCE_NAME=$(basename $(dirname $REPO_URL))
