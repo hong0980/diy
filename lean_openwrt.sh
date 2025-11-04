@@ -1,56 +1,6 @@
 #!/usr/bin/env bash
 
 mkdir firmware output &>/dev/null
-for page in 1 2 3 4; do
-	curl -sL "$GITHUB_API_URL/repos/hong0980/Actions-OpenWrt/releases?page=$page"
-done | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' > xa
-curl -sL https://api.github.com/repos/hong0980/OpenWrt-Cache/releases | \
-	grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' >> xa
-
-if [[ $cache_Release == 'true' ]]; then
-	count=0
-	while read -r line && [ $count -lt 5 ]; do
-		filename="${line##*/}"
-		if ! grep -q "$filename" xc &>/dev/null && wget -qO "output/$filename" "$line"; then
-			echo "$filename 已经下载完成"
-			((count++))
-		fi
-	done < xa
-
-	if [ -n "$(ls -A output 2>/dev/null)" ]; then
-		echo "UPLOAD_Release=true" >> $GITHUB_ENV
-	else
-		echo "没有新的cache可以下载！"
-	fi
-	exit 0
-fi
-
-if [[ $CACHE_ACTIONS == 'true' ]]; then
-	echo "打包cache"
-	REPO_FLODER=${REPO_FLODER:-openwrt}
-	hx=`ls $REPO_FLODER/bin/targets/*/*/*toolchain* 2>/dev/null | sed "s/openwrt/$CACHE_NAME/g"`
-	xx=`ls $REPO_FLODER/bin/targets/*/*/*imagebuil* 2>/dev/null | sed "s/openwrt/$CACHE_NAME/g"`
-	[[ $hx ]] && (cp -v `find $REPO_FLODER/bin/targets/ -type f -name "*toolchain*"` output/${hx##*/} || true)
-	[[ $xx ]] && (cp -v `find $REPO_FLODER/bin/targets/ -type f -name "*imagebuil*"` output/${xx##*/} || true)
-	cd "$REPO_FLODER"
-	[[ -d ".ccache" && $(du -s .ccache | cut -f1) -gt 0 ]] && {
-		ccache=".ccache"
-		ls -alh .ccache
-	}
-	du -h --max-depth=1 ./staging_dir
-	du -h --max-depth=1 ./ --exclude=staging_dir
-	tar -I zstdmt -cf ../output/$CACHE_NAME-cache-$(TZ=UTC-8 date +%m-%d).tzst staging_dir/host* staging_dir/tool* $ccache || \
-	tar --zstd -cf ../output/$CACHE_NAME-cache-$(TZ=UTC-8 date +%m-%d).zst staging_dir/host* staging_dir/tool* $ccache
-	if [[ $(du -sm "../output" | cut -f1) -ge 150 ]]; then
-		ls -lh ../output
-		echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
-		sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
-	fi
-	echo "SAVE_CACHE=" >> $GITHUB_ENV
-	exit 0
-fi
-
-qb_version=$(curl -sL https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K(.*?)(?=/)' | sort -Vr | uniq | awk 'NR==1')
 
 color() {
 	case $1 in
@@ -81,6 +31,59 @@ status() {
 		printf "%35s %s %s %s %s %-6s %s\n" `echo -e "[ $(color cr ✕)\e[1;39m ]${_date}"`
 	fi
 }
+
+if [[ $cache_Release == 'true' ]]; then
+	count=0
+	while read -r line && [ $count -lt 5 ]; do
+		filename="${line##*/}"
+		if ! grep -q "$filename" xc &>/dev/null && wget -qO "output/$filename" "$line"; then
+			echo "$filename 已经下载完成"
+			((count++))
+		fi
+	done < xa
+
+	if [ -n "$(ls -A output 2>/dev/null)" ]; then
+		echo "UPLOAD_Release=true" >> $GITHUB_ENV
+	else
+		echo "没有新的cache可以下载！"
+	fi
+	exit 0
+fi
+
+if [[ $CACHE_ACTIONS == 'true' ]]; then
+	echo -e "$(color cy '打包tz-cache')\c"
+	begin_time=$(date '+%H:%M:%S')
+	time=$(TZ=UTC-8 date +%m-%d)
+	REPO_FLODER=${REPO_FLODER:-openwrt}
+	tc=`ls $REPO_FLODER/bin/targets/*/*/*toolchain* 2>/dev/null | sed "s/openwrt/$CACHE_NAME/g"`
+	ie=`ls $REPO_FLODER/bin/targets/*/*/*imagebuil* 2>/dev/null | sed "s/openwrt/$CACHE_NAME/g"`
+	[[ $tc ]] && (cp -v `find $REPO_FLODER/bin/targets/ -type f -name "*toolchain*"` output/${tc##*/} || true)
+	[[ $ie ]] && (cp -v `find $REPO_FLODER/bin/targets/ -type f -name "*imagebuil*"` output/${ie##*/} || true)
+	cd "$REPO_FLODER"
+	[[ -d ".ccache" && $(du -s .ccache | cut -f1) -gt 0 ]] && {
+		ccache=".ccache"
+		ls -alh .ccache
+	}
+	du -h --max-depth=1 ./staging_dir
+	du -h --max-depth=1 ./ --exclude=staging_dir
+	tar -I zstdmt -cf ../output/$CACHE_NAME-cache-$time.tzst staging_dir/host* staging_dir/tool* $ccache || \
+	tar --zstd -cf ../output/$CACHE_NAME-cache-$time.zst staging_dir/host* staging_dir/tool* $ccache
+	status
+	if [[ $(du -sm "../output" | cut -f1) -ge 150 ]]; then
+		ls -lh ../output
+		echo "SAVE_CACHE=true" >> $GITHUB_ENV
+		echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
+		sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
+	fi
+	exit 0
+fi
+
+qb_version=$(curl -sL https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K(.*?)(?=/)' | sort -Vr | uniq | awk 'NR==1')
+for page in 1 2 3 4; do
+	curl -sL "$GITHUB_API_URL/repos/hong0980/Actions-OpenWrt/releases?page=$page"
+done | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' > xa
+curl -sL https://api.github.com/repos/hong0980/OpenWrt-Cache/releases | \
+	grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' >> xa
 
 find_first_dir() {
 	find $1 -maxdepth 5 -type d -name "$2" -print -quit 2>/dev/null
