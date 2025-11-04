@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # sudo bash -c 'bash <(curl -s https://build-scripts.immortalwrt.eu.org/init_build_environment.sh)'
 qb_version=$(curl -sL https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K(.*?)(?=/)' | sort -Vr | uniq | awk 'NR==1')
-curl -sL https://raw.githubusercontent.com/klever1988/nanopi-openwrt/zstd-bin/zstd | sudo tee /usr/bin/zstd > /dev/null
 for page in 1 2 3 4; do
 	curl -sL "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases?page=$page"
 done | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' > xa
@@ -354,6 +353,10 @@ deploy_cache() {
 			echo -e "$(color cy '部署tz-cache')\c"
 			begin_time=$(date '+%H:%M:%S')
 			(tar -I unzstd -xf ../*.tzst || tar -xf ../*.tzst) && sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
+			[[ $CACHE_URL =~ hong0980/OpenWrt-Cache ]] && {
+				cp ../*"$CACHE_NAME"*.tzst ../output
+				echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
+			}
 			[ -d staging_dir ]; status
 		fi
 	else
@@ -412,7 +415,7 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 		sed -Ei '
 			s/^(PKG_VERSION:=).*/\169.0.2/;
 			s/^(PKG_HASH:=).*/\1735896e78a4742605974de002ac60562d286fa8051a7e2299445e8e8fbb01aa6/
-		' feeds/packages/lang/python/setuptools/Makefile
+		' feeds/packages/lang/python/python-setuptools/Makefile
 	else
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 	fi

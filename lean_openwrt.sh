@@ -28,16 +28,19 @@ fi
 if [[ $CACHE_ACTIONS == 'true' ]]; then
 	echo "打包cache"
 	REPO_FLODER=${REPO_FLODER:-openwrt}
-	hx=`ls $REPO_FLODER/bin/targets/*/*/*toolchain* 2>/dev/null | sed "s/openwrt/$CACHE_NAME/g" 2>/dev/null`
-	xx=`ls $REPO_FLODER/bin/targets/*/*/*imagebuil* 2>/dev/null | sed "s/openwrt/$CACHE_NAME/g" 2>/dev/null`
+	hx=`ls $REPO_FLODER/bin/targets/*/*/*toolchain* 2>/dev/null | sed "s/openwrt/$CACHE_NAME/g"`
+	xx=`ls $REPO_FLODER/bin/targets/*/*/*imagebuil* 2>/dev/null | sed "s/openwrt/$CACHE_NAME/g"`
 	[[ $hx ]] && (cp -v `find $REPO_FLODER/bin/targets/ -type f -name "*toolchain*"` output/${hx##*/} || true)
 	[[ $xx ]] && (cp -v `find $REPO_FLODER/bin/targets/ -type f -name "*imagebuil*"` output/${xx##*/} || true)
 	cd "$REPO_FLODER"
-	[[ -d ".ccache" ]] && (ccache=".ccache"; ls -alh .ccache)
+	[[ -d ".ccache" && $(du -s .ccache | cut -f1) -gt 0 ]] && {
+		ccache=".ccache"
+		ls -alh .ccache
+	}
 	du -h --max-depth=1 ./staging_dir
 	du -h --max-depth=1 ./ --exclude=staging_dir
 	tar -I zstdmt -cf ../output/$CACHE_NAME-cache-$(TZ=UTC-8 date +%m-%d).tzst staging_dir/host* staging_dir/tool* $ccache || \
-	tar --zstd -cf ../output/$CACHE_NAME-cache-$(TZ=UTC-8 date +%m-%d).tar.zst staging_dir/host* staging_dir/tool* $ccache
+	tar --zstd -cf ../output/$CACHE_NAME-cache-$(TZ=UTC-8 date +%m-%d).zst staging_dir/host* staging_dir/tool* $ccache
 	if [[ $(du -sm "../output" | cut -f1) -ge 150 ]]; then
 		ls -lh ../output
 		echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
@@ -47,7 +50,6 @@ if [[ $CACHE_ACTIONS == 'true' ]]; then
 	exit 0
 fi
 
-curl -sL https://raw.githubusercontent.com/klever1988/nanopi-openwrt/zstd-bin/zstd | sudo tee /usr/bin/zstd > /dev/null
 qb_version=$(curl -sL https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K(.*?)(?=/)' | sort -Vr | uniq | awk 'NR==1')
 
 color() {
@@ -393,6 +395,10 @@ deploy_cache() {
 			echo -e "$(color cy '部署tz-cache')\c"
 			begin_time=$(date '+%H:%M:%S')
 			(tar -I unzstd -xf ../*.tzst || tar -xf ../*.tzst) && sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
+			[[ $CACHE_URL =~ hong0980/OpenWrt-Cache ]] && {
+				cp ../*"$CACHE_NAME"*.tzst ../output
+				echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
+			}
 			[ -d staging_dir ]; status
 		fi
 	else
