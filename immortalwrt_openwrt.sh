@@ -354,7 +354,8 @@ deploy_cache() {
 			begin_time=$(date '+%H:%M:%S')
 			(tar -I unzstd -xf ../*.tzst || tar -xf ../*.tzst) && sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
 			[[ $CACHE_URL =~ hong0980/OpenWrt-Cache ]] && {
-				cp ../*"$CACHE_NAME"*.tzst ../output
+				ls -la ../*"$CACHE_NAME"*
+				cp ../*"$CACHE_NAME"* ../output
 				echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
 			}
 			[ -d staging_dir ]; status
