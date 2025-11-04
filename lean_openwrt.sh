@@ -2,6 +2,14 @@
 
 mkdir firmware output &>/dev/null
 
+for page in {1..4}; do
+  curl -sL "https://api.github.com/repos/hong0980/Actions-OpenWrt/releases?page=$page&per_page=100" \
+  | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' > xa
+done
+
+curl -sL "https://api.github.com/repos/hong0980/OpenWrt-Cache/releases?per_page=100" \
+| grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' >> xa
+
 color() {
 	case $1 in
 		cr) echo -e "\e[1;31m$2\e[0m" ;;  # 红色
@@ -34,11 +42,14 @@ status() {
 
 if [[ $cache_Release == 'true' ]]; then
 	count=0
-	while read -r line && [ $count -lt 5 ]; do
-		filename="${line##*/}"
-		if ! grep -q "$filename" xc &>/dev/null && wget -qO "output/$filename" "$line"; then
-			echo "$filename 已经下载完成"
-			((count++))
+	while read -r url && [[ $count -lt 5 ]]; do
+		filename="${url##*/}"
+		if [[ $url == *"Actions-OpenWrt"* ]] && ! grep -q "OpenWrt-Cache.*/$filename" xa; then
+			echo "正在下载：$filename"
+			if wget -qO "output/$filename" "$url"; then
+				echo "$filename 已经下载完成"
+				((count++))
+			fi
 		fi
 	done < xa
 
@@ -79,11 +90,6 @@ if [[ $CACHE_ACTIONS == 'true' ]]; then
 fi
 
 qb_version=$(curl -sL https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K(.*?)(?=/)' | sort -Vr | uniq | awk 'NR==1')
-for page in 1 2 3 4; do
-	curl -sL "$GITHUB_API_URL/repos/hong0980/Actions-OpenWrt/releases?page=$page"
-done | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' > xa
-curl -sL https://api.github.com/repos/hong0980/OpenWrt-Cache/releases | \
-	grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' >> xa
 
 find_first_dir() {
 	find $1 -maxdepth 5 -type d -name "$2" -print -quit 2>/dev/null
