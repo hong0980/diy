@@ -69,10 +69,7 @@ if [[ $CACHE_ACTIONS == 'true' ]]; then
 	[[ $tc ]] && (cp -v `find $REPO_FLODER/bin/targets/ -type f -name "*toolchain*"` output/${tc##*/} || true)
 	[[ $ie ]] && (cp -v `find $REPO_FLODER/bin/targets/ -type f -name "*imagebuil*"` output/${ie##*/} || true)
 	cd "$REPO_FLODER"
-	[[ -d ".ccache" && $(du -s .ccache | cut -f1) -gt 0 ]] && {
-		ccache=".ccache"
-		ls -alh .ccache
-	}
+	[[ -d ".ccache" && $(du -s .ccache | cut -f1) -gt 0 ]] && ccache=".ccache"
 	tar -I zstdmt -cf ../output/$CACHE_NAME-cache-$time.tzst staging_dir/host* staging_dir/tool* $ccache || \
 	tar --zstd -cf ../output/$CACHE_NAME-cache-$time.zst staging_dir/host* staging_dir/tool* $ccache
 	status

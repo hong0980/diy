@@ -406,7 +406,9 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
 		delpackage "dnsmasq"
 		create_directory "package/emortal"
-		[[ $REPO_BRANCH =~ 23 ]] && ucode=ucode || ucode=''
+		[[ $REPO_BRANCH =~ 23 ]] && {
+			ucode=ucode || ucode=''
+		}
 		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal r8152 $ucode
 		git clone -q https://github.com/immortalwrt/homeproxy package/A/luci-app-homeproxy
 		sed -i '/^define Py3Build\/Install\/Default/a \
@@ -421,7 +423,7 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 	fi
 
-	grep -q -- '--ci false \\' feeds/packages/lang/rust/Makefile || sed -i '/x\.py \\/a \        --ci false \\' feeds/packages/lang/rust/Makefile
+	[[ $REPO_BRANCH =~ 23 ]] || grep -q -- '--ci false \\' feeds/packages/lang/rust/Makefile || sed -i '/x\.py \\/a \        --ci false \\' feeds/packages/lang/rust/Makefile
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy luci-app-nikki"
 	#add_package "axel luci-app-gecoosac" luci-app-istorex luci-app-partexp
 	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
