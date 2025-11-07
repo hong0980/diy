@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
 mkdir firmware output &>/dev/null
-for page in {1..4}; do
-  curl -sL "https://api.github.com/repos/hong0980/Actions-OpenWrt/releases?page=$page&per_page=100" \
-  | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' > xa
-done
-
-curl -sL "https://api.github.com/repos/hong0980/OpenWrt-Cache/releases?per_page=100" \
-| grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' >> xa
+for page in 1 2 3 4; do
+	curl -sL "$GITHUB_API_URL/repos/hong0980/Actions-OpenWrt/releases?page=$page"
+done | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' > xa
+curl -sL https://api.github.com/repos/hong0980/OpenWrt-Cache/releases | \
+	grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' >> xa
 
 color() {
 	case $1 in
@@ -42,7 +40,7 @@ if [[ $cache_Release == 'true' ]]; then
 	count=0
 	while read -r url && [[ $count -lt 5 ]]; do
 		filename="${url##*/}"
-		if [[ $url == *"Actions-OpenWrt"* ]] && ! grep -q "OpenWrt-Cache.*/$filename" xa; then
+		if [[ $url =~ Actions-OpenWrt ]] && ! grep -q "OpenWrt-Cache.*/$filename" xa; then
 			echo "正在下载：$filename"
 			if wget -qO "output/$filename" "$url"; then
 				echo "$filename 已经下载完成"

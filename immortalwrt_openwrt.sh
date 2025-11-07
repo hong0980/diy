@@ -341,6 +341,7 @@ set_config (){
 
 deploy_cache() {
 	TOOLS_HASH=$(git log --pretty=tformat:"%h" -n1 tools toolchain)
+	[[ ${REPO}${REPO_BRANCH} == openwrtmaster ]] && TOOLS_HASH=3969335815
 	CACHE_NAME="$SOURCE_NAME-${REPO_BRANCH#*-}-$TOOLS_HASH-$ARCH"
 	echo "CACHE_NAME=$CACHE_NAME" >> $GITHUB_ENV
 	if grep -q "$CACHE_NAME" ../xa 2>/dev/null; then
@@ -373,7 +374,7 @@ git_clone() {
 	git clone -q $cmd $REPO_URL $REPO_FLODER # --depth 1
 	status
 	[[ -d $REPO_FLODER ]] && cd $REPO_FLODER || exit 1
-
+	# [[ $REPO == openwrt && $REPO_BRANCH == master ]] && git reset --hard 914eb43
 	echo -e "$(color cy '更新软件....')\c"
 	begin_time=$(date '+%H:%M:%S')
 	./scripts/feeds update -a 1>/dev/null 2>&1
@@ -406,24 +407,24 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
 		delpackage "dnsmasq"
 		create_directory "package/emortal"
-		[[ $REPO_BRANCH =~ 23 ]] && {
-			ucode=ucode || ucode=''
+		git clone -q https://github.com/immortalwrt/homeproxy package/A/luci-app-homeproxy
+		[[ $REPO_BRANCH =~ master|24 ]] && {
+			sed -i '/^define Py3Build\/Install\/Default/a \
+			\t# Clean duplicated metadata and license files before python -m installer\n\t$(FIND) $(PKG_INSTALL_DIR) -type f \\( -name AUTHORS -o -name LICENSE -o -name COPYING \\) -delete || true\n\t$(FIND) $(PKG_INSTALL_DIR) -type f -path "*/.dist-info/licenses/*" -delete || true
+			' feeds/packages/lang/python/python3-package.mk
+			sed -i 's#"\$(PYTHON3_PKG_BUILD_DIR)"/openwrt-build/\$(PYTHON3_PKG_WHEEL_NAME)-\$(PYTHON3_PKG_WHEEL_VERSION)-\*.whl#$(PYTHON3_PKG_BUILD_DIR)/openwrt-build/*\$(PYTHON3_PKG_WHEEL_VERSION)*.whl#' feeds/packages/lang/python/python3-package.mk
+			sed -Ei '
+				s/^(PKG_VERSION:=).*/\169.0.2/;
+				s/^(PKG_HASH:=).*/\1735896e78a4742605974de002ac60562d286fa8051a7e2299445e8e8fbb01aa6/
+			' feeds/packages/lang/python/python-setuptools/Makefile
+			grep -q -- '--ci false' feeds/packages/lang/rust/Makefile || sed -i '/build \\/a\\t--ci false \\' feeds/packages/lang/rust/Makefile
+		} || {
+			ucode=ucode
 		}
 		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal r8152 $ucode
-		git clone -q https://github.com/immortalwrt/homeproxy package/A/luci-app-homeproxy
-		sed -i '/^define Py3Build\/Install\/Default/a \
-		\t# Clean duplicated metadata and license files before python -m installer\n\t$(FIND) $(PKG_INSTALL_DIR) -type f \\( -name AUTHORS -o -name LICENSE -o -name COPYING \\) -delete || true\n\t$(FIND) $(PKG_INSTALL_DIR) -type f -path "*/.dist-info/licenses/*" -delete || true
-		' feeds/packages/lang/python/python3-package.mk
-		sed -i 's#"\$(PYTHON3_PKG_BUILD_DIR)"/openwrt-build/\$(PYTHON3_PKG_WHEEL_NAME)-\$(PYTHON3_PKG_WHEEL_VERSION)-\*.whl#$(PYTHON3_PKG_BUILD_DIR)/openwrt-build/*\$(PYTHON3_PKG_WHEEL_VERSION)*.whl#' feeds/packages/lang/python/python3-package.mk
-		sed -Ei '
-			s/^(PKG_VERSION:=).*/\169.0.2/;
-			s/^(PKG_HASH:=).*/\1735896e78a4742605974de002ac60562d286fa8051a7e2299445e8e8fbb01aa6/
-		' feeds/packages/lang/python/python-setuptools/Makefile
 	else
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 	fi
-
-	[[ $REPO_BRANCH =~ 23 ]] || grep -q -- '--ci false \\' feeds/packages/lang/rust/Makefile || sed -i '/x\.py \\/a \        --ci false \\' feeds/packages/lang/rust/Makefile
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy luci-app-nikki"
 	#add_package "axel luci-app-gecoosac" luci-app-istorex luci-app-partexp
 	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
