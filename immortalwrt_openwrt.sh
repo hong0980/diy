@@ -374,9 +374,9 @@ git_clone() {
 	echo -e "$(color cy "拉取源码 $REPO ${REPO_BRANCH#*-}")\c"
 	begin_time=$(date '+%H:%M:%S')
 	[ "$REPO_BRANCH" ] && cmd="-b $REPO_BRANCH --single-branch"
-	git clone -q $cmd $REPO_URL $REPO_FLODER # --depth 1
+	git clone -q $cmd $REPO_URL openwrt # --depth 1
 	status
-	[[ -d $REPO_FLODER ]] && cd $REPO_FLODER || exit 1
+	[[ -d openwrt ]] && cd openwrt || exit 1
 	# [[ $REPO == openwrt && $REPO_BRANCH == master ]] && git reset --hard 914eb43
 	echo -e "$(color cy '更新软件....')\c"
 	begin_time=$(date '+%H:%M:%S')
@@ -387,6 +387,7 @@ git_clone() {
 	set_config
 }
 
+rm -rf openwrt
 REPO=${REPO:-immortalwrt}
 REPO_URL="https://github.com/$REPO/$REPO"
 SOURCE_NAME=$(basename $(dirname $REPO_URL))
