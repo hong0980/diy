@@ -376,8 +376,8 @@ echo "REPO_BRANCH=$REPO_BRANCH" >> $GITHUB_ENV
 echo -e "$(color cy "拉取源码 $REPO ${REPO_BRANCH#*-}")\c"
 begin_time=$(date '+%H:%M:%S')
 git clone -q -b $REPO_BRANCH $REPO_URL openwrt # --depth 1
+cd openwrt
 status
-[[ -d openwrt ]] && cd openwrt || exit 1
 # [[ $REPO == openwrt && $REPO_BRANCH == master ]] && git reset --hard 914eb43
 echo -e "$(color cy '更新软件....')\c"
 begin_time=$(date '+%H:%M:%S')
