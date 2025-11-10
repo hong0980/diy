@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
+rm -rf openwrt
 mkdir firmware output &>/dev/null
-# sudo bash -c 'bash <(curl -s https://build-scripts.immortalwrt.eu.org/init_build_environment.sh)'
 qb_version=$(curl -sL https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K(.*?)(?=/)' | sort -Vr | uniq | awk 'NR==1')
 for page in 1 2 3 4; do
 	curl -sL "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases?page=$page"
@@ -369,30 +369,23 @@ deploy_cache() {
 	fi
 }
 
-git_clone() {
-	local cmd
-	echo -e "$(color cy "拉取源码 $REPO ${REPO_BRANCH#*-}")\c"
-	begin_time=$(date '+%H:%M:%S')
-	[ "$REPO_BRANCH" ] && cmd="-b $REPO_BRANCH --single-branch"
-	git clone -q $cmd $REPO_URL openwrt # --depth 1
-	status
-	[[ -d openwrt ]] && cd openwrt || exit 1
-	# [[ $REPO == openwrt && $REPO_BRANCH == master ]] && git reset --hard 914eb43
-	echo -e "$(color cy '更新软件....')\c"
-	begin_time=$(date '+%H:%M:%S')
-	./scripts/feeds update -a 1>/dev/null 2>&1
-	./scripts/feeds install -a 1>/dev/null 2>&1
-	status
-	create_directory "package/A"
-	set_config
-}
-
-rm -rf openwrt
+REPO_BRANCH=${REPO_BRANCH/main/master}
 REPO_URL="https://github.com/$REPO/$REPO"
 config_generate="package/base-files/files/bin/config_generate"
-REPO_BRANCH=${REPO_BRANCH/main/master}
 echo "REPO_BRANCH=$REPO_BRANCH" >> $GITHUB_ENV
-git_clone
+echo -e "$(color cy "拉取源码 $REPO ${REPO_BRANCH#*-}")\c"
+begin_time=$(date '+%H:%M:%S')
+git clone -q -b $REPO_BRANCH $REPO_URL openwrt # --depth 1
+status
+[[ -d openwrt ]] && cd openwrt || exit 1
+# [[ $REPO == openwrt && $REPO_BRANCH == master ]] && git reset --hard 914eb43
+echo -e "$(color cy '更新软件....')\c"
+begin_time=$(date '+%H:%M:%S')
+./scripts/feeds update -a 1>/dev/null 2>&1
+./scripts/feeds install -a 1>/dev/null 2>&1
+status
+create_directory "package/A"
+set_config
 
 clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
 clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus mosdns \

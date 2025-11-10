@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+rm -rf openwrt
 mkdir firmware output &>/dev/null
 for page in 1 2 3 4; do
 	curl -sL "$GITHUB_API_URL/repos/hong0980/Actions-OpenWrt/releases?page=$page"
