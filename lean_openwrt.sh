@@ -61,12 +61,11 @@ if [[ $CACHE_ACTIONS == 'true' ]]; then
 	echo -e "$(color cy '打包tz-cache')\c"
 	begin_time=$(date '+%H:%M:%S')
 	time=$(TZ=UTC-8 date +%m-%d)
-	REPO_FLODER=${REPO_FLODER:-openwrt}
-	tc=`ls $REPO_FLODER/bin/targets/*/*/*toolchain* 2>/dev/null | sed "s/openwrt/$CACHE_NAME/g"`
-	ie=`ls $REPO_FLODER/bin/targets/*/*/*imagebuil* 2>/dev/null | sed "s/openwrt/$CACHE_NAME/g"`
-	[[ $tc ]] && (cp -v `find $REPO_FLODER/bin/targets/ -type f -name "*toolchain*"` output/${tc##*/} || true)
-	[[ $ie ]] && (cp -v `find $REPO_FLODER/bin/targets/ -type f -name "*imagebuil*"` output/${ie##*/} || true)
-	cd "$REPO_FLODER"
+	tc=`ls openwrt/bin/targets/*/*/*toolchain* 2>/dev/null | sed "s/openwrt/$CACHE_NAME/g"`
+	ie=`ls openwrt/bin/targets/*/*/*imagebuil* 2>/dev/null | sed "s/openwrt/$CACHE_NAME/g"`
+	[[ $tc ]] && (cp -v `find openwrt/bin/targets/ -type f -name "*toolchain*"` output/${tc##*/} || true)
+	[[ $ie ]] && (cp -v `find openwrt/bin/targets/ -type f -name "*imagebuil*"` output/${ie##*/} || true)
+	cd "openwrt"
 	[[ -d ".ccache" && $(du -s .ccache | cut -f1) -gt 0 ]] && ccache=".ccache"
 	tar -I zstdmt -cf ../output/$CACHE_NAME-cache-$time.tzst staging_dir/host* staging_dir/tool* $ccache || \
 	tar --zstd -cf ../output/$CACHE_NAME-cache-$time.zst staging_dir/host* staging_dir/tool* $ccache
@@ -413,9 +412,9 @@ git_clone() {
 	echo -e "$(color cy '拉取源码....')\c"
 	begin_time=$(date '+%H:%M:%S')
 	[ "$REPO_BRANCH" ] && cmd="-b $REPO_BRANCH --single-branch"
-	git clone -q $cmd $REPO_URL $REPO_FLODER # --depth 1
+	git clone -q $cmd $REPO_URL openwrt # --depth 1
 	status
-	[[ -d $REPO_FLODER ]] && cd $REPO_FLODER || exit
+	[[ -d openwrt ]] && cd openwrt || exit
 
 	echo -e "$(color cy '更新软件....')\c"
 	begin_time=$(date '+%H:%M:%S')

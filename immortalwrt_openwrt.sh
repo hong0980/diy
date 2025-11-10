@@ -345,7 +345,7 @@ deploy_cache() {
 		openwrt-master) TOOLS_HASH=3969335815 ;;
 		immortalwrt-master) TOOLS_HASH=35bceb3d00 ;;
 	esac
-	CACHE_NAME="$SOURCE_NAME-${REPO_BRANCH#*-}-$TOOLS_HASH-$ARCH"
+	CACHE_NAME="$REPO-${REPO_BRANCH#*-}-$TOOLS_HASH-$ARCH"
 	echo "CACHE_NAME=$CACHE_NAME" >> $GITHUB_ENV
 	if grep -q "$CACHE_NAME" ../xa 2>/dev/null; then
 		echo -e "$(color cy '下载tz-cache')\c"
@@ -388,9 +388,7 @@ git_clone() {
 }
 
 rm -rf openwrt
-REPO=${REPO:-immortalwrt}
 REPO_URL="https://github.com/$REPO/$REPO"
-SOURCE_NAME=$(basename $(dirname $REPO_URL))
 config_generate="package/base-files/files/bin/config_generate"
 REPO_BRANCH=${REPO_BRANCH/main/master}
 echo "REPO_BRANCH=$REPO_BRANCH" >> $GITHUB_ENV
@@ -464,7 +462,7 @@ grep -Fq '[ -x /usr/bin/apk ]' "$profile" && sed -i 's|\[ -x /usr/bin/apk \]|fal
 
 # sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
 sed -i 's|/bin/login|/bin/login -f root|' feeds/packages/utils/ttyd/files/ttyd.config
-REPLACEMENT=$([[ $SOURCE_NAME == openwrt ]] && echo "" || echo "${SOURCE_NAME}/")
+REPLACEMENT=$([[ $REPO == openwrt ]] && echo "" || echo "${REPO}/")
 sed -i "s|^\(OPENWRT_RELEASE.*%C\)\(.*\)|\1 ${REPLACEMENT}$(TZ=UTC-8 date +%m月%d日)\2|" package/*/*/*/lib/os-release || true
 # sed -i "/VERSION_NUMBER/ s/if.*/if \$(VERSION_NUMBER),\$(VERSION_NUMBER),${REPO_BRANCH#*-}-SNAPSHOT)/" include/version.mk || true
 
@@ -517,7 +515,7 @@ make defconfig 1>/dev/null 2>&1
 status
 
 LINUX_VERSION=$(sed -nr 's/CONFIG_LINUX_(.*)=y/\1/p' .config | tr '_' '.')
-sed -i "/IMG_PREFIX:/ {s/=/=$SOURCE_NAME-${REPO_BRANCH#*-}-$LINUX_VERSION-\$(shell TZ=UTC-8 date +%m%d-%H%M)-/}" include/image.mk
+sed -i "/IMG_PREFIX:/ {s/=/=$REPO-${REPO_BRANCH#*-}-$LINUX_VERSION-\$(shell TZ=UTC-8 date +%m%d-%H%M)-/}" include/image.mk
 # sed -Ei 's/# (CONFIG_.*_COMPRESS_UPX) is not set/\1=y/' .config && make defconfig 1>/dev/null 2>&1
 ARCH=$(sed -nr 's/CONFIG_ARCH="(.*)"/\1/p' .config)
 
@@ -532,5 +530,5 @@ echo "LINUX_VERSION_ARCH=$LINUX_VERSION-$ARCH" >> $GITHUB_ENV
 # echo "UPLOAD_SYSUPGRADE=false" >> $GITHUB_ENV
 
 deploy_cache
-echo -e "$(color cy 当前机型) $(color cb $SOURCE_NAME-${REPO_BRANCH#*-}-$LINUX_VERSION-${DEVICE_NAME})"
+echo -e "$(color cy 当前机型) $(color cb $REPO-${REPO_BRANCH#*-}-$LINUX_VERSION-${DEVICE_NAME})"
 echo -e "\e[1;35m脚本运行完成！\e[0m"
