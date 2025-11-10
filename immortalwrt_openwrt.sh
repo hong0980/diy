@@ -237,7 +237,7 @@ set_config (){
 		CONFIG_KERNEL_BUILD_USER="win3gp"
 		CONFIG_KERNEL_BUILD_DOMAIN="OpenWrt"
 		# CONFIG_LUCI_SRCDIET is not set #压缩 Lua 源代码
-		## CONFIG_LUCI_JSMIN is not set  #压缩 JavaScript 源代码
+		# CONFIG_LUCI_JSMIN is not set  #压缩 JavaScript 源代码
 		# CONFIG_LUCI_CSSTIDY is not set #压缩 CSS 文件
 	EOF
 	export DEVICE_NAME="$TARGET_DEVICE"
@@ -341,7 +341,10 @@ set_config (){
 
 deploy_cache() {
 	TOOLS_HASH=$(git log --pretty=tformat:"%h" -n1 tools toolchain)
-	[[ ${REPO}${REPO_BRANCH} == openwrtmaster ]] && TOOLS_HASH=3969335815
+	case $REPO-$REPO_BRANCH in
+		openwrt-master) TOOLS_HASH=3969335815 ;;
+		immortalwrt-master) TOOLS_HASH=35bceb3d00 ;;
+	esac
 	CACHE_NAME="$SOURCE_NAME-${REPO_BRANCH#*-}-$TOOLS_HASH-$ARCH"
 	echo "CACHE_NAME=$CACHE_NAME" >> $GITHUB_ENV
 	if grep -q "$CACHE_NAME" ../xa 2>/dev/null; then
