@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 rm -rf openwrt
-mkdir firmware output &>/dev/null
 qb_version=$(curl -sL https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K(.*?)(?=/)' | sort -Vr | uniq | awk 'NR==1')
 for page in 1 2 3 4; do
 	curl -sL "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases?page=$page"
@@ -257,7 +256,7 @@ set_config (){
 			# CONFIG_GRUB_EFI_IMAGES is not set
 			EOF
 			lan_ip "192.168.2.150"
-			echo "FIRMWARE_TYPE=squashfs-combined" >> $GITHUB_ENV
+			echo "FIRMWARE_TYPE=x86-64-generic-squashfs" >> $GITHUB_ENV
 			add_busybox "lsusb lspci lsscsi lsof"
 			add_package "kmod-r8101 kmod-r8125 kmod-r8126 kmod-r8152 kmod-r8168"
 			;;
@@ -408,17 +407,17 @@ if [[ $REPO_BRANCH =~ master|23|24 ]]; then
 	else
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 	fi
-	[[ $REPO_BRANCH =~ master|24 ]] && {
-		sed -i '/^define Py3Build\/Install\/Default/a \
-		\t# Clean duplicated metadata and license files before python -m installer\n\t$(FIND) $(PKG_INSTALL_DIR) -type f \\( -name AUTHORS -o -name LICENSE -o -name COPYING \\) -delete || true\n\t$(FIND) $(PKG_INSTALL_DIR) -type f -path "*/.dist-info/licenses/*" -delete || true
-		' feeds/packages/lang/python/python3-package.mk
-		sed -i 's#"\$(PYTHON3_PKG_BUILD_DIR)"/openwrt-build/\$(PYTHON3_PKG_WHEEL_NAME)-\$(PYTHON3_PKG_WHEEL_VERSION)-\*.whl#$(PYTHON3_PKG_BUILD_DIR)/openwrt-build/*\$(PYTHON3_PKG_WHEEL_VERSION)*.whl#' feeds/packages/lang/python/python3-package.mk
-		sed -Ei '
-			s/^(PKG_VERSION:=).*/\169.0.2/;
-			s/^(PKG_HASH:=).*/\1735896e78a4742605974de002ac60562d286fa8051a7e2299445e8e8fbb01aa6/
-		' feeds/packages/lang/python/python-setuptools/Makefile
-		grep -q -- '--ci false' feeds/packages/lang/rust/Makefile || sed -i '/build \\/a\\t--ci false \\' feeds/packages/lang/rust/Makefile
-	}
+	# [[ $REPO_BRANCH =~ master|24 ]] && {
+	# 	sed -i '/^define Py3Build\/Install\/Default/a \
+	# 	\t# Clean duplicated metadata and license files before python -m installer\n\t$(FIND) $(PKG_INSTALL_DIR) -type f \\( -name AUTHORS -o -name LICENSE -o -name COPYING \\) -delete || true\n\t$(FIND) $(PKG_INSTALL_DIR) -type f -path "*/.dist-info/licenses/*" -delete || true
+	# 	' feeds/packages/lang/python/python3-package.mk
+	# 	sed -i 's#"\$(PYTHON3_PKG_BUILD_DIR)"/openwrt-build/\$(PYTHON3_PKG_WHEEL_NAME)-\$(PYTHON3_PKG_WHEEL_VERSION)-\*.whl#$(PYTHON3_PKG_BUILD_DIR)/openwrt-build/*\$(PYTHON3_PKG_WHEEL_VERSION)*.whl#' feeds/packages/lang/python/python3-package.mk
+	# 	sed -Ei '
+	# 		s/^(PKG_VERSION:=).*/\169.0.2/;
+	# 		s/^(PKG_HASH:=).*/\1735896e78a4742605974de002ac60562d286fa8051a7e2299445e8e8fbb01aa6/
+	# 	' feeds/packages/lang/python/python-setuptools/Makefile
+	# 	grep -q -- '--ci false' feeds/packages/lang/rust/Makefile || sed -i '/build \\/a\\t--ci false \\' feeds/packages/lang/rust/Makefile
+	# }
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy luci-app-nikki"
 	#add_package "axel luci-app-gecoosac" luci-app-istorex luci-app-partexp
 	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
@@ -518,7 +517,6 @@ echo "UPLOAD_BIN_DIR=false" >> $GITHUB_ENV
 echo "UPLOAD_COWTRANSFER=false" >> $GITHUB_ENV
 echo "UPLOAD_WETRANSFER=false" >> $GITHUB_ENV
 echo "LINUX_VERSION_ARCH=$LINUX_VERSION-$ARCH" >> $GITHUB_ENV
-# echo "UPLOAD_FIRMWARE=false" >> $GITHUB_ENV
 # echo "UPLOAD_PACKAGES=false" >> $GITHUB_ENV
 # echo "UPLOAD_SYSUPGRADE=false" >> $GITHUB_ENV
 
