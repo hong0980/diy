@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-rm -rf openwrt
-mkdir firmware output &>/dev/null
 for page in 1 2 3 4; do
 	curl -sL "$GITHUB_API_URL/repos/hong0980/Actions-OpenWrt/releases?page=$page"
 done | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' > xa
@@ -83,6 +81,8 @@ if [[ $CACHE_ACTIONS == 'true' ]]; then
 fi
 
 qb_version=$(curl -sL https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K(.*?)(?=/)' | sort -Vr | uniq | awk 'NR==1')
+rm -rf openwrt
+mkdir firmware output &>/dev/null
 
 find_first_dir() {
 	find $1 -maxdepth 5 -type d -name "$2" -print -quit 2>/dev/null
