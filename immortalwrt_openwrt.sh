@@ -256,7 +256,7 @@ set_config (){
 			# CONFIG_GRUB_EFI_IMAGES is not set
 			EOF
 			lan_ip "192.168.2.150"
-			echo "FIRMWARE_TYPE=x86-64-generic-squashfs" >> $GITHUB_ENV
+			echo "FIRMWARE_TYPE=generic-squashfs" >> $GITHUB_ENV
 			add_busybox "lsusb lspci lsscsi lsof"
 			add_package "kmod-r8101 kmod-r8125 kmod-r8126 kmod-r8152 kmod-r8168"
 			;;
