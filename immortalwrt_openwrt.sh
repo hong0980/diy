@@ -341,7 +341,7 @@ set_config (){
 deploy_cache() {
 	TOOLS_HASH=$(git log --pretty=tformat:"%h" -n1 tools toolchain)
 	case $REPO-$REPO_BRANCH in
-		openwrt-master) TOOLS_HASH=3969335815 ;;
+		# openwrt-master) TOOLS_HASH=3969335815 ;;
 		immortalwrt-master) TOOLS_HASH=35bceb3d00 ;;
 	esac
 	CACHE_NAME="$REPO-${REPO_BRANCH#*-}-$TOOLS_HASH-$ARCH"
