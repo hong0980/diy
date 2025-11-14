@@ -330,7 +330,7 @@ set_config (){
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package \
 		automount autosamba diffutils patch luci-app-diskman luci-app-poweroff luci-app-filebrowser \
 		luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote \
-		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter \
+		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter luci-app-ddns-go \
 		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2
 
 	add_package autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall \
@@ -340,10 +340,10 @@ set_config (){
 
 deploy_cache() {
 	TOOLS_HASH=$(git log --pretty=tformat:"%h" -n1 tools toolchain)
-	case $REPO-$REPO_BRANCH in
-		# openwrt-master) TOOLS_HASH=3969335815 ;;
-		immortalwrt-master) TOOLS_HASH=35bceb3d00 ;;
-	esac
+	# case $REPO-$REPO_BRANCH in
+	# 	openwrt-master) TOOLS_HASH=3969335815 ;;
+	# 	immortalwrt-master) TOOLS_HASH=35bceb3d00 ;;
+	# esac
 	CACHE_NAME="$REPO-${REPO_BRANCH#*-}-$TOOLS_HASH-$ARCH"
 	echo "CACHE_NAME=$CACHE_NAME" >> $GITHUB_ENV
 	if grep -q "$CACHE_NAME" ../xa 2>/dev/null; then
@@ -358,7 +358,7 @@ deploy_cache() {
 			begin_time=$(date '+%H:%M:%S')
 			(tar -I unzstd -xf ../*.tzst || tar -xf ../*.tzst) && sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
 			[ -d staging_dir ]; status
-			[[ $CACHE_URL == *"hong0980/OpenWrt-Cache"* ]] && {
+			[[ $CACHE_URL =~ OpenWrt-Cache ]] && {
 				cp ../*.tzst ../output/
 				echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
 			}
