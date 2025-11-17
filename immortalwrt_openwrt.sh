@@ -501,7 +501,7 @@ sed -Ei '{
 	sed -i 's/transmission-daemon/transmission-daemon +transmission-web-control/' feeds/luci/applications/luci-app-transmission/Makefile
 
 [[ "$TARGET_DEVICE" =~ armvirt ]] && sed -i '/qbittorrent/d' .config
-# [[ $REPO_BRANCH =~ master ]] && sed -i '/deluge/d' .config
+[[ $REPO_BRANCH =~ master ]] && sed -i '/deluge/d' .config
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
 make defconfig 1>/dev/null 2>&1
