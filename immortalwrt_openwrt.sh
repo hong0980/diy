@@ -449,7 +449,7 @@ clone_dir xiaorouji/openwrt-passwall-packages chinadns-ng geoview trojan-plus
 color cy "自定义设置.... "
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
 sed -i "/ONLY/ s/^/#/g" feeds/packages/lang/python/python-mako/Makefile
-profile='package/base-files/files/etc/profile'
+profile='package/base-files/files/etc/profile.d/apk-cheatsheet.sh'
 grep -Fq '[ -x /usr/bin/apk ]' "$profile" && sed -i 's|\[ -x /usr/bin/apk \]|false|' "$profile"
 
 # sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
