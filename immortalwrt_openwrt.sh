@@ -450,6 +450,7 @@ color cy "自定义设置.... "
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
 sed -i "/ONLY/ s/^/#/g" feeds/packages/lang/python/python-mako/Makefile
 profile='package/base-files/files/etc/profile.d/apk-cheatsheet.sh'
+[ -e "$profile" ] && \
 grep -Fq '[ -x /usr/bin/apk ]' "$profile" && sed -i 's|\[ -x /usr/bin/apk \]|false|' "$profile"
 
 # sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
@@ -501,7 +502,10 @@ sed -Ei '{
 	sed -i 's/transmission-daemon/transmission-daemon +transmission-web-control/' feeds/luci/applications/luci-app-transmission/Makefile
 
 [[ "$TARGET_DEVICE" =~ armvirt ]] && sed -i '/qbittorrent/d' .config
-[[ $REPO_BRANCH =~ master ]] && sed -i '/deluge/d' .config
+[[ $REPO_BRANCH =~ master ]] && {
+	sed -i '/deluge/d' .config
+	delpackage "ca-certificates"
+}
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
 make defconfig 1>/dev/null 2>&1
