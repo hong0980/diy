@@ -258,6 +258,7 @@ set_config (){
 			lan_ip "192.168.2.150"
 			echo "FIRMWARE_TYPE=squashfs-combined" >> $GITHUB_ENV
 			add_busybox "lsusb lspci lsscsi lsof"
+			[[ $REPO_BRANCH =~ master ]] || \
 			add_package "kmod-r8101 kmod-r8125 kmod-r8126 kmod-r8152 kmod-r8168"
 			;;
 		r[124]*)
@@ -504,7 +505,7 @@ sed -Ei '{
 [[ "$TARGET_DEVICE" =~ armvirt ]] && sed -i '/qbittorrent/d' .config
 [[ $REPO_BRANCH =~ master ]] && {
 	sed -i '/deluge/d' .config
-	delpackage "ca-certificates"
+	delpackage "ca-certificates" "luci-app-nikki"
 }
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
