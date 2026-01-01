@@ -505,7 +505,7 @@ sed -Ei '{
 [[ "$TARGET_DEVICE" =~ armvirt ]] && sed -i '/qbittorrent/d' .config
 [[ $REPO_BRANCH =~ master|25 ]] && {
 	sed -i '/deluge/d' .config
-	delpackage "ca-certificates" "luci-app-nikki"
+	delpackage "ca-bundle" "luci-app-nikki"
 }
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
