@@ -152,7 +152,7 @@ clone_dir() {
 		return 1
 	}
 
-	[[ $REPO_BRANCH =~ master|23|24 ]] || {
+	[[ $REPO_BRANCH =~ master|23|24|25 ]] || {
 		[[ $repo_url =~ hong0980/diy ]] && set -- "$@" luci-app-wizard
 		[[ $repo_url =~ coolsnowwolf/packages ]] && set -- "$@" "bash" \
 				"btrfs-progs" "gawk" "jq" "nginx-util" "pciutils" "curl"
@@ -258,7 +258,7 @@ set_config (){
 			lan_ip "192.168.2.150"
 			echo "FIRMWARE_TYPE=squashfs-combined" >> $GITHUB_ENV
 			add_busybox "lsusb lspci lsscsi lsof"
-			[[ $REPO_BRANCH =~ master ]] || \
+			[[ $REPO_BRANCH =~ master|25 ]] || \
 			add_package "kmod-r8101 kmod-r8125 kmod-r8126 kmod-r8152 kmod-r8168"
 			;;
 		r[124]*)
@@ -398,17 +398,17 @@ clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
 		python-pyasn1 python-pyxdg python-rencode python-setproctitle python-twisted \
 		sunpanel transmission qBittorrent-static luci-app-diskman-js
 
-if [[ $REPO_BRANCH =~ master|23|24 ]]; then
+if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
 		delpackage "dnsmasq"
 		create_directory "package/emortal"
 		git clone -q https://github.com/immortalwrt/homeproxy package/A/luci-app-homeproxy
-		[[ $REPO_BRANCH =~ master|24 ]] || ucode=ucode
+		[[ $REPO_BRANCH =~ master|24|25 ]] || ucode=ucode
 		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal r8152 $ucode
 	else
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 	fi
-	[[ $REPO_BRANCH =~ master|24 ]] && {
+	[[ $REPO_BRANCH =~ master|24|25 ]] && {
 		sed -i '/^define Py3Build\/Install\/Default/a \
 		\t# Clean duplicated metadata and license files before python -m installer\n\t$(FIND) $(PKG_INSTALL_DIR) -type f \\( -name AUTHORS -o -name LICENSE -o -name COPYING \\) -delete || true\n\t$(FIND) $(PKG_INSTALL_DIR) -type f -path "*/.dist-info/licenses/*" -delete || true
 		' feeds/packages/lang/python/python3-package.mk
@@ -437,7 +437,7 @@ else
 		https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/include/openssl-module.mk
 fi
 
-[[ $REPO_BRANCH =~ master ]] || clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang #nlbwmon
+[[ $REPO_BRANCH =~ master|25 ]] || clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang #nlbwmon
 delpackage "luci-app-filetransfer luci-app-turboacc"
 clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box
 clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb \
@@ -503,7 +503,7 @@ sed -Ei '{
 	sed -i 's/transmission-daemon/transmission-daemon +transmission-web-control/' feeds/luci/applications/luci-app-transmission/Makefile
 
 [[ "$TARGET_DEVICE" =~ armvirt ]] && sed -i '/qbittorrent/d' .config
-[[ $REPO_BRANCH =~ master ]] && {
+[[ $REPO_BRANCH =~ master|25 ]] && {
 	sed -i '/deluge/d' .config
 	delpackage "ca-certificates" "luci-app-nikki"
 }
