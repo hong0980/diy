@@ -332,7 +332,8 @@ set_config (){
 		automount autosamba diffutils patch luci-app-diskman luci-app-poweroff luci-app-filebrowser \
 		luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote \
 		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter luci-app-ddns-go \
-		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2 luci-app-diskman-js
+		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2 luci-app-diskman-js \
+		luci-app-filebrowser-js
 
 	add_package autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall \
 				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-ksmbd luci-app-wizard \
@@ -396,7 +397,7 @@ clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
 		luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
 		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
 		python-pyasn1 python-pyxdg python-rencode python-setproctitle python-twisted \
-		sunpanel transmission qBittorrent-static luci-app-diskman-js
+		sunpanel transmission qBittorrent-static luci-app-diskman-js luci-app-filebrowser-js
 
 if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
@@ -409,10 +410,10 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 	fi
 	[[ $REPO_BRANCH =~ master|24|25 ]] && {
-		sed -i '/^define Py3Build\/Install\/Default/a \
-		\t# Clean duplicated metadata and license files before python -m installer\n\t$(FIND) $(PKG_INSTALL_DIR) -type f \\( -name AUTHORS -o -name LICENSE -o -name COPYING \\) -delete || true\n\t$(FIND) $(PKG_INSTALL_DIR) -type f -path "*/.dist-info/licenses/*" -delete || true
-		' feeds/packages/lang/python/python3-package.mk
-		sed -i 's#"\$(PYTHON3_PKG_BUILD_DIR)"/openwrt-build/\$(PYTHON3_PKG_WHEEL_NAME)-\$(PYTHON3_PKG_WHEEL_VERSION)-\*.whl#$(PYTHON3_PKG_BUILD_DIR)/openwrt-build/*\$(PYTHON3_PKG_WHEEL_VERSION)*.whl#' feeds/packages/lang/python/python3-package.mk
+		# sed -i '/^define Py3Build\/Install\/Default/a \
+		# \t# Clean duplicated metadata and license files before python -m installer\n\t$(FIND) $(PKG_INSTALL_DIR) -type f \\( -name AUTHORS -o -name LICENSE -o -name COPYING \\) -delete || true\n\t$(FIND) $(PKG_INSTALL_DIR) -type f -path "*/.dist-info/licenses/*" -delete || true
+		# ' feeds/packages/lang/python/python3-package.mk
+		# sed -i 's#"\$(PYTHON3_PKG_BUILD_DIR)"/openwrt-build/\$(PYTHON3_PKG_WHEEL_NAME)-\$(PYTHON3_PKG_WHEEL_VERSION)-\*.whl#$(PYTHON3_PKG_BUILD_DIR)/openwrt-build/*\$(PYTHON3_PKG_WHEEL_VERSION)*.whl#' feeds/packages/lang/python/python3-package.mk
 		sed -Ei '
 			s/^(PKG_VERSION:=).*/\169.0.2/;
 			s/^(PKG_HASH:=).*/\1735896e78a4742605974de002ac60562d286fa8051a7e2299445e8e8fbb01aa6/
@@ -440,12 +441,14 @@ fi
 [[ $REPO_BRANCH =~ master|25 ]] || clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang #nlbwmon
 delpackage "luci-app-filetransfer luci-app-turboacc"
 clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box
+clone_dir vernesong/OpenClash luci-app-openclash
+clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
+clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
+clone_dir xiaorouji/openwrt-passwall-packages chinadns-ng geoview trojan-plus
 clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb \
 		luci-app-advancedplus luci-app-arpbind luci-app-ddns-go luci-app-gecoosac \
 		luci-app-istorex luci-app-pushbot luci-app-quickstart luci-app-store \
-		luci-app-syncdial luci-lib-taskd luci-lib-xterm taskd \
-		luci-app-openclash luci-app-passwall luci-app-passwall2
-clone_dir xiaorouji/openwrt-passwall-packages chinadns-ng geoview trojan-plus
+		luci-app-syncdial luci-lib-taskd luci-lib-xterm taskd
 
 color cy "自定义设置.... "
 wget -qO package/base-files/files/etc/banner git.io/JoNK8

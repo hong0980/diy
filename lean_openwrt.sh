@@ -391,11 +391,14 @@ git_clone
 # git diff ./ >> ../output/t.patch || true
 clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
 clone_dir immortalwrt/packages libdeflate libdht libutp libb64
+clone_dir vernesong/OpenClash luci-app-openclash
+clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
+clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
 clone_dir xiaorouji/openwrt-passwall-packages chinadns-ng geoview trojan-plus
-clone_dir kiddin9/kwrt-packages lua-maxminddb luci-app-bypass luci-app-arpbind \
-		luci-app-pushbot luci-app-store luci-app-syncdial luci-lib-taskd luci-lib-xterm taskd \
-		gecoosac luci-app-gecoosac luci-app-quickstart luci-app-advancedplus luci-app-istorex \
-		luci-app-homeproxy luci-app-openclash luci-app-passwall luci-app-passwall2
+clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb \
+		luci-app-advancedplus luci-app-arpbind luci-app-ddns-go luci-app-gecoosac \
+		luci-app-istorex luci-app-pushbot luci-app-quickstart luci-app-store \
+		luci-app-syncdial luci-lib-taskd luci-lib-xterm taskd
 clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
 		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
