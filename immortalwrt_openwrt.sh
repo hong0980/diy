@@ -414,6 +414,7 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 		# \t# Clean duplicated metadata and license files before python -m installer\n\t$(FIND) $(PKG_INSTALL_DIR) -type f \\( -name AUTHORS -o -name LICENSE -o -name COPYING \\) -delete || true\n\t$(FIND) $(PKG_INSTALL_DIR) -type f -path "*/.dist-info/licenses/*" -delete || true
 		# ' feeds/packages/lang/python/python3-package.mk
 		# sed -i 's#"\$(PYTHON3_PKG_BUILD_DIR)"/openwrt-build/\$(PYTHON3_PKG_WHEEL_NAME)-\$(PYTHON3_PKG_WHEEL_VERSION)-\*.whl#$(PYTHON3_PKG_BUILD_DIR)/openwrt-build/*\$(PYTHON3_PKG_WHEEL_VERSION)*.whl#' feeds/packages/lang/python/python3-package.mk
+		sed -i 's/PYPI_NAME:=Mako/PYPI_NAME:=mako/i' feeds/packages/lang/python/python-mako/Makefile
 		sed -Ei '
 			s/^(PKG_VERSION:=).*/\169.0.2/;
 			s/^(PKG_HASH:=).*/\1735896e78a4742605974de002ac60562d286fa8051a7e2299445e8e8fbb01aa6/
