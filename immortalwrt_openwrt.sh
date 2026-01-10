@@ -336,7 +336,7 @@ set_config (){
 		luci-app-filebrowser-js
 
 	add_package autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall \
-				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-ksmbd luci-app-wizard \
+				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard \
 				luci-app-miaplus luci-app-watchdog default-settings-chn luci-app-package-manager
 }
 
@@ -508,10 +508,10 @@ sed -Ei '{
 	sed -i 's/transmission-daemon/transmission-daemon +transmission-web-control/' feeds/luci/applications/luci-app-transmission/Makefile
 
 [[ "$TARGET_DEVICE" =~ armvirt ]] && sed -i '/qbittorrent/d' .config
-# [[ $REPO_BRANCH =~ master|25 ]] && {
-# 	sed -i '/deluge/d' .config
-# 	delpackage "ca-bundle" "luci-app-nikki"
-# }
+[[ $REPO_BRANCH =~ master|25 ]] && {
+	sed -i '/deluge/d' .config
+	# delpackage "ca-bundle" "luci-app-nikki"
+}
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
 make defconfig 1>/dev/null 2>&1
