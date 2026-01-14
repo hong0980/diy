@@ -377,7 +377,7 @@ echo "REPO_BRANCH=$REPO_BRANCH" >> $GITHUB_ENV
 echo -e "$(color cy "拉取源码 $REPO ${REPO_BRANCH#*-}")\c"
 begin_time=$(date '+%H:%M:%S')
 git clone -q -b $REPO_BRANCH $REPO_URL openwrt # --depth 1
-cd openwrt
+cd openwrt || exit
 status
 # [[ $REPO == openwrt && $REPO_BRANCH == master ]] && git reset --hard 914eb43
 echo -e "$(color cy '更新软件....')\c"
@@ -442,7 +442,7 @@ fi
 
 [[ $REPO_BRANCH =~ master|25 ]] || clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang #nlbwmon
 delpackage "luci-app-filetransfer luci-app-turboacc"
-clone_dir sbwml/openwrt_helloworld shadowsocks-rust xray-core sing-box
+clone_dir sbwml/openwrt_helloworld shadowsocks-rust sing-box
 clone_dir vernesong/OpenClash luci-app-openclash
 clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
 clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
@@ -450,7 +450,7 @@ clone_dir xiaorouji/openwrt-passwall-packages chinadns-ng geoview trojan-plus
 clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb \
 		luci-app-advancedplus luci-app-arpbind luci-app-ddns-go luci-app-gecoosac \
 		luci-app-istorex luci-app-pushbot luci-app-quickstart luci-app-store \
-		luci-app-syncdial luci-lib-taskd luci-lib-xterm taskd
+		luci-app-syncdial luci-lib-taskd luci-lib-xterm taskd xray-core
 
 color cy "自定义设置.... "
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
