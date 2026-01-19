@@ -413,13 +413,13 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 		# sed -i '/^define Py3Build\/Install\/Default/a \
 		# \t# Clean duplicated metadata and license files before python -m installer\n\t$(FIND) $(PKG_INSTALL_DIR) -type f \\( -name AUTHORS -o -name LICENSE -o -name COPYING \\) -delete || true\n\t$(FIND) $(PKG_INSTALL_DIR) -type f -path "*/.dist-info/licenses/*" -delete || true
 		# ' feeds/packages/lang/python/python3-package.mk
-		[[ $REPO_BRANCH =~ 24 ]] && \
-		sed -i 's#"\$(PYTHON3_PKG_BUILD_DIR)"/openwrt-build/\$(PYTHON3_PKG_WHEEL_NAME)-\$(PYTHON3_PKG_WHEEL_VERSION)-\*.whl#$(PYTHON3_PKG_BUILD_DIR)/openwrt-build/*\$(PYTHON3_PKG_WHEEL_VERSION)*.whl#' feeds/packages/lang/python/python3-package.mk
-
-		sed -Ei '
-			s/^(PKG_VERSION:=).*/\169.0.2/;
-			s/^(PKG_HASH:=).*/\1735896e78a4742605974de002ac60562d286fa8051a7e2299445e8e8fbb01aa6/
-		' feeds/packages/lang/python/python-setuptools/Makefile
+		[[ $REPO_BRANCH =~ 24 ]] && {
+			sed -i 's#"\$(PYTHON3_PKG_BUILD_DIR)"/openwrt-build/\$(PYTHON3_PKG_WHEEL_NAME)-\$(PYTHON3_PKG_WHEEL_VERSION)-\*.whl#$(PYTHON3_PKG_BUILD_DIR)/openwrt-build/*\$(PYTHON3_PKG_WHEEL_VERSION)*.whl#' feeds/packages/lang/python/python3-package.mk
+			sed -Ei '
+				s/^(PKG_VERSION:=).*/\169.0.2/;
+				s/^(PKG_HASH:=).*/\1735896e78a4742605974de002ac60562d286fa8051a7e2299445e8e8fbb01aa6/
+			' feeds/packages/lang/python/python-setuptools/Makefile
+		}
 		grep -q -- '--ci false' feeds/packages/lang/rust/Makefile || sed -i '/build \\/a\\t--ci false \\' feeds/packages/lang/rust/Makefile
 	}
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy luci-app-nikki"
