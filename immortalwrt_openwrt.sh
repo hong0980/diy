@@ -440,7 +440,7 @@ else
 		https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/include/openssl-module.mk
 fi
 
-[[ $REPO_BRANCH =~ master|25 ]] || clone_dir openwrt/packages docker dockerd containerd docker-compose runc golang #nlbwmon
+[[ $REPO_BRANCH =~ master|25 ]] || clone_dir openwrt/packages docker dockerd containerd docker-compose runc #nlbwmon
 delpackage "luci-app-filetransfer luci-app-turboacc"
 clone_dir sbwml/openwrt_helloworld shadowsocks-rust sing-box xray-core
 clone_dir vernesong/OpenClash luci-app-openclash
@@ -451,6 +451,9 @@ clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb \
 		luci-app-advancedplus luci-app-arpbind luci-app-ddns-go luci-app-gecoosac \
 		luci-app-istorex luci-app-pushbot luci-app-quickstart luci-app-store \
 		luci-app-syncdial luci-lib-taskd luci-lib-xterm taskd
+
+rm -rf feeds/packages/lang/golang && \
+git clone -q https://github.com/sbwml/packages_lang_golang -b 26.x feeds/packages/lang/golang
 
 color cy "自定义设置.... "
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
