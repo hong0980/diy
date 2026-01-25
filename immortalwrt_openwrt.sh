@@ -420,7 +420,7 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 			# 	s/^(PKG_HASH:=).*/\1735896e78a4742605974de002ac60562d286fa8051a7e2299445e8e8fbb01aa6/
 			# ' feeds/packages/lang/python/python-setuptools/Makefile
 		}
-		# grep -q -- '--ci false' feeds/packages/lang/rust/Makefile || sed -i '/build \\/a\\t--ci false \\' feeds/packages/lang/rust/Makefile
+		sed -i 's/download-ci-llvm=true/download-ci-llvm=false/g' feeds/packages/lang/rust/Makefile || true
 	}
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy luci-app-nikki"
 	#add_package "axel luci-app-gecoosac" luci-app-istorex luci-app-partexp
