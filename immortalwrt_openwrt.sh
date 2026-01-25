@@ -420,7 +420,7 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 				s/^(PKG_HASH:=).*/\1735896e78a4742605974de002ac60562d286fa8051a7e2299445e8e8fbb01aa6/
 			' feeds/packages/lang/python/python-setuptools/Makefile
 		}
-		grep -q -- '--ci false' feeds/packages/lang/rust/Makefile || sed -i '/build \\/a\\t--ci false \\' feeds/packages/lang/rust/Makefile
+		# grep -q -- '--ci false' feeds/packages/lang/rust/Makefile || sed -i '/build \\/a\\t--ci false \\' feeds/packages/lang/rust/Makefile
 	}
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy luci-app-nikki"
 	#add_package "axel luci-app-gecoosac" luci-app-istorex luci-app-partexp
@@ -452,6 +452,7 @@ clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb \
 		luci-app-istorex luci-app-pushbot luci-app-quickstart luci-app-store \
 		luci-app-syncdial luci-lib-taskd luci-lib-xterm taskd
 
+! grep -q "GO_VERSION.*1.26.*" feeds/packages/lang/golang/golang/Makefile 2>/dev/null && \
 rm -rf feeds/packages/lang/golang && \
 git clone -q https://github.com/sbwml/packages_lang_golang -b 26.x feeds/packages/lang/golang
 
