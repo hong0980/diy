@@ -377,7 +377,7 @@ echo "REPO_BRANCH=$REPO_BRANCH" >> $GITHUB_ENV
 echo -e "$(color cy "拉取源码 $REPO ${REPO_BRANCH#*-}")\c"
 begin_time=$(date '+%H:%M:%S')
 git clone -q -b $REPO_BRANCH $REPO_URL openwrt # --depth 1
-cd openwrt || exit
+[[ -d openwrt ]] && cd openwrt || exit
 status
 # [[ $REPO == openwrt && $REPO_BRANCH == master ]] && git reset --hard 914eb43
 echo -e "$(color cy '更新软件....')\c"
@@ -410,15 +410,8 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 	fi
 	[[ $REPO_BRANCH =~ master|24|25 ]] && {
-		# sed -i '/^define Py3Build\/Install\/Default/a \
-		# \t# Clean duplicated metadata and license files before python -m installer\n\t$(FIND) $(PKG_INSTALL_DIR) -type f \\( -name AUTHORS -o -name LICENSE -o -name COPYING \\) -delete || true\n\t$(FIND) $(PKG_INSTALL_DIR) -type f -path "*/.dist-info/licenses/*" -delete || true
-		# ' feeds/packages/lang/python/python3-package.mk
 		[[ $REPO_BRANCH =~ 24 ]] && {
 			sed -i 's#"\$(PYTHON3_PKG_BUILD_DIR)"/openwrt-build/\$(PYTHON3_PKG_WHEEL_NAME)-\$(PYTHON3_PKG_WHEEL_VERSION)-\*.whl#$(PYTHON3_PKG_BUILD_DIR)/openwrt-build/*\$(PYTHON3_PKG_WHEEL_VERSION)*.whl#' feeds/packages/lang/python/python3-package.mk
-			# sed -Ei '
-			# 	s/^(PKG_VERSION:=).*/\169.0.2/;
-			# 	s/^(PKG_HASH:=).*/\1735896e78a4742605974de002ac60562d286fa8051a7e2299445e8e8fbb01aa6/
-			# ' feeds/packages/lang/python/python-setuptools/Makefile
 		}
 		sed -i 's/download-ci-llvm=true/download-ci-llvm=false/g' feeds/packages/lang/rust/Makefile || true
 	}
@@ -427,9 +420,7 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
 else
 	create_directory "package/network/config/firewall4" "package/utils/ucode" "package/network/utils/fullconenat-nft" "package/libs/libmd" "package/kernel/bpf-headers"
-	clone_dir coolsnowwolf/lede automount ppp busybox parted r8152 firewall openssl \
-		# bpf-headers firewall4 ucode fullconenat fullconenat-nft libmd
-	# clone_dir coolsnowwolf/packages bash btrfs-progs gawk jq nginx-util pciutils curl
+	clone_dir coolsnowwolf/lede automount ppp busybox parted r8152 firewall openssls
 	[[ "$REPO_BRANCH" =~ 21 ]] && {
 		git_apply "https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/openwrt-21.02-dmesg.js.patch" "feeds/luci"
 		git_apply "https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/openwrt-21.02-syslog.js.patch" "feeds/luci"

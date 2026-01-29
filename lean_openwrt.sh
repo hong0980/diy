@@ -331,7 +331,8 @@ set_config (){
 			luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils \
 			patch luci-app-qbittorrent luci-app-nikki luci-app-homeproxy luci-app-deluge luci-app-transmission luci-app-aria2
 	add_package luci-app-filebrowser luci-app-passwall luci-app-ttyd luci-app-wizard luci-app-taskplan \
-			luci-app-ksmbd luci-app-miaplus luci-app-watchdog luci-theme-bootstrap luci-app-filebrowser-js
+			luci-app-ksmbd luci-app-miaplus luci-app-watchdog luci-theme-bootstrap luci-app-filebrowser-js \
+			luci-app-diskman-js
 	delpackage luci-app-ddns luci-app-autoreboot luci-app-wol luci-app-vlmcsd luci-app-filetransfer
 }
 
@@ -405,7 +406,7 @@ clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
 		luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
 		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
 		python-pyasn1 python-pyxdg python-rencode python-setproctitle python-twisted \
-		sunpanel transmission qBittorrent-static luci-app-filebrowser-js
+		sunpanel transmission qBittorrent-static luci-app-filebrowser-js luci-app-diskman-js
 
 REPO_BRANCH=$(sed -En 's/^src-git luci.*;(.*)/\1/p' feeds.conf.default)
 REPO_BRANCH=${REPO_BRANCH:-18.06}
