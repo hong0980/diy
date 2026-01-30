@@ -389,13 +389,16 @@ REPO_URL="https://github.com/coolsnowwolf/lede"
 SOURCE_NAME=$(basename $(dirname $REPO_URL))
 git_clone
 
+! grep -q "GO_VERSION.*1.26.*" feeds/packages/lang/golang/golang/Makefile 2>/dev/null && \
+rm -rf feeds/packages/lang/golang && \
+git clone -q https://github.com/sbwml/packages_lang_golang -b 26.x feeds/packages/lang/golang
 # git diff ./ >> ../output/t.patch || true
 clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
 clone_dir immortalwrt/packages libdeflate libdht libutp libb64
 clone_dir vernesong/OpenClash luci-app-openclash
 clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
 clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
-clone_dir xiaorouji/openwrt-passwall-packages chinadns-ng geoview trojan-plus
+clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview trojan-plus
 clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb \
 		luci-app-advancedplus luci-app-arpbind luci-app-ddns-go luci-app-gecoosac \
 		luci-app-istorex luci-app-pushbot luci-app-quickstart luci-app-store \
