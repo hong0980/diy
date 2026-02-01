@@ -1,0 +1,1055 @@
+<%+header%>
+<style>
+    .fb-container {
+        margin: 1rem auto; /* 水平居中显示，顶部边距为 1rem */
+        max-width: auto; /* 容器最大宽度 */
+        margin-top: 1rem; /* 顶部边距 */
+    }
+
+    .fb-container table {
+        width: 100%;
+    }
+
+    .fb-container td,
+    .fb-container th {
+        padding: 6px; /* 行高 */
+        border-bottom: 1px solid #e6e6e6;
+    }
+
+    .input-container {
+        display: flex; /* 使用flexbox布局 */
+        align-items: center; /* 垂直居中对齐 */
+        justify-content: center; /* 水平居中对齐 */
+    }
+
+    .input-container.float {
+        padding: 3px;
+        position: sticky;
+        border-radius: 8px;
+        z-index: 1 !important;
+        background-color: #7df9fd;
+    }
+
+    .fb-container #current-path {
+        width: 100%;
+    }
+
+    .folder-icon, .link-icon {
+        cursor: pointer; /* 鼠标样式 */
+    }
+
+    .file-icon:before, .link-icon:before, .folder-icon:before {
+        content: ''; /* 伪元素的内容为空 */
+        width: 1.5rem; /* 宽度 */
+        height: 1.5rem; /* 高度 */
+        position: relative; /* 相对定位 */
+        margin-right: 0.5rem; /* 右边间距 */
+        display: inline-block; /* 行内块元素 */
+        vertical-align: middle; /* 垂直居中 */
+        background-size: contain; /* 背景图自适应 */
+    }
+
+    .screen_button {
+        top: 0; /* 位于父元素顶部 */
+        right: 0; /* 右侧距离0 */
+        z-index: 99; /* 层级99，处于最顶层 */
+        line-height: 22px; /* 设置行高为22像素 */
+        position: absolute; /* 绝对定位 */
+        cursor: pointer; /* 设置鼠标光标为文本光标 */
+        color: #666; /* 文字颜色为深灰色 */
+        background-color: #ddd; /* 背景颜色为浅灰色 */
+        border-radius: 0px 0px 0px 5px; /* 边框圆角设置，左下角为5像素 */
+        padding: 4px 6px 0 4px; /* 上内边距4px，右内边距6px，下内边距0，左内边距4px */
+    }
+
+    .screen_button:hover {
+        background-color: #faf8f8;
+    }
+
+    .file-icon:before {
+        background-image: url(/luci-static/resources/fb/file-icon.png);
+    }
+
+    .folder-icon:before {
+        background-image: url(/luci-static/resources/fb/folder-icon.png);
+    }
+
+    .link-icon:before {
+        background-image: url(/luci-static/resources/fb/link-icon.png);
+    }
+
+    .menu-item {
+        color: #333;
+        display: block;
+        cursor: pointer;
+        padding: 5px 10px;
+        transition: all 0.3s ease-in-out;
+    }
+
+    .menu-item:hover {
+        color: #007bff;
+        background-color: #fff;
+    }
+
+    .menu-item:not(:last-child) {
+        border-bottom: 1px solid #ddd;
+    }
+
+    .swal2-title {
+        font-size: 20px;
+        line-height: 30px;
+        font-weight: 550;
+    }
+
+    .swal2-styled.swal2-cancel,
+    .swal2-styled.swal2-confirm {
+        color: #fff;
+        cursor: pointer;
+        position: sticky;
+        padding: 6px 10px;
+        border-radius: 5px;
+        transform: translateY(0);
+        transition: all 0.3s ease-in-out;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .swal2-styled.swal2-confirm {
+        background-color: hsl(195, 100%, 71%);
+    }
+
+    .swal2-styled.swal2-cancel {
+        background-color: hsl(0, 100%, 71%);
+    }
+
+    .swal2-styled.swal2-confirm:hover {
+        background-color: hsl(195, 97%, 34%)
+    }
+
+    .swal2-styled.swal2-cancel:hover {
+        background-color: rgb(177, 35, 35);
+    }
+
+    .swal2-styled.swal2-cancel:hover,
+    .swal2-styled.swal2-confirm:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .swal2-styled.swal2-confirm:focus {
+        box-shadow: 0 0 0 2px rgba(0, 136, 182, 0.527);
+    }
+
+    .swal2-popup.swal2-toast .swal2-html-container {
+        text-align: center;
+    }
+
+    .ace_gutter-cell {
+        padding-left: 6px !important;
+    }
+
+    .swal2-input:focus, .swal2-select:focus,
+    .swal2-textarea:focus, .swal2-file:focus {
+        outline: 0;
+        text-decoration: none;
+        border-color: rgba(235, 120, 67, 0.8) !important;
+        box-shadow: inset 0 1px 3px hsla(206, 100%, 50%, 0.01), 0 0 10px rgba(249, 128, 72, 0.8) !important;
+        /*border-color: rgba(82, 168, 236, 0.8) !important;
+        box-shadow: inset 0 1px 3px hsla(0, 0%, 99%, 0.01), 0 0 8px rgba(82, 168, 236, 0.6) !important;*/
+    }
+
+    .swal2-timer-progress-bar {
+        height: 3px !important;
+        background: #ff0000 !important;
+    }
+
+    @media screen and (max-device-width: 600px) {
+        .cbi-titles {
+            width: 20px; /* 设置一个固定宽度，根据需求调整 */
+            overflow: hidden; /* 控制溢出隐藏 */
+            white-space: nowrap; /* 防止换行 */
+            text-overflow: ellipsis; /* 显示省略号 */
+        }
+
+        .input-container input[type="text"] {
+            flex: 1;
+        }
+
+        .menu-item {
+            font-size: 12px;
+            padding: 3px 8px;
+        }
+
+        .display-none {
+            display: none !important;
+        }
+    }
+</style>
+<script src="<%=resource%>/fb/sweetalert2.all.min.js?v=11.10.8"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.33.1/ace.min.js?v=1.33.1"></script>
+<h2 name="content"><%:File management%></h2>
+<div class="cbi-map-descr"><b><%:Right click%></b> <%:You can modify the names and downloads of files and directories, permissions, add directories and files, and edit scripts.%></div>
+<div class="fb-container">
+    <div class="input-container">
+        <input id="createnewfile" type="button" class="btn cbi-button cbi-button-add" value="<%:Create%>" style="margin-right: 6px;">
+        <input id="current-path" type="text" title="<%:If the path is the root directory, add '&' at the first character%>" value="/" />
+        <input id="godirectory" type="button" class="btn cbi-button cbi-button-apply" value="<%:Go to directory%>">
+        <input id="uploadfile" type="button" class="btn cbi-button cbi-button-action important" style="margin-left: 6px;" value="<%:Upload%>">
+        <input id="selectedremove" type="button" class="btn cbi-button cbi-button-remove" style="margin-left: 6px;" value="<%:Delete%>">
+    </div>
+    <div id="file-list"></div>
+</div>
+<script type="text/javascript">
+// console.log(Object.keys(Swal));
+(function () {
+    let currentPath, customMenu = null;
+    var listElem = document.getElementById("file-list"),
+        pathElem = document.getElementById("current-path"),
+        isMobileDevice = /Android|iPhone|iPod|iPad|BlackBerry|Mobile|MQQBrowser|JUC|Fennec|wOSBrowser|WebOS|Symbian|Windows Phone|HarmonyOS|HyperOS/i.test(navigator.userAgent),
+        swalConfig = {
+            showCancelButton: true, cancelButtonText: '<%:Cancel%>', confirmButtonText: '<%:Confirm%>'
+        };
+
+    listElem.onclick = handleClick;
+    document.getElementById('uploadfile').addEventListener('click', uploadfile);
+    document.getElementById('godirectory').addEventListener('click', godirectory);
+    document.getElementById('selectedremove').addEventListener('click', deletefiles);
+    document.getElementById('createnewfile').addEventListener('click', createnewfile);
+    pathElem.addEventListener("keyup", function (event) { event.key === "Enter" && godirectory() });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        let isFloating = false, navHeight = document.querySelector('header').offsetHeight;
+        var inputContainer = document.querySelector('.input-container'),
+            originalWidth = inputContainer.offsetWidth,
+            originalPosition = document.querySelector('header').getBoundingClientRect().bottom + document.querySelector('h2').offsetHeight + window.scrollY;
+        isMobileDevice && (navHeight = navHeight === 0 ? 40 : navHeight < 40 ? navHeight * 10 : navHeight);
+        window.addEventListener('scroll', function() {
+            var shouldFloat = window.pageYOffset > originalPosition;
+            isFloating = shouldFloat !== isFloating ? shouldFloat : isFloating;
+            inputContainer.style = `top: ${isFloating ? navHeight : 0}px; width: ${originalWidth}px; z-index: 1 !important;`;
+            inputContainer.classList.toggle('float', isFloating);
+        });
+    });
+
+    function FileExt(v) { return v.split('.').pop().toLowerCase(); }
+    function ensureString(v) { return typeof v === 'string' ? v.trim() : '' }
+    function concatPath(p, f = '') { return `${p.replace(/\/*$/, '/')}${f}` }
+    function colorMessage(n, c) { return `<span style="color: ${c};">${n}</span>` }
+    function getInitPath() { return new URLSearchParams(location.search).get('path') || '/' }
+
+    function removeCustomMenu() {
+        customMenu && customMenu.remove();
+        customMenu = null;
+    }
+
+    function resolveFilePath(n) {
+        return /^&\//.test(n)
+            ? n.replace(/^&/, '')
+            : n.startsWith(currentPath)
+                ? n
+                : concatPath(currentPath, n.replace(/^\//, ''));
+    }
+
+    function setStyle(r, s) {
+        var k = document.querySelector(r);
+        if (k) {
+            Object.entries(s).forEach(function([t, v]) {
+                k.style.setProperty(t, v, 'important');
+            });
+        }
+    }
+
+    function convertPermissions(p) {
+        var v, o = '',
+            m = { 'r': 4, 'w': 2, 'x': 1, 't': 1, '-': 0 };
+        for (let i = 1; i < p.length; i += 3) {
+            v = p.slice(i, i + 3).split('').reduce(function (a, c) {
+                return a + m[c];
+            }, 0);
+            o += v.toString(8);
+        }
+        return o;
+    }
+
+    function getMode(path) {
+        var fileExt = FileExt(path),
+            modes = {'js':'javascript','html':'html','css':'css','php':'php',
+            'py':'python','rb':'ruby','sh':'sh','sql':'sql','json':'json','xml':'xml',
+            'yaml':'yaml','lua':'lua','htm':'html'};
+        return modes[fileExt] || 'textile';
+    }
+
+    function swalNotification(html = '', icon = 'success') {
+        Swal.fire({
+            html, toast: true, timerProgressBar: true,
+            icon, timer: 2000, showConfirmButton: false,
+            didOpen: function (toast) {
+                toast.addEventListener('mouseenter', Swal.stopTimer);
+                toast.addEventListener('mouseleave', Swal.resumeTimer);
+            }
+        });
+    }
+
+    function alert(msg, color = '#3699ff') {
+        var body = document.body,
+            alertMask = document.createElement('div'),
+            alertContent = document.createElement('div'),
+            alertContainer = document.createElement('div');
+
+        alertMask.id = 'alertMask';
+        alertContent.id = 'alertContent';
+        alertContainer.id = 'alertContainer';
+        alertContent.innerHTML = `<pre>\n${msg}\n\n</pre>`;
+        alertMask.style.cssText = `
+            top: 0; left: 0; width: 100%; height: 100%; display: flex; position: fixed; align-items: center;
+            z-index: 1 !important; justify-content: center; background-color: rgba(0, 0, 0, 0.5);
+        `;
+        alertContent.style.cssText = "overflow: auto; max-height: calc(70vh - 100px);";
+        alertContainer.style.cssText = `
+            width: 70%; overflow: auto; max-width: 900px; max-height: 70vh; position: relative;
+            border-radius: 7px; background-color: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        `;
+
+        body.appendChild(alertMask).appendChild(alertContainer).appendChild(alertContent);
+        document.querySelector('#alertContent pre').style.cssText = `
+            margin: 0; color: ${color}; font-size: 14px; line-height: 1.5;
+            text-align: left; font-family: Consolas; background-color: #212121;
+        `;
+
+        alertMask.onclick = function (e) {
+            e.target === alertMask && body.removeChild(alertMask);
+        };
+    }
+
+    function Draggable() {
+        var x, y,
+            p = document.querySelector('[aria-live="assertive"]');
+
+        function handleMouseMove(e) {
+            var b = e.clientX,
+                c = e.clientY;
+            p.style.position = 'fixed';
+            p.style.top = `${c - y}px`;
+            p.style.left = `${b - x}px`;
+        }
+
+        function handleMouseUp() {
+            document.removeEventListener('mouseup', handleMouseUp);
+            document.removeEventListener('mousemove', handleMouseMove);
+        }
+
+        document.addEventListener('mouseover', function(e) {
+            p.style.cursor = (e.target === p) ? 'move' : 'auto';
+            p.title = (e.target === p) ? '<%:Window can be dragged%>' : '';
+        });
+
+        p.addEventListener('mousedown', function(e) {
+            if (e.target !== p) return;
+            x = e.offsetX;
+            y = e.offsetY;
+            document.addEventListener('mouseup', handleMouseUp);
+            document.addEventListener('mousemove', handleMouseMove);
+            e.preventDefault();
+        });
+    }
+
+    function calculateTotalSize(path) {
+        let unitIndex = 0;
+        var units = ['B', 'KB', 'MB', 'GB'];
+        var sizeFactor = { K: 1024, M: 1024 ** 2, G: 1024 ** 3 };
+        let totalSize = path
+            .filter(function (line) { return !/^(d|l)/.test(line) })
+            .reduce(function (total, line) {
+                var [, , , , size] = line.trim().split(/\s+/),
+                    suffix = size.slice(-1).toUpperCase(),
+                    parsedSize = parseFloat(size) * (sizeFactor[suffix] || 1);
+                return isNaN(parsedSize) ? total : total + parsedSize;
+            }, 0);
+        while (totalSize >= 1024 && unitIndex < units.length - 1) {
+            totalSize /= 1024; unitIndex++;
+        }
+        return `${totalSize.toFixed(2)} ${units[unitIndex]}`;
+    }
+
+    function sendRequest(url, params, method = 'GET') {
+        url = `<%=url("admin/system/")%>${url}`
+        return new Promise(function(resolve, reject) {
+            var xhr = new XMLHttpRequest(),
+                urlWithParams = method === 'GET' ? `${url}?${params.toString()}` : url;
+            xhr.open(method, urlWithParams);
+            xhr.onload = function() {
+                return xhr.status === 200 ? resolve(JSON.parse(xhr.responseText)) : reject(alert(xhr.statusText, 'red'));
+            };
+            xhr.onerror = function() {
+                reject(alert('Network error', 'red'));
+            };
+            xhr.send(method === 'POST' ? params : null);
+        });
+    }
+
+    function godirectory(filePath = '') {
+        var path = ensureString(filePath) ? filePath : resolveFilePath(pathElem.value.trim());
+        var pathcolor = colorMessage(path, 'red')
+        checkdirectory(path).then(function (exists) {
+            exists
+                ? update_list(path)
+                : Swal.fire({
+                    ...swalConfig, confirmButtonText: '<%:Create%>',
+                    text: '<%:Do you want to create this directory?%>',
+                    title: `<%:${pathcolor} directory does not exist%>`,
+                    didOpen: function() { Draggable(); }
+                }).then(function (result) {
+                    if (!result.isConfirmed) return;
+                    createnewfile(path);
+                });
+        });
+    }
+
+    function update_list(path, opt = false, upload = false) {
+        path = concatPath(path);
+        if (currentPath === path && !upload) return;
+        var params = new URLSearchParams({ path });
+        sendRequest('file_list', params).then(function (res) {
+            var isSuccess = res.stat;
+            refresh_list(isSuccess ? res.data : []);
+            if (isSuccess) currentPath = pathElem.value = path;
+        });
+        if (!opt) history.pushState({ path }, null, `?path=${path}`);
+    }
+
+    function renderDocumentEditor(path, content) {
+        var isace = typeof ace === 'object';
+        Swal.fire({
+            ...swalConfig, showConfirmButton: false, padding: '2px',
+            confirmButtonText: '<%:Save%>', allowOutsideClick: false, width: '900px',
+            title: path, inputValue: true, cancelButtonText: '<%:Dismiss%>', html: isace
+                ?  `<label id="readonly" class="swal2-checkbox" style="margin: 0 12px 0 30px;">
+                        <input type="checkbox" value="1" checked>
+                        <span class="swal2-label"><%:Read-only%></span>
+                    </label>
+                    <label id="wrap" class="swal2-checkbox" style="margin: 0;">
+                        <input type="checkbox" value="1" checked>
+                        <span class="swal2-label"><%:wrap%></span>
+                    </label>
+                    <div id="editorContainer" style="position: relative; height: 450px;">
+                        <div id="editorContent" style="height: 100%;"></div>
+                        <button id="fullscreen" class="screen_button">拉伸</button>
+                        <button id="closescreen" class="screen_button" style="display: none;">恢复</button>
+                    </div>`
+                :  `<label id="readonly" class="swal2-checkbox" style="margin: 0 12px 0 30px;">
+                        <input type="checkbox" value="1" checked>
+                        <span class="swal2-label"><%:Read-only%></span>
+                    </label>
+                    <textarea id="Swaleditor" style="height: 450px; width: 100%; background-color: black; color: white; font-size: 16px"></textarea>`,
+            didOpen: function() {
+                function toggleFullscreen() {
+                    var fullscreen = document.getElementById('fullscreen'),
+                        closescreen = document.getElementById('closescreen'),
+                        ace_content = document.querySelector('.ace_content'),
+                        swalActions = document.querySelector('.swal2-actions'),
+                        editorContainer = document.getElementById('editorContainer'),
+                        isFullscreen = editorContainer.classList.toggle('fullScreen');
+
+                        if (isFullscreen) {
+                            editorContainer.style.cssText = 'height: 100%; position: fixed; left: 0; right: 0; bottom: 0; z-index: 1; overflow: hidden;';
+                            closescreen.style.display = 'block';
+                            fullscreen.style.display = 'none';
+                            swalActions.style.display = 'none';
+                        } else {
+                            editorContainer.style.cssText = 'position: relative; height: 450px;';
+                            closescreen.style.display = 'none';
+                            fullscreen.style.display = 'block';
+                            swalActions.style.display = 'flex';
+                        }
+                }
+
+                var ch2 = document.getElementById('wrap'),
+                    ch1 = document.getElementById('readonly'),
+                    cfm = document.querySelector('.swal2-confirm'),
+                    acs = document.querySelector('.swal2-actions');
+
+                acs.append(ch1, ch2 || '');
+                setStyle('.swal2-title', { padding: '5px 0 1px' });
+                setStyle('.swal2-html-container', { margin: '2px 2px 2px' });
+                setStyle('.swal2-container .swal2-actions', { margin: '.2em auto 0' });
+                if (isace) {
+                    var Theme, mode = getMode(path),
+                        editor = ace.edit('editorContent'),
+                        ace_md = [["textile","text"],["sh","Shell"],["lua","Lua"],["html","HTML"],["javascript","JavaScript"],["css","CSS"],["python","Python"],["php","PHP"],["json","JSON"],["xml","XML"],["yaml","YAML"],["sql","SQL"],["makefile","Makefile"],["markdown","markdown"],["ini","ini"],["diff","patch(diff)"]],
+                        ace_td = [["ambiance","Ambiance"],["chaos","Chaos"],["chrome","Chrome"],["cloud9_day","Cloud9 Day"],["cloud9_night","Cloud9 Night"],["cloud9_night_low_color","Cloud9 Night Low Color"],["clouds","Clouds"],["clouds_midnight","Clouds Midnight"],["cobalt","Cobalt"],["crimson_editor","Crimson Editor"],["dawn","Dawn"],["dracula","Dracula"],["dreamweaver","Dreamweaver"],["eclipse","Eclipse"],["github","GitHub"],["github_dark","GitHub Dark"],["gob","Gob"],["gruvbox","Gruvbox"],["gruvbox_dark_hard","Gruvbox Dark Hard"],["gruvbox_light_hard","Gruvbox Light Hard"],["idle_fingers","Idle Fingers"],["iplastic","IPlastic"],["katzenmilch","Katzenmilch"],["kr_theme","KR Theme"],["kuroir","Kuroir"],["merbivore","Merbivore"],["merbivore_soft","Merbivore Soft"],["mono_industrial","Mono Industrial"],["monokai","Monokai"],["nord_dark","Nord Dark"],["one_dark","One Dark"],["pastel_on_dark","Pastel on Dark"],["solarized_dark","Solarized Dark"],["solarized_light","Solarized Light"],["sqlserver","SQL Server"],["terminal","Terminal"],["textmate","TextMate"],["tomorrow","Tomorrow"],["tomorrow_night","Tomorrow Night"],["tomorrow_night_blue","Tomorrow Night Blue"],["tomorrow_night_bright","Tomorrow Night Bright"],["tomorrow_night_eighties","Tomorrow Night Eighties"],["twilight","Twilight"],["vibrant_ink","Vibrant Ink"],["xcode","Xcode"]],
+                        createDropdown = function(id, opts, value, txt) {
+                            var cnt = document.createElement('div'),
+                                lbl = document.createElement('label'),
+                                sel = document.createElement('select');
+
+                            sel.id = id;
+                            sel.style.cssText = 'width: 70px; margin-left: 6px;';
+                            opts.forEach(function([v, t]) { sel.appendChild(new Option(t, v)) });
+                            sel.value = value;
+                            lbl.textContent = txt;
+                            sel.addEventListener('change', function() {
+                                id === 'td'
+                                    ? editor.setTheme("ace/theme/" + sel.value)
+                                    : editor.getSession().setMode("ace/mode/" + sel.value);
+                            });
+
+                            cnt.append(lbl, sel);
+                            return cnt;
+                        };
+
+                    if (mode === 'textile' && content.trim() !== '') {
+                        if (content.trim().match(/^#!\/.*\/lua/)) mode = 'lua';
+                        else if (content.trim().match(/^#!\/.*(ba)?sh/)) mode = 'sh';
+                    }
+
+                    editor.getSession().setValue(content);
+                    editor.setOptions({
+                        printMarginColumn: -1, showPrintMargin: true, readOnly: true,
+                        fontSize: "16px", fontFamily: "Consolas, monospace", wrap: true,
+                        mode: 'ace/mode/' + mode, theme: "ace/theme/" + (Theme || 'monokai')
+                    });
+                    editor.focus();
+
+                    var con = document.createElement('div'),
+                        h2e = document.querySelector('.swal2-title'),
+                        em = editor.getOptions().mode.split('/').pop(),
+                        et = editor.getOptions().theme.split('/').pop(),
+                        md = createDropdown('md', ace_md, em, "<%:Type%>"),
+                        td = createDropdown('td', ace_td, et, "<%:Theme%>"),
+                        tn = document.querySelector('[aria-labelledby="swal2-title"]');
+
+                    con.append(td, md);
+                    con.id = 'con';
+                    md.style.cssText = 'margin-left: 15px;';
+                    con.style.cssText = 'display: none; justify-content: center; align-items: center; height: 36px;';
+                    tn.insertAdjacentElement('afterbegin', con);
+                    var endEvent = isMobileDevice ? 'touchend' : 'mouseleave',
+                        startEvent = isMobileDevice ? 'touchstart' : 'mouseenter';
+
+                    ch1.addEventListener('change', function(e) {
+                        editor.setReadOnly(e.target.checked);
+                        cfm.style.display = e.target.checked ? 'none' : 'block';
+                    });
+
+                    ch2.addEventListener('change', function(e) {
+                        editor.setOption("wrap", e.target.checked);
+                    });
+
+                    h2e.addEventListener(startEvent, function() {
+                        con.style.display = 'flex';
+                        h2e.style.display = 'none';
+                    });
+
+                    con.addEventListener(endEvent, function(e) {
+                        if (!isMobileDevice || !['md', 'td'].includes(e.target.id)) {
+                            con.style.display = 'none';
+                            h2e.style.display = 'block';
+                        }
+                    });
+
+                    document.getElementById('fullscreen').addEventListener('click', toggleFullscreen);
+                    document.getElementById('closescreen').addEventListener('click', toggleFullscreen);
+                } else {
+                    document.getElementById('Swaleditor').innerHTML = content;
+                    document.querySelector('.swal2-label').innerHTML = '<%:Save%>'
+                    ch1.addEventListener('change', function(e) {
+                        cfm.style.display = e.target.checked ? 'none' : 'block';
+                    });
+                }
+                Draggable();
+            },
+            preConfirm: function() {
+                return isace ? ace.edit('editorContent').getValue() : document.getElementById('Swaleditor').value;
+            }
+        }).then(function(result) {
+            if (!result.isConfirmed || result.value === content) return;
+            Swal.fire({
+                ...swalConfig, title: '<%:Confirm Save%>', icon: 'question', allowOutsideClick: false,
+                html: `${path} ${colorMessage('<%:Are you sure you want to save the changes?%>', 'orange')}`,
+                didOpen: function() { Draggable(); }
+            }).then(function(confirmResult) {
+                if (!confirmResult.isConfirmed) return;
+                var formData = new FormData();
+                formData.append('path', path);
+                formData.append('content', result.value);
+                sendRequest('handleDocument', formData, 'POST')
+                .then(function(res) {
+                    if (res.success) update_list(path.replace(/\/[^/]*\/?$/, '/'), undefined, true)
+                    swalNotification(`${path} <br> ${colorMessage(res.msg, res.success ? 'blue' : 'red')}`);
+                });
+            });
+        });
+    }
+
+    function editDocument(path) {
+        var params = new URLSearchParams({ path });
+        sendRequest('handleDocument', params)
+            .then(function (res) {
+                res.success
+                   ? renderDocumentEditor(path, res.data)
+                   : swalNotification(`${path} <br> ${colorMessage(res.msg, 'red')}`);
+            });
+    }
+
+    function deletefiles(filename) {
+        function deleteSingleFile(name) {
+            var path = concatPath(currentPath, name);
+            path = path.replace(/(.*) ->.*/, '$1');
+            var params = new URLSearchParams({ path });
+            sendRequest('file_tools', params).then(function (res) {
+                var isSuccess = res.stat,
+                    message = isSuccess
+                        ? `${colorMessage(name, 'blue')} <%:successfully deleted!%>`
+                        : `${colorMessage(name, 'red')} <%:deleted failed%>`;
+                swalNotification(message, isSuccess ? 'success' : 'error');
+                isSuccess && refresh_list(res.data);
+            });
+        };
+
+        filename = ensureString(filename);
+        if (filename) {
+            return Swal.fire({
+                ...swalConfig, icon: 'warning', iconColor: 'red',
+                html: `<%:confirm deletion%> ${colorMessage(filename, 'red')} ?`,
+                didOpen: function() { Draggable(); }
+            }).then(function (result) {
+                if (!result.isConfirmed) return;
+                deleteSingleFile(filename);
+            });
+        }
+        var selectedFiles = Array.from(document.querySelectorAll('.file-checkbox:checked'))
+            .map(function (checkbox) {
+                return checkbox.closest('tr').dataset
+            });
+        var selectedFileNames = selectedFiles.map(function (file) {
+            return file.filename.length > 28 ? `${file.filename.slice(0, 20)}...${file.filename.slice(-8)}` : file.filename;
+        });
+        Swal.fire({
+            ...swalConfig, icon: 'warning', iconColor: 'red',
+            html: `<%:confirm deletion%> ?<br>${colorMessage(selectedFileNames.join('<br>'), 'red')}`,
+            didOpen: function() { Draggable(); }
+        }).then(function (result) {
+            if (!result.isConfirmed) return;
+            selectedFiles.forEach(function (file) {
+                deleteSingleFile(file.filename)
+            });
+        });
+    }
+
+    function createLink(targetPath, isDirectory) {
+        var targetPathcolor = colorMessage(targetPath, 'blue');
+        Swal.fire({
+            ...swalConfig, input: 'text', icon: 'info', inputValue: '/',
+            title: `<%:Enter ${targetPathcolor} target link path%>`,
+            inputAttributes: { style: 'margin: 8px 100px; width: auto; height: 36px;' },
+            html: isDirectory !== '0' ? '' :
+            '<div><input id="checkbox" class="swal2-checkbox" type="checkbox"/>' +
+            '<label for="checkbox"> <%:Create hard link%></label></div>',
+            didOpen: function() { Draggable(); }
+        }).then(function (result) {
+            if (!result.isConfirmed) return;
+            var linkPath = result.value,
+                isHardLinkElement = document.getElementById('checkbox'),
+                isHardLink = isHardLinkElement ? isHardLinkElement.checked : false,
+                params = new URLSearchParams({
+                    targetPath: targetPath, linkPath: linkPath, isHardLink: isHardLink
+                });
+            sendRequest('file_tools', params).then(function (res) {
+                if (res.stat) {
+                    refresh_list(res.data);
+                    update_list(linkPath.replace(/\/[^/]*\/?$/, '/'), undefined, true);
+                    swalNotification(`${colorMessage(linkPath, 'blue')} <%:Link created successfully%>`, 'success');
+                } else {
+                    swalNotification(`${colorMessage(linkPath, 'red')} <%:Link creation failed%>`, 'error');
+                }
+            });
+        });
+    }
+
+    function renamefile(oldname) {
+        var oldnamecolor = colorMessage(oldname, 'blue');
+        oldname = oldname.includes(' -> ') ? oldname.replace(/\s*->.*/, '') : oldname;
+        checkdirectory(concatPath(currentPath, oldname)).then(function (exists) {
+            Swal.fire({
+                ...swalConfig, inputValue: oldname, iconColor: 'red', input: 'text',
+                inputAttributes: { style: 'margin: 10px 100px; width: auto; height: 38px;' },
+                title: `<%:Enter ${oldnamecolor} new name%>`, icon: 'warning',
+                didOpen: function() { Draggable(); },
+                didRender: function () {
+                    setTimeout(function () {
+                        var input = Swal.getInput();
+                        exists ? input.select() : input.setSelectionRange(0, oldname.lastIndexOf('.'));
+                        input.onmouseover = function () { this.focus() }
+                    }, 0)
+                },
+                inputValidator: function (value) {
+                    return /^[^\/]*$/.test(value) ? '' : '<%:The name contains a non-canonical string%>'
+                }
+            }).then(function (result) {
+                if (!result.isConfirmed) return;
+                var newname = (result.value || '').trim();
+                if (newname !== oldname) {
+                    var params = new URLSearchParams({
+                        newname: concatPath(currentPath, newname), oldname: concatPath(currentPath, oldname)
+                    });
+                    sendRequest('file_tools', params).then(function (res) {
+                        if (res.stat) {
+                            refresh_list(res.data);
+                            swalNotification(`${colorMessage(oldname, 'blue')} <%:Renaming successful!%>`, 'success');
+                        } else {
+                            swalNotification(`${colorMessage(oldname, 'red')} <%:Renaming failed%>`, 'error');
+                        }
+                    });
+                }
+            }).catch(function () {
+                swalNotification(`${colorMessage(oldname, 'red')} <%:Renaming failed%>`, 'error');
+            });
+        });
+    }
+
+    function modifypermissions(filepath, type) {
+        var oldPermissions = convertPermissions(type),
+            filenamecolor = `${colorMessage(filepath, 'blue')}`;
+        Swal.fire({
+            ...swalConfig, icon: 'warning', iconColor: 'red', inputValue: oldPermissions,
+            title: `<%:Please select new permissions for ${filenamecolor}%>`, input: 'select',
+            inputAttributes: { style: 'height: auto; margin: 10px 25px; width: auto; height: 34px; font-size: 14px;' },
+            inputOptions: {
+                777: '<%:777 - All users have read, write and execute permissions%>',
+                755: '<%:755 - All users have read and execute permissions, but only the file owner has write permissions%>',
+                700: '<%:700 - Only the file owner has read, write, and execute permissions%>',
+                666: '<%:666 - All users have read and write permissions but no execute permissions%>',
+                644: '<%:644 - All users have read permissions, but only the file owner has write permissions%>',
+                600: '<%:600 - Only the file owner has read and write permissions%>',
+                555: '<%:555 - All users have execute permissions, but only the file owner has read and write permissions%>',
+                444: '<%:444 - All users have read permissions but no write and execute permissions%>',
+            },
+            didOpen: function() { Draggable(); }
+        }).then(function (result) {
+            if (!result.isConfirmed) return;
+            var permissions = result.value,
+                params = new URLSearchParams({
+                    permissions, path: concatPath(currentPath, filepath)
+                });
+            sendRequest('file_tools', params).then(function (res) {
+                var isSuccess = res.stat,
+                    message = isSuccess
+                        ? `${colorMessage(filepath, 'blue')} <%:Permissions modified successfully%>`
+                        : `${colorMessage(filepath, 'red')} <%:Permission modification failed%>`;
+                swalNotification(message, isSuccess ? 'success' : 'error');
+                isSuccess && refresh_list(res.data);
+            });
+        });
+    }
+
+    function createnewfile(filePath = '') {
+        filePath = ensureString(filePath);
+        Swal.fire({
+            ...swalConfig, title: '<%:Enter name%>：',
+            html: `
+                <input id="newname" class="swal2-input" style="margin: 10px 25px; width: auto; height: 35px;" placeholder="<%:For example: example.txt%>" type="text" title="<%:You can enter a file name or directory name%>"><br><br>
+                <input id="is_dir" class="swal2-checkbox" type="checkbox">
+                <label for="is_dir"><b><%:Create as directory%></b></label><br>
+                <span id="directorytip" class="hidden" style="font-size: smaller;"><%:If the path is the root directory, add '&' at the first character%></span>
+            `, input: 'select', inputValue: '644',
+            inputAttributes: { style: 'height: auto; margin: 10px 25px; width: auto; height: 34px; font-size: 14px;' },
+            inputOptions: {
+                777: '<%:777 - All users have read, write and execute permissions%>',
+                755: '<%:755 - All users have read and execute permissions, but only the file owner has write permissions%>',
+                700: '<%:700 - Only the file owner has read, write, and execute permissions%>',
+                666: '<%:666 - All users have read and write permissions but no execute permissions%>',
+                644: '<%:644 - All users have read permissions, but only the file owner has write permissions%>',
+                600: '<%:600 - Only the file owner has read and write permissions%>',
+                555: '<%:555 - All users have execute permissions, but only the file owner has read and write permissions%>',
+                444: '<%:444 - All users have read permissions but no write and execute permissions%>',
+            },
+            didOpen: function () { //在弹出框打开后执行的操作。
+                if (filePath) {
+                    document.getElementById('newname').value = filePath;
+                    document.getElementById('is_dir').checked = true;
+                    document.getElementById('is_dir').dispatchEvent(new Event('change'));
+                }
+                document.getElementById("newname").focus();
+                Draggable();
+            },
+            preConfirm: function () { //在用户点击确认按钮之前执行的操作。
+                var newname = document.getElementById('newname').value,
+                    perms = document.getElementById('swal2-select').value,
+                    is_dir = document.getElementById('is_dir').checked;
+                return { newname, is_dir, perms };
+            },
+            didRender: function () { //在弹出框渲染完成后执行的操作。
+                var directorytip = document.getElementById('directorytip'),
+                    is_dir = document.getElementById('is_dir');
+                if (is_dir && directorytip) {
+                    is_dir.addEventListener('change', function () {
+                        directorytip.classList.toggle('hidden', !is_dir.checked);
+                    });
+                }
+            }
+        }).then(function (result) {
+            if (!result.isConfirmed) return;
+            var data,
+                { newname, is_dir, perms } = result.value,
+                newfile = (filePath && !is_dir)
+                    ? newname
+                    : (filePath && is_dir)
+                        ? filePath
+                        : resolveFilePath(newname);
+
+            if (!is_dir) {
+                Swal.fire({
+                    ...swalConfig, title: '<%:Enter file content%>',
+                    inputPlaceholder: '<%:Enter text here%>', input: 'textarea',
+                    inputAttributes: { style: "margin: 10px 25px; width: auto;" },
+                    didOpen: function() { Draggable(); }
+                }).then(function (result) {
+                    if (!result.isConfirmed) return;
+                    data = result.value; executeOrder();
+                });
+            } else executeOrder();
+
+            function executeOrder() {
+                var formData = new FormData();
+                formData.append('newfile', newfile);
+                if (data) formData.append('data', data);
+                formData.append('perms', perms);
+                formData.append('is_dir', is_dir);
+                sendRequest('createnewfile', formData, 'POST').then(function (res) {
+                    if (res.stat) {
+                        is_dir && update_list(newfile || '');
+                        refresh_list(res.data);
+                        swalNotification(`${colorMessage(newfile, 'blue')} <%:File created successfully!%>`, 'success');
+                    } else {
+                        swalNotification(`${colorMessage(newfile, 'red')} <%:File creation failed!%>`, 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    function installipk(filename) {
+        var filepath = concatPath(currentPath, filename);
+        Swal.fire({
+            ...swalConfig, icon: 'info',
+            html: `<%:Confirm installation%> ${colorMessage(filename, 'red')} ?`,
+            preConfirm: function () {
+                var params = new URLSearchParams({ filepath });
+                sendRequest('file_tools', params).then(function (res) {
+                    res.stat
+                        ? alert(res.data)
+                        : swalNotification(`${colorMessage(filename, 'red')} <%:installation failed%>`, 'error');
+                });
+            },
+            didOpen: function() { Draggable(); },
+            allowOutsideClick: function () { return !Swal.isLoading() }
+        });
+    }
+
+    function uploadfile() {
+        Swal.fire({
+            ...swalConfig, title: '<%:upload file%>', input: 'file',
+            inputAttributes: { style: "margin: 10px 25px;", accept: '/*' },
+            didOpen: function() { Draggable(); }
+        }).then(function (result) {
+            if (!result.isConfirmed) return;
+            var file = result.value,
+                formData = new FormData();
+            formData.append('file', file);
+            formData.append('filename', file.name);
+            formData.append('filedir', concatPath(currentPath));
+            sendRequest('uploadfile', formData, 'POST').then(function (res) {
+                if (res.stat) {
+                   update_list(res.filedir, undefined, true);
+                   swalNotification(`${colorMessage(res.filename, 'blue')} <%:File has been uploaded to%> ${colorMessage(res.filedir, 'blue')}`, 'success');
+                } else {
+                    swalNotification(`${colorMessage(res.filename, 'red')} <%:upload failed%>`, 'error');
+                }
+            });
+        });
+    }
+
+    function dpfile(filename, path = currentPath, download = '') {
+        var linkfile,
+            match = filename.match(/(.*) -> (.*)/);
+        if (match !== null) {
+            linkfile = 1;
+            path = match[1];
+            filename = match[2];
+        }
+        var params = new URLSearchParams({ path, filename, download, linkfile }),
+            url = `<%=url("admin/system/dpfile")%>?${params.toString()}`;
+        if (!download) return window.open(url);
+        Swal.fire({
+            ...swalConfig, icon: 'info',
+            title: `${(download === 'open') ? '<%:Confirm open%>' : '<%:Confirm download%>'} ${colorMessage(filename, 'blue')} ?`,
+            didOpen: function() { Draggable(); }
+        }).then(function (result) {
+            if (result.isConfirmed) window.open(url);
+        });
+    }
+
+    function checkdirectory(dir_path) {
+        var params = new URLSearchParams({ dir_path });
+        return sendRequest('file_tools', params)
+        .then(function (res) {
+            return Promise.resolve(res.stat);
+        })
+        .catch(function () {
+            swalNotification(`${colorMessage('<%:Failed to check the directory%>', 'red')}`, 'error');
+        });
+    }
+
+    function handleClick(event) {
+        function hasClass(element, className) { return element.classList.contains(className) }
+        function getFileElem(elem) {
+            while (elem && !(elem.className && elem.className.includes('-icon'))) {
+                elem = elem.parentNode;
+            }
+            return elem || '';
+        }
+        var targetElem = event.target,
+            fileElem = getFileElem(targetElem),
+            infoElem = targetElem.parentNode.parentNode.dataset;
+
+        if (hasClass(targetElem, 'rename')) renamefile(infoElem.filename);
+        else if (hasClass(targetElem, 'install')) installipk(infoElem.filename);
+        else if (hasClass(targetElem, 'cbi-button-remove')) deletefiles(infoElem.filename);
+        else if (hasClass(targetElem, 'cbi-button-edit')) editDocument(currentPath + infoElem.filename);
+        else if (hasClass(targetElem, 'download')) dpfile(infoElem.filename, currentPath, true);
+        if (fileElem) {
+            if (hasClass(fileElem, 'back-root-icon')) update_list('/');
+            // else if (hasClass(fileElem, 'file-icon')) dpfile(infoElem.filename);
+            else if (hasClass(fileElem, 'back-icon')) update_list(currentPath.replace(/\/[^/]*\/?$/, '/'));
+            else if (hasClass(fileElem, 'folder-icon')) update_list(concatPath(currentPath, fileElem.parentNode.dataset.filename));
+            else if (hasClass(fileElem, 'link-icon')) {
+                var match = infoElem.filename.match(/(.*) -> (.*)/);
+                if (match !== null) {
+                    var [path, filename] = match.slice(1),
+                        filePath = filename.replace(/^\/*/, '/');
+                    checkdirectory(filePath).then(function (exists) {
+                        exists
+                            ? update_list(filePath)
+                            : (filename.match(/\//g) || []).length > 1
+                                ? update_list(filePath.match(/(.+\/)(.+)/)[1])
+                                : swalNotification(`${colorMessage(sourcefile, 'red')} <%:It’s the current directory%> ${colorMessage(filename, 'blue')}`, 'info');
+                    });
+                }
+            }
+        }
+    }
+
+    function refresh_list(filePath) {
+        let folderCount = 0, fileCount = 0, totalSize = 0;
+        if (filePath && filePath.length > 0) {
+            totalSize = calculateTotalSize(filePath),
+            folderCount = filePath.filter(function (line) {return line.startsWith('d');}).length,
+            fileCount = filePath.filter(function (line) { return /^[^dl]/.test(line) }).length;
+        }
+        var html = `<table>
+            <tr>
+                <td colspan="7" class="center">
+                    ${getInitPath() !== '/' ? '<input type="button" class="btn cbi-button cbi-button-apply back-root-icon display-none" style="margin-right: 10px;" value="<%:Go to root directory%>">' : ''}
+                    <b class="display-none"><%:There are currently ${fileCount} files,%> ${folderCount} <%:directory.%> <%:total file size%>：${totalSize}</b>
+                    ${getInitPath() !== '/' ? '<input type="button" class="btn cbi-button cbi-button-apply back-icon" style="margin-left: 10px;" value="<%:Back to previous%>">' : ''}
+                </td>
+            </tr>
+            <tr>
+                <th class="display-none"></th>
+                <th class="th left"><%:name%></th>
+                <th class="th left display-none"><%:owner%></th>
+                <th class="th left"><%:size%></th>
+                <th class="th left display-none"><%:Change the time%></th>
+                <th class="th left display-none"><%:Rights%></th>
+                <th class="th"><%:File operations%></th>
+            </tr>`;
+            for (var i = 0; i < filePath.length; i++) {
+                var [type, _, owner, _, size, month, day, _, ...fullNameParts] = filePath[i].trim().split(/\s+/),
+                    fullName = fullNameParts.join(' '),
+                    isLink = ['z', 'l', 'x'].includes(type[0]),
+                    icon = type[0] === 'd' ? "folder-icon" : (isLink ? "link-icon" : "file-icon"),
+                    truncatedName = fullName.length > 20 ? `${fullName.slice(0, 13)}...${fullName.slice(-7)}` : fullName,
+                    installButtonHtml = fullName.endsWith(".ipk") ? `<input type="button" class="btn cbi-button cbi-button-apply install" value="<%:Install%>">` : "",
+                    editButtonHtml = (type[0] !== 'd' && !isLink) ? `<input type="button" class="btn cbi-button cbi-button-edit" value="<%:open%>">` : "";
+                html += `
+                <tr class="cbi-rowstyle-${(i % 2) + 1} cbi-titles" data-filename="${fullName}" data-isdir="${Number(type[0] === 'd' || type[0] === 'z')}" data-authority="${type}" data-linktarget="${(/->.*/.test(fullName)) && fullName}">
+                    <td class="td display-none">
+                        <input type="checkbox" class="file-checkbox" name="${fullName}"/>
+                    </td>
+                    <td class="td ${icon}">
+                        <b title="${fullName}">${truncatedName}</b>
+                    </td>
+                    <td class="td left display-none">${owner}</td>
+                    <td class="td left">${size}</td>
+                    <td class="td left display-none">${month} ${day}</td>
+                    <td class="td left display-none">[ ${convertPermissions(type)} ] ${type}</td>
+                    <td class="td right">
+                        ${editButtonHtml}
+                        <input type="button" class="btn cbi-button cbi-button-add download display-none" value="<%:download%>">
+                        <input type="button" class="btn cbi-button cbi-button-apply rename" value="<%:Rename%>">
+                        ${installButtonHtml}
+                    </td>
+                </tr>`;
+            }
+        html += '</table>';
+        listElem.innerHTML = html;
+        var deleteButton = document.getElementById('selectedremove');
+        document.querySelectorAll('.file-checkbox').forEach(function (checkbox) {
+            checkbox.addEventListener('change', function () {
+                deleteButton.style.display = document.querySelectorAll('.file-checkbox:checked').length > 0 ? 'block' : 'none';
+            });
+        });
+        deleteButton.style.display = 'none';
+    }
+
+    function createCustomMenu(filename, targetElem) {
+        removeCustomMenu();
+        var isFile = targetElem.isdir === '0',
+            menuItems = [
+                { label: "<%:Refresh Page%>", action: function() { location.reload(); } },
+                { label: "<%:Rename%>", action: function() { renamefile(filename); } },
+                ...(isFile ? [{label: "<%:Edit Document%>", action: function() { editDocument(currentPath + filename); } }] : []),
+                { label: isFile ? "<%:download file%>" : "<%:Download catalog%>", action: function() { dpfile(filename, currentPath, true); } },
+                { label: isFile ? "<%:open file%>" : "<%:open Directory%>", action: function() {
+                    isFile ? dpfile(filename, currentPath, 'open') : update_list(concatPath(currentPath, filename))
+                } },
+                { label: "<%:Create file (directory)%>", action: function() { createnewfile(); } },
+                { label: "<%:Delete file (directory)%>", action: function() { deletefiles(filename); } },
+                { label: "<%:Modify permissions%>", action: function() { modifypermissions(filename, targetElem.authority); } },
+                { label: "<%:Create link%>", action: function() { createLink(currentPath + filename, targetElem.isdir); } },
+                ...(currentPath.split('/').length > 2 ? [{ label: "<%:Back to previous%>", action: function() { update_list(currentPath.replace(/\/[^/]*\/?$/, '/')); } }] : [])
+            ];
+        customMenu = document.createElement('ul');
+        customMenu.style.cssText = 'margin: 0; padding: 5px 0; position: fixed; font-size: 15px; border-radius: 5px; z-index: 1 !important; border: 1px solid #dadada; background-color: #f5f5f5; font-family: Arial, sans-serif; box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.1);';
+        menuItems.forEach(function (item) {
+            var menuItemElem = Object.assign(document.createElement('div'), { className: 'menu-item', innerText: item.label });
+            menuItemElem.addEventListener('click', item.action);
+            customMenu.appendChild(menuItemElem);
+        });
+
+        var { clientX, clientY } = event,
+            bottomEdge = clientY + menuItems.length * 30 > window.innerHeight,
+            position = bottomEdge
+                ? { bottom: `${window.innerHeight - clientY - 30}px`, left: `${clientX}px` }
+                : { top: `${clientY}px`, left: `${clientX}px` };
+        Object.assign(customMenu.style, position);
+        document.body.appendChild(customMenu);
+    }
+
+    document.addEventListener('contextmenu', function (event) {
+        var filenameElement = event.target.closest('[data-filename]');
+        filenameElement
+            ? (event.preventDefault(), createCustomMenu(filenameElement.dataset.filename, filenameElement.dataset))
+            : removeCustomMenu();
+    });
+
+    document.addEventListener('click', removeCustomMenu);
+    document.addEventListener('DOMContentLoaded', function (evt) {
+        update_list(getInitPath(), true);
+    });
+
+    window.addEventListener('popstate', function (evt) {
+        update_list(evt.state ? evt.state.path : '/', true);
+    });
+})();
+</script>
+<%+footer%>

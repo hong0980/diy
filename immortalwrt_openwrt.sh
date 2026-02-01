@@ -332,8 +332,7 @@ set_config (){
 		automount autosamba diffutils patch luci-app-diskman luci-app-poweroff luci-app-filebrowser \
 		luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote \
 		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter luci-app-ddns-go \
-		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2 luci-app-diskman-js \
-		luci-app-filebrowser-js
+		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2 luci-app-diskman-js
 
 	add_package autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall \
 				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard \
@@ -397,7 +396,7 @@ clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
 		luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
 		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
 		python-pyasn1 python-pyxdg python-rencode python-setproctitle python-twisted \
-		sunpanel transmission qBittorrent-static luci-app-diskman-js luci-app-filebrowser-js
+		sunpanel transmission qBittorrent-static luci-app-diskman-js
 
 if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 	if [[ $REPO =~ openwrt ]]; then

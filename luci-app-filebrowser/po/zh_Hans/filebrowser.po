@@ -1,0 +1,284 @@
+msgid "File management"
+msgstr "文件管理"
+
+msgid "Go to directory"
+msgstr "转到目录"
+
+msgid "Upload to current directory"
+msgstr "上传到当前目录"
+
+msgid "confirm deletion"
+msgstr "确定删除"
+
+msgid "create new file"
+msgstr "创建新文件"
+
+msgid "Enter ${oldnamecolor} new name"
+msgstr "输入 ${oldnamecolor} 新的文件名"
+
+msgid "Back to previous"
+msgstr "返回上一级"
+
+msgid "Rename"
+msgstr "重命名"
+
+msgid "download"
+msgstr "下载"
+
+msgid "Confirm"
+msgstr "确认"
+
+msgid "Delete file (directory)"
+msgstr "删除文件(目录)"
+
+msgid "Create file (directory)"
+msgstr "创建文件(目录)"
+
+msgid "successfully deleted!"
+msgstr "删除成功！"
+
+msgid "Renaming successful!"
+msgstr "重命名成功！"
+
+msgid "File has been uploaded to"
+msgstr "文件已上传到"
+
+msgid "upload failed"
+msgstr "上传失败"
+
+msgid "name"
+msgstr "名称"
+
+msgid "owner"
+msgstr "所有者"
+
+msgid "size"
+msgstr "大小"
+
+msgid "Change the time"
+msgstr "修改时间"
+
+msgid "Rights"
+msgstr "权限"
+
+msgid "File operations"
+msgstr "文件操作"
+
+msgid "Renaming failed"
+msgstr "重命名失败"
+
+msgid "deleted failed"
+msgstr "删除失败"
+
+msgid "Permissions modified successfully"
+msgstr "权限修改成功"
+
+msgid "Permission modification failed"
+msgstr "权限修改失败"
+
+msgid "Please select new permissions for ${filenamecolor}"
+msgstr "请为 ${filenamecolor} 选择新权限"
+
+msgid "Modify permissions"
+msgstr "修改权限"
+
+msgid "Select the required permissions"
+msgstr "选择需要的权限"
+
+msgid "777 - All users have read, write and execute permissions"
+msgstr "777 - 所有用户都具有读取、写入和执行权限"
+
+msgid "755 - All users have read and execute permissions, but only the file owner has write permissions"
+msgstr "755 - 所有用户都具有读取和执行权限，但只有文件所有者具有写入权限"
+
+msgid "700 - Only the file owner has read, write, and execute permissions"
+msgstr "700 - 只有文件所有者具有读取、写入和执行权限"
+
+msgid "666 - All users have read and write permissions but no execute permissions"
+msgstr "666 - 所有用户都具有读取和写入权限，但没有执行权限"
+
+msgid "644 - All users have read permissions, but only the file owner has write permissions"
+msgstr "644 - 所有用户都具有读取权限，但只有文件所有者具有写入权限"
+
+msgid "600 - Only the file owner has read and write permissions"
+msgstr "600 - 只有文件所有者具有读取和写入权限"
+
+msgid "555 - All users have execute permissions, but only the file owner has read and write permissions"
+msgstr "555 - 所有用户都具有执行权限，但只有文件所有者具有读取权限和写入权限"
+
+msgid "444 - All users have read permissions but no write and execute permissions"
+msgstr "444 - 所有用户都具有读取权限，但没有写入权限和执行权限"
+
+msgid "There are currently ${fileCount} files,"
+msgstr "当前有 ${fileCount} 文件，"
+
+msgid "directory."
+msgstr "个目录。"
+
+msgid "total file size"
+msgstr "文件总大小"
+
+msgid "Go to root directory"
+msgstr "进入根目录"
+
+msgid "Successful installation"
+msgstr "安装成功"
+
+msgid "installation failed"
+msgstr "安装失败"
+
+msgid "Confirm installation"
+msgstr "确定安装"
+
+msgid "Enter name"
+msgstr "输入名称"
+
+msgid "For example: example.txt"
+msgstr "例如：example.txt"
+
+msgid "Enter file content"
+msgstr "输入文件内容"
+
+msgid "Enter text here"
+msgstr "在这里输入文本"
+
+msgid "File created successfully!"
+msgstr "文件创建成功！"
+
+msgid "File creation failed!"
+msgstr "文件创建失败！"
+
+msgid "upload file"
+msgstr "上传文件"
+
+msgid "Create as directory"
+msgstr "创建为目录"
+
+msgid "You can enter a file name or directory name"
+msgstr "可以输入文件名或者目录名"
+
+msgid "download file"
+msgstr "下载文件"
+
+msgid "Confirm download"
+msgstr "确定下载"
+
+msgid "Do you want to create this directory?"
+msgstr "是否要创建该目录？"
+
+msgid "${pathcolor} directory does not exist"
+msgstr "${pathcolor} 目录不存在"
+
+msgid "If the path is the root directory, add '&' at the first character"
+msgstr "如路径是根目录在首字符添加'&'"
+
+msgid "open file"
+msgstr "打开文件"
+
+msgid "Confirm open"
+msgstr "确定打开"
+
+msgid "Download catalog"
+msgstr "下载目录"
+
+msgid "open Directory"
+msgstr "打开目录"
+
+msgid "Refresh Page"
+msgstr "刷新页面"
+
+msgid "It’s the current directory"
+msgstr "就是当前目录的"
+
+msgid "The name contains a non-canonical string"
+msgstr "名称包含了不是规范字符串"
+
+msgid "Failed to check the directory"
+msgstr "检查目录失败"
+
+msgid "owner"
+msgstr "所有者"
+
+msgid "size"
+msgstr "大小"
+
+msgid "Download folder"
+msgstr "下载目录"
+
+msgid "View Files"
+msgstr "查看文件"
+
+msgid "Create link"
+msgstr "创建链接"
+
+msgid "Enter ${targetPathcolor} target link path"
+msgstr "输入 ${targetPathcolor} 的链接目标路径"
+
+msgid "Create hard link"
+msgstr "创建硬链接"
+
+msgid "Link created successfully"
+msgstr "链接创建成功"
+
+msgid "Link creation failed"
+msgstr "链接创建失败"
+
+msgid "Edit Document"
+msgstr "编辑文档"
+
+msgid "Failed to load document"
+msgstr "加载文档失败"
+
+msgid "An error occurred while loading the document"
+msgstr "加载文档时发生错误"
+
+msgid "Document saved successfully"
+msgstr "文档保存成功"
+
+msgid "Failed to save document"
+msgstr "保存文档失败"
+
+msgid "An error occurred while saving the document"
+msgstr "保存文档时出错"
+
+msgid "Confirm Save"
+msgstr "确认保存"
+
+msgid "Are you sure you want to save the changes?"
+msgstr "您确定要保存更改吗？"
+
+msgid "%s file does not exist"
+msgstr "%s 文件不存在"
+
+msgid "Unable to read file: %s"
+msgstr "无法读取文件: %s"
+
+msgid "Unable to open file: %s"
+msgstr "无法打开文件： %s"
+
+msgid "Theme"
+msgstr "主题"
+
+msgid "You can modify the names and downloads of files and directories, permissions, add directories and files, and edit scripts."
+msgstr "您可以修改文件和目录的名称和下载、权限、添加目录和文件以及编辑脚本。"
+
+msgid "Right click"
+msgstr "右键点击"
+
+msgid "open"
+msgstr "打开"
+
+msgid "wrap"
+msgstr "换行"
+
+msgid "NAS"
+msgstr "网络存储"
+
+msgid "Scroll to tail"
+msgstr "滚动到尾部"
+
+msgid "Scroll to head"
+msgstr "滚动到顶部"
+
+msgid "Reverse Log Order"
+msgstr "反转日志顺序"
