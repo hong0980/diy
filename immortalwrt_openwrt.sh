@@ -154,8 +154,8 @@ clone_dir() {
 
 	[[ $REPO_BRANCH =~ master|23|24|25 ]] || {
 		[[ $repo_url =~ hong0980/diy ]] && set -- "$@" luci-app-wizard
-		[[ $repo_url =~ coolsnowwolf/packages ]] && set -- "$@" "bash" \
-				"btrfs-progs" "gawk" "jq" "nginx-util" "pciutils" "curl"
+		# [[ $repo_url =~ coolsnowwolf/packages ]] && set -- "$@" "bash" \
+		# 		"btrfs-progs" "gawk" "jq" "nginx-util" "pciutils" "curl"
 	}
 	[[ $repo_url =~ sbwml && $REPO =~ openwrt ]] && set -- "$@" "dns2socks" "dns2tcp" \
 		"ipt2socks" "microsocks" "naiveproxy" "pdnsd" "redsocks2" "tcping" "tuic-client" \
@@ -386,6 +386,8 @@ begin_time=$(date '+%H:%M:%S')
 status
 create_directory "package/A"
 set_config
+grep -q "PKG_VERSION:=1.90.0" feeds/packages/lang/rust/Makefile && \
+clone_dir coolsnowwolf/packages rust
 
 clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
 clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus mosdns \
@@ -412,7 +414,6 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 		[[ $REPO_BRANCH =~ 24 ]] && {
 			sed -i 's#"\$(PYTHON3_PKG_BUILD_DIR)"/openwrt-build/\$(PYTHON3_PKG_WHEEL_NAME)-\$(PYTHON3_PKG_WHEEL_VERSION)-\*.whl#$(PYTHON3_PKG_BUILD_DIR)/openwrt-build/*\$(PYTHON3_PKG_WHEEL_VERSION)*.whl#' feeds/packages/lang/python/python3-package.mk
 		}
-		sed -i 's/download-ci-llvm=true/download-ci-llvm=false/g' feeds/packages/lang/rust/Makefile || true
 	}
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy luci-app-nikki"
 	#add_package "axel luci-app-gecoosac" luci-app-istorex luci-app-partexp
