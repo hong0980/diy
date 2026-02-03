@@ -386,7 +386,7 @@ begin_time=$(date '+%H:%M:%S')
 status
 create_directory "package/A"
 set_config
-grep -q "PKG_VERSION:=1.90.0" feeds/packages/lang/rust/Makefile && \
+grep -qv "PKG_VERSION:=1.93.0" feeds/packages/lang/rust/Makefile && \
 clone_dir coolsnowwolf/packages rust
 
 clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
