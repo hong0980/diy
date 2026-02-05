@@ -258,6 +258,7 @@ set_config (){
 			lan_ip "192.168.2.150"
 			echo "FIRMWARE_TYPE=squashfs-combined" >> $GITHUB_ENV
 			add_busybox "lsusb lspci lsscsi lsof"
+			add_package "bcm53xx bcm47xx"
 			[[ $REPO_BRANCH =~ master|25 ]] || \
 			add_package "kmod-r8101 kmod-r8125 kmod-r8126 kmod-r8152 kmod-r8168"
 			;;
