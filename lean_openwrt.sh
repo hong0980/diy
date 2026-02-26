@@ -269,7 +269,7 @@ set_config (){
 			# clone_dir 'openwrt-18.06-k5.4' immortalwrt/immortalwrt uboot-rockchip arm-trusted-firmware-rockchip-vendor
 			sed -i "/interfaces_lan_wan/s/'eth1' 'eth0'/'eth0' 'eth1'/" target/linux/rockchip/*/*/*/*/02_network
 			;;
-		360-t7)
+		360T7)
 			cat >>.config<<-EOF
 			CONFIG_TARGET_mediatek=y
 			CONFIG_TARGET_mediatek_filogic=y

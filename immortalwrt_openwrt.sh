@@ -280,7 +280,7 @@ set_config (){
 			lan_ip "192.168.2.1"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
 			;;
-		360-t7)
+		360T7)
 			cat >>.config<<-EOF
 			CONFIG_TARGET_mediatek=y
 			CONFIG_TARGET_mediatek_filogic=y
