@@ -280,6 +280,17 @@ set_config (){
 			lan_ip "192.168.2.1"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
 			;;
+		360-t7)
+			cat >>.config<<-EOF
+			CONFIG_TARGET_mediatek=y
+			CONFIG_TARGET_mediatek_filogic=y
+			CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_qihoo_360t7=y
+			EOF
+			lan_ip "192.168.5.1"
+			export DEVICE_NAME="360T7"
+			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
+			add_package "automount autosamba luci-app-diskman luci-app-usb-printer"
+			;;
 		newifi-d2)
 			cat >>.config<<-EOF
 			CONFIG_TARGET_ramips=y
@@ -329,7 +340,7 @@ set_config (){
 			echo "FIRMWARE_TYPE=$TARGET_DEVICE" >> $GITHUB_ENV
 			;;
 	esac
-	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package \
+	[[ $TARGET_DEVICE =~ k2p|d2|360 ]] || add_package \
 		automount autosamba diffutils patch luci-app-diskman luci-app-poweroff luci-app-filebrowser \
 		luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote \
 		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter luci-app-ddns-go \

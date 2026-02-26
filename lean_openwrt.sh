@@ -269,6 +269,17 @@ set_config (){
 			# clone_dir 'openwrt-18.06-k5.4' immortalwrt/immortalwrt uboot-rockchip arm-trusted-firmware-rockchip-vendor
 			sed -i "/interfaces_lan_wan/s/'eth1' 'eth0'/'eth0' 'eth1'/" target/linux/rockchip/*/*/*/*/02_network
 			;;
+		360-t7)
+			cat >>.config<<-EOF
+			CONFIG_TARGET_mediatek=y
+			CONFIG_TARGET_mediatek_filogic=y
+			CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_qihoo_360t7=y
+			EOF
+			lan_ip "192.168.5.1"
+			export DEVICE_NAME="360T7"
+			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
+			add_package "automount autosamba luci-app-diskman luci-app-usb-printer"
+			;;
 		newifi-d2)
 			cat >>.config<<-EOF
 			CONFIG_TARGET_ramips=y
@@ -325,13 +336,13 @@ set_config (){
 			}
 			;;
 	esac
-	[[ $TARGET_DEVICE =~ k2p ]] || \
+	[[ $TARGET_DEVICE =~ k2p|360 ]] || \
 		add_package automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser \
 			luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote \
 			luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils \
 			patch luci-app-qbittorrent luci-app-nikki luci-app-homeproxy luci-app-deluge luci-app-transmission luci-app-aria2
 	add_package luci-app-filebrowser luci-app-passwall luci-app-ttyd luci-app-wizard luci-app-taskplan \
-			luci-app-ksmbd luci-app-miaplus luci-app-watchdog luci-theme-bootstrap luci-app-diskman-js
+			luci-app-ksmbd luci-app-miaplus luci-app-watchdog luci-theme-bootstrap luci-app-diskman-js luci-app-tinynote-js
 	delpackage luci-app-ddns luci-app-autoreboot luci-app-wol luci-app-vlmcsd luci-app-filetransfer
 }
 
@@ -408,7 +419,7 @@ clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
 		luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
 		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
 		python-pyasn1 python-pyxdg python-rencode python-setproctitle python-twisted \
-		sunpanel transmission qBittorrent-static luci-app-diskman-js
+		sunpanel transmission qBittorrent-static luci-app-diskman-js luci-app-tinynote-js
 
 REPO_BRANCH=$(sed -En 's/^src-git luci.*;(.*)/\1/p' feeds.conf.default)
 REPO_BRANCH=${REPO_BRANCH:-18.06}
