@@ -123,9 +123,9 @@ create_feed() {
 	local patch="$1"
 	shift
 	for z in $@; do
-	    local dir_path="$patch/$z"
-	    create_directory "$dir_path"
-	    ln -sf $(pwd)/$dir_path package/feeds/packages/$z 2>/dev/null
+		local dir_path="$patch/$z"
+		create_directory "$dir_path"
+		ln -sf $(pwd)/$dir_path package/feeds/packages/$z 2>/dev/null
 	done
 }
 
@@ -269,18 +269,30 @@ set_config (){
 			# clone_dir 'openwrt-18.06-k5.4' immortalwrt/immortalwrt uboot-rockchip arm-trusted-firmware-rockchip-vendor
 			sed -i "/interfaces_lan_wan/s/'eth1' 'eth0'/'eth0' 'eth1'/" target/linux/rockchip/*/*/*/*/02_network
 			;;
-		360T7)
-			cat >>.config<<-EOF
+		360T7|h3c-nx30-pro|xiaomi-ax3000t)
+			cat >>.config <<-EOF
 			CONFIG_TARGET_mediatek=y
 			CONFIG_TARGET_mediatek_filogic=y
-			CONFIG_TARGET_mediatek_filogic_DEVICE_qihoo_360t7=y
-			# CONFIG_TARGET_mediatek_filogic_DEVICE_h3c_magic-nx30-pro=y
-			# CONFIG_TARGET_mediatek_filogic_DEVICE_xiaomi_mi-router-ax3000t=y
 			EOF
+			case "$TARGET_DEVICE" in
+					*360*)
+						CONF_ID="qihoo_360t7"
+						D_NAME="360T7"
+						;;
+					*nx30*)
+						CONF_ID="h3c_magic-nx30-pro"
+						D_NAME="H3C-NX30-Pro"
+						;;
+					*ax3000t*)
+						CONF_ID="xiaomi_mi-router-ax3000t"
+						D_NAME="Xiaomi-AX3000T"
+						;;
+			esac
+			echo "CONFIG_TARGET_mediatek_filogic_DEVICE_${CONF_ID}=y" >> .config
 			lan_ip "192.168.5.1"
-			export DEVICE_NAME="360T7"
+			export DEVICE_NAME="$D_NAME"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
-			add_package "luci-app-cpufreq luci-app-turbacc"
+			add_package "luci-app-cpufreq"
 			;;
 		newifi-d2)
 			cat >>.config<<-EOF
@@ -448,10 +460,10 @@ sed -i "{
 # git_apply "https://raw.githubusercontent.com/sbwml/openwrt_helloworld/refs/heads/v5/patch-luci-app-passwall.patch" "feeds/luci/applications"
 sed -i "/ONLY/ s/^/#/g" feeds/packages/lang/python/python-mako/Makefile
 sed -Ei '{
-    s|../../lang/|$(TOPDIR)/feeds/packages/lang/|;
-    s|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|;
-    s/(^(PKG_HASH|PKG_MD5SUM|HASH):=).*/\1skip/;
-    s|include ../py(.*).mk|include $(TOPDIR)/feeds/packages/lang/python/py\1.mk|
+	s|../../lang/|$(TOPDIR)/feeds/packages/lang/|;
+	s|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|;
+	s/(^(PKG_HASH|PKG_MD5SUM|HASH):=).*/\1skip/;
+	s|include ../py(.*).mk|include $(TOPDIR)/feeds/packages/lang/python/py\1.mk|
 }' package/A/*/Makefile 2>/dev/null
 
 find {package/A,feeds/luci/applications}/luci-app*/po -type d 2>/dev/null | while read p; do
