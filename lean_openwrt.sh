@@ -273,7 +273,7 @@ set_config (){
 			cat >>.config<<-EOF
 			CONFIG_TARGET_mediatek=y
 			CONFIG_TARGET_mediatek_filogic=y
-			CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_qihoo_360t7=y
+			CONFIG_TARGET_mediatek_filogic_DEVICE_qihoo_360t7=y
 			EOF
 			lan_ip "192.168.5.1"
 			export DEVICE_NAME="360T7"
