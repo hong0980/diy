@@ -274,11 +274,13 @@ set_config (){
 			CONFIG_TARGET_mediatek=y
 			CONFIG_TARGET_mediatek_filogic=y
 			CONFIG_TARGET_mediatek_filogic_DEVICE_qihoo_360t7=y
+			# CONFIG_TARGET_mediatek_filogic_DEVICE_h3c_magic-nx30-pro=y
+			# CONFIG_TARGET_mediatek_filogic_DEVICE_xiaomi_mi-router-ax3000t=y
 			EOF
 			lan_ip "192.168.5.1"
 			export DEVICE_NAME="360T7"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
-			add_package "automount autosamba luci-app-diskman luci-app-usb-printer"
+			add_package "luci-app-cpufreq luci-app-turbacc"
 			;;
 		newifi-d2)
 			cat >>.config<<-EOF
