@@ -5,7 +5,7 @@ uci -q batch <<-EOF >/dev/null
 	add ucitrack easymesh
 	set ucitrack.@easymesh[-1].init=easymesh
 	commit ucitrack
-	set easymesh.config=easymesh
+	set easymesh.default=easymesh
 	commit easymesh
 EOF
 chmod +x /etc/init.d/easymesh 2>/dev/null

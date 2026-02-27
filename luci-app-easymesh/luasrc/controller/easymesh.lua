@@ -7,6 +7,10 @@ function index()
 		return
 	end
 
+	if not nixio.fs.access("/etc/config/wireless") then
+		return
+	end
+
 	local page
 	page = entry({"admin", "network", "easymesh"}, cbi("easymesh"), _("EASY MESH"), 60)
 	page.dependent = true

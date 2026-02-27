@@ -1,32 +1,35 @@
-msgid ""
-msgstr "Content-Type: text/plain; charset=UTF-8\n"
-
-msgid "easymesh"
-msgstr "easymesh"
-
-msgid "<b>Active node：" .. Nodes .. "</b>"
-msgstr "<b>活动节点：" .. Nodes .. "</b>"
-
-msgid "IF"
-msgstr "IF"
-
-msgid "Neighbor"
-msgstr "节点邻居设备"
-
-msgid "lastseen"
-msgstr "上次连接延时"
-
 msgid "EASY MESH"
 msgstr "简单MESH"
 
-msgid "Settings"
-msgstr "设置"
+msgid "EasyMesh Configuration"
+msgstr "EasyMesh 配置"
 
-msgid "General Settings"
-msgstr "基本设置"
+msgid "Configure wireless mesh network using Batman-adv"
+msgstr "使用 Batman-adv 配置 Mesh 无线网络"
+
+msgid "<b>Active Mesh Nodes: %d</b>"
+msgstr "<b>活动 Mesh 节点：%d</b>"
+
+msgid "Neighbor MAC"
+msgstr "MAC 地址"
+
+msgid "Last Seen"
+msgstr "连接时间"
+
+msgid "Link Quality"
+msgstr "连接时间"
 
 msgid "Enable"
 msgstr "启用"
+
+msgid "Enable or disable EASY MESH"
+msgstr "启用或禁用简单MESH"
+
+msgid "Radio device"
+msgstr "无线设备"
+
+msgid "The radio device which MESH use"
+msgstr "选择 MESH 组网的无线设备"
 
 msgid "role"
 msgstr "角色"
@@ -40,17 +43,8 @@ msgstr "主MESH"
 msgid "son MESH"
 msgstr "子MESH"
 
-msgid "MESH Radio device"
-msgstr "MESH无线设备"
-
-msgid "The radio device which MESH use"
-msgstr "使用MESH组网的无线设备"
-
 msgid "AUTO"
 msgstr "自动"
-
-msgid "Enable or disable EASY MESH"
-msgstr "启用或禁用简单MESH"
 
 msgid "Encryption"
 msgstr "加密"
@@ -81,3 +75,18 @@ msgstr "IPv4 网关"
 
 msgid "Use custom DNS servers"
 msgstr "使用自定义的 DNS 服务器"
+
+msgid "Enable 802.11k/v/r for improved roaming and network management. 802.11k provides neighbor reports, 802.11v supports load balancing, and 802.11r enables fast AP transitions."
+msgstr "启用 802.11k/v/r 以改善漫游和网络管理。802.11k 提供邻居报告，802.11v 支持负载均衡，802.11r 实现快速 AP 切换。"
+
+msgid "RSSI threshold (dBm) for a good signal, used by DAWN to prefer stronger APs."
+msgstr "良好信号的 RSSI 阈值（dBm），DAWN 用以优先选择较强的 AP。"
+
+msgid "RSSI threshold (dBm) for a bad signal, used by DAWN to trigger AP switching."
+msgstr "较差信号的 RSSI 阈值（dBm），DAWN 用以触发 AP 切换。"
+
+msgid "Up"
+msgstr "上移"
+
+msgid "Down"
+msgstr "下移"

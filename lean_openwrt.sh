@@ -292,7 +292,7 @@ set_config (){
 			lan_ip "192.168.5.1"
 			export DEVICE_NAME="$D_NAME"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
-			add_package "luci-app-cpufreq"
+			add_package "luci-app-cpufreq luci-app-easymesh"
 			;;
 		newifi-d2)
 			cat >>.config<<-EOF

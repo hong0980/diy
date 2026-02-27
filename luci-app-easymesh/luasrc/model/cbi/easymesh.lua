@@ -1,51 +1,43 @@
 -- Copyright (C) 2021 dz <dingzhong110@gmail.com>
-
+-- https://openwrt.org/docs/guide-user/network/wifi/mesh/batman
 local m, s, o
-local sys = require "luci.sys"
-local uci = require "luci.model.uci".cursor()
+local util = require "luci.util"
+local uci  = require "luci.model.uci".cursor()
 
-m = Map("easymesh")
+local function get_bat_nodes()
+	local nodes = {}
+	local output = util.exec("batctl n 2>/dev/null | awk 'NR>2 {print $1,$2,$3,$4}'") or ""
 
-function detect_Node()
-	local data = {}
-	local lps = luci.util.execi(" batctl n 2>/dev/null | tail +2 | sed 's/^[ ][ ]*//g' | sed 's/[ ][ ]*/ /g' | sed 's/$/ /g' ")
-	for value in lps do
-		local row = {}
-		local pos = string.find(value, " ")
-		local IFA = string.sub(value, 1, pos - 1)
-		local value = string.sub(value, pos + 1, string.len(value))
-		pos = string.find(value, " ")
-		local pos = string.find(value, " ")
-		local Neighbora = string.sub(value, 1, pos - 1)
-		local value = string.sub(value, pos + 1, string.len(value))
-		pos = string.find(value, " ")
-		local pos = string.find(value, " ")
-		local lastseena = string.sub(value, 1, pos - 1)
-		local value = string.sub(value, pos + 1, string.len(value))
-		pos = string.find(value, " ")
-		row["IF"] = IFA
-		row["Neighbor"] = Neighbora
-		row["lastseen"] = lastseena
-		table.insert(data, row)
+	for line in output:gmatch("[^\r\n]+") do
+		local iface, neighbor, lastseen, link_quality = line:match("^(%S+)%s+(%S+)%s+(%S+)%s+(%S+)")
+		if iface then
+			nodes[#nodes + 1] = { IF = iface, Neighbor = neighbor, lastseen = lastseen, link_quality = link_quality }
+		end
 	end
-	return data
+
+	return nodes
 end
-local Nodes = luci.sys.exec("batctl n 2>/dev/null| tail +3 | wc -l")
-local Node = detect_Node()
 
-v = m:section(Table, Node, "" ,translate("<b>Active node：" .. Nodes .. "</b>"))
-v:option(DummyValue, "IF")
-v:option(DummyValue, "Neighbor")
-v:option(DummyValue, "lastseen")
+local bat_nodes = get_bat_nodes()
+local node_count = #bat_nodes
 
--- Basic
-s = m:section(TypedSection, "easymesh", translate("Settings"))
-s.description = translate("General Settings")
+m = Map("easymesh", translate("EasyMesh Configuration"),
+	translate("Configure wireless mesh network using Batman-adv"))
+
+if node_count > 0 then
+	s = m:section(Table, bat_nodes,
+		translatef("<b>Active Mesh Nodes: %d</b>", node_count))
+	s:option(DummyValue, "IF", translate("Interface"))
+	s:option(DummyValue, "Neighbor", translate("Neighbor MAC"))
+	s:option(DummyValue, "lastseen", translate("Last Seen"))
+	s:option(DummyValue, "link_quality", translate("Link Quality"))
+end
+
+s = m:section(TypedSection, "easymesh", translate(" "))
 s.anonymous = true
 
----- Eanble
-o = s:option(Flag, "enabled", translate("Enable"))
-o.description = translate("Enable or disable EASY MESH")
+o = s:option(Flag, "enabled", translate("Enable"),
+	translate("Enable or disable EASY MESH"))
 o.default = 0
 o.rmempty = false
 
@@ -55,57 +47,61 @@ o:value("server", translate("host MESH"))
 o:value("client", translate("son MESH"))
 o.rmempty = false
 
-apRadio = s:option(ListValue, "apRadio", translate("MESH Radio device"))
-apRadio.description = translate("The radio device which MESH use")
+local radios = {}
 uci:foreach("wireless", "wifi-device",
-							function(s)
-								apRadio:value(s['.name'])
-							end)
-apRadio:value("all", translate("ALL"))
-o.default = "radio0"
+	function(s) radios[s['.name']] = true end)
+
+o = s:option(ListValue, "apRadio", translate("MESH Radio device"),
+	translate("The radio device which MESH use"))
+for radio in pairs(radios) do
+	o:value(radio, radio:upper())
+end
+o:value("all", translate("All"))
+o.default = next(radios) or "radio0"
+
+o = s:option(Value, "mesh_id", translate("MESH ID"),
+	translate("MESH ID"))
+o.default = "openwrt_mesh"
+o.datatype = "string"
+
+o = s:option(Flag, "encryption", translate("Encryption"))
+o.default = 0
 o.rmempty = false
-
----- mesh
-o = s:option(Value, "mesh_id", translate("MESH ID"))
-o.default = "easymesh"
-o.description = translate("MESH ID")
-
-enable = s:option(Flag, "encryption", translate("Encryption"))
-enable.default = 0
-enable.rmempty = false
 
 o = s:option(Value, "key", translate("Key"))
 o.default = "easymesh"
 o:depends("encryption", 1)
+o.datatype = "rangelength(8,16)"
 
----- kvr
-enable = s:option(Flag, "kvr", translate("K/V/R"))
-enable.default = 1
-enable.rmempty = false
+o = s:option(Flag, "kvr", translate("K/V/R"),
+	translate("Enable 802.11k/v/r for improved roaming and network management. 802.11k provides neighbor reports, 802.11v supports load balancing, and 802.11r enables fast AP transitions."))
+o.default = 1
+o.rmempty = false
 
-o = s:option(Value, "mobility_domain", translate("Mobility Domain"))
-o.description = translate("4-character hexadecimal ID")
+o = s:option(Value, "mobility_domain", translate("Mobility Domain"),
+	translate("4-character hexadecimal ID"))
 o.default = "4f57"
-o.datatype = "and(hexstring,rangelength(4,4))"
+o.datatype = "and(hexstring,rangelength(4, 4))"
 o:depends("kvr", 1)
 
-o = s:option(Value, "rssi_val", translate("Threshold for an good RSSI"))
+o = s:option(Value, "rssi_val", translate("Threshold for an good RSSI"),
+	translate("RSSI threshold (dBm) for a good signal, used by DAWN to prefer stronger APs."))
 o.default = "-60"
-o.atatype = "range(-1,-120)"
+o.datatype = "range(-120, -1)"
 o:depends("kvr", 1)
 
-o = s:option(Value, "low_rssi_val", translate("Threshold for an bad RSSI"))
+o = s:option(Value, "low_rssi_val", translate("Threshold for an bad RSSI"),
+	translate("RSSI threshold (dBm) for a bad signal, used by DAWN to trigger AP switching."))
 o.default = "-88"
-o.atatype = "range(-1,-120)"
+o.datatype = "range(-120, -1)"
 o:depends("kvr", 1)
 
----- ap_mode
-enable = s:option(Flag, "ap_mode", translate("AP MODE Enable"))
-enable.description = translate("Enable or disable AP MODE")
+enable = s:option(Flag, "ap_mode", translate("AP MODE Enable"),
+	translate("Enable or disable AP MODE"))
 enable.default = 0
 enable.rmempty = false
 
-o = s:option(Value, "ipaddr", translate("IPv4-Address"))
+o = s:option(Value, "ap_ipaddr", translate("IPv4-Address"))
 o.default = "192.168.1.10"
 o.datatype = "ip4addr"
 o:depends("ap_mode", 1)
