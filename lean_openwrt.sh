@@ -350,7 +350,7 @@ set_config (){
 			}
 			;;
 	esac
-	[[ $TARGET_DEVICE =~ k2p|360 ]] || \
+	[[ $TARGET_DEVICE =~ k2p|d2|360|nx30|ax3000t ]] || \
 		add_package automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser \
 			luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote \
 			luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils \
