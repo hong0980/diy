@@ -359,7 +359,7 @@ set_config (){
 	esac
 	[[ $TARGET_DEVICE =~ k2p|d2|360|nx30|ax3000t ]] || add_package \
 		automount autosamba diffutils patch luci-app-diskman luci-app-poweroff luci-app-filebrowser \
-		luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote \
+		luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-nikki \
 		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter luci-app-ddns-go \
 		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2 luci-app-diskman-js
 
@@ -446,7 +446,7 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 	}
 	[[ -f feeds/packages/libs/libutp/Makefile ]] && [[ $REPO_BRANCH =~ 25 ]] && \
 		sed -i 's/-DLIBUTP_ENABLE_WERROR:BOOL=YES/-DLIBUTP_ENABLE_WERROR:BOOL=NO/' feeds/packages/libs/libutp/Makefile
-	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy luci-app-nikki"
+	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy"
 	#add_package "axel luci-app-gecoosac" luci-app-istorex luci-app-partexp
 	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
 else
