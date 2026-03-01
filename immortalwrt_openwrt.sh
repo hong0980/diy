@@ -306,7 +306,7 @@ set_config (){
 			lan_ip "192.168.5.1"
 			export DEVICE_NAME="$D_NAME"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
-			add_package "luci-app-cpufreq"
+			add_package "luci-app-cpufreq luci-app-easymesh"
 			;;
 		newifi-d2)
 			cat >>.config<<-EOF
@@ -317,7 +317,7 @@ set_config (){
 			lan_ip "192.168.2.1"
 			export DEVICE_NAME="Newifi-D2"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
-			add_package "automount autosamba luci-app-diskman luci-app-usb-printer"
+			add_package "automount autosamba luci-app-diskman luci-app-usb-printer luci-app-easymesh"
 			;;
 		phicomm_k2p)
 			cat >>.config<<-EOF
@@ -327,6 +327,7 @@ set_config (){
 			EOF
 			lan_ip "192.168.1.1"
 			export DEVICE_NAME="Phicomm-K2P"
+			add_package "luci-app-easymesh"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
 			;;
 		asus_rt-n16)
@@ -344,6 +345,7 @@ set_config (){
 				EOF
 			fi
 			lan_ip "192.168.2.130"
+			add_package "luci-app-easymesh"
 			export DEVICE_NAME="Asus-RT-N16"
 			echo "FIRMWARE_TYPE=n16" >> $GITHUB_ENV
 			;;
@@ -365,8 +367,7 @@ set_config (){
 
 	add_package autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall \
 				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard luci-app-tinynote-js \
-				luci-app-miaplus luci-app-watchdog default-settings-chn luci-app-package-manager \
-				luci-app-easymesh
+				luci-app-miaplus luci-app-watchdog default-settings-chn luci-app-package-manager
 }
 
 deploy_cache() {

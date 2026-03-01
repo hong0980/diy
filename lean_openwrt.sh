@@ -292,7 +292,7 @@ set_config (){
 			lan_ip "192.168.5.1"
 			export DEVICE_NAME="$D_NAME"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
-			add_package "luci-app-cpufreq"
+			add_package "luci-app-cpufreq luci-app-easymesh"
 			;;
 		newifi-d2)
 			cat >>.config<<-EOF
@@ -301,6 +301,7 @@ set_config (){
 			CONFIG_TARGET_ramips_mt7621_DEVICE_d-team_newifi-d2=y
 			EOF
 			lan_ip "192.168.2.1"
+			add_package "luci-app-easymesh"
 			export DEVICE_NAME="Newifi-D2"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
 			;;
@@ -311,6 +312,7 @@ set_config (){
 			CONFIG_TARGET_ramips_mt7621_DEVICE_phicomm_k2p=y
 			EOF
 			lan_ip "192.168.1.1"
+			add_package "luci-app-easymesh"
 			export DEVICE_NAME="Phicomm-K2P"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
 			;;
@@ -357,7 +359,7 @@ set_config (){
 			patch luci-app-qbittorrent luci-app-nikki luci-app-homeproxy luci-app-deluge luci-app-transmission luci-app-aria2
 	add_package luci-app-filebrowser luci-app-passwall luci-app-ttyd luci-app-wizard luci-app-taskplan \
 			luci-app-ksmbd luci-app-miaplus luci-app-watchdog luci-theme-bootstrap luci-app-diskman-js \
-			luci-app-easymesh luci-app-tinynote-js
+			luci-app-tinynote-js
 	delpackage luci-app-ddns luci-app-autoreboot luci-app-wol luci-app-vlmcsd luci-app-filetransfer
 }
 
