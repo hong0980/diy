@@ -363,11 +363,12 @@ set_config (){
 		automount autosamba diffutils patch luci-app-diskman luci-app-poweroff luci-app-filebrowser \
 		luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-nikki \
 		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter luci-app-ddns-go \
-		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2 luci-app-diskman-js
+		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2 luci-app-diskman-js \
+		luci-app-miaplus luci-app-watchdog
 
 	add_package autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall \
 				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard luci-app-tinynote-js \
-				luci-app-miaplus luci-app-watchdog default-settings-chn luci-app-package-manager
+				default-settings-chn luci-app-package-manager
 }
 
 deploy_cache() {
