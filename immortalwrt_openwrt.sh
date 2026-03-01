@@ -306,7 +306,7 @@ set_config (){
 			lan_ip "192.168.5.1"
 			export DEVICE_NAME="$D_NAME"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
-			add_package "luci-app-cpufreq luci-app-easymesh"
+			add_package "luci-app-cpufreq"
 			;;
 		newifi-d2)
 			cat >>.config<<-EOF
@@ -365,7 +365,8 @@ set_config (){
 
 	add_package autocore opkg luci-app-arpbind luci-app-ddnsto luci-app-ssr-plus luci-app-passwall \
 				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard luci-app-tinynote-js \
-				luci-app-miaplus luci-app-watchdog default-settings-chn luci-app-package-manager
+				luci-app-miaplus luci-app-watchdog default-settings-chn luci-app-package-manager \
+				luci-app-easymesh
 }
 
 deploy_cache() {
