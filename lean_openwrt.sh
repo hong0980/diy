@@ -292,7 +292,7 @@ set_config (){
 			lan_ip "192.168.5.1"
 			export DEVICE_NAME="$D_NAME"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
-			add_package "luci-app-cpufreq luci-app-easymesh"
+			add_package "luci-app-easymesh"
 			;;
 		newifi-d2)
 			cat >>.config<<-EOF
@@ -334,7 +334,6 @@ set_config (){
 			EOF
 			lan_ip "192.168.2.110"
 			echo "FIRMWARE_TYPE=$TARGET_DEVICE" >> $GITHUB_ENV
-			sed -i '/easymesh/d' .config
 
 			dc=$(find_first_dir "package/A feeds/luci/applications" "luci-app-cpufreq")
 			[[ -d $dc ]] && {
@@ -353,7 +352,7 @@ set_config (){
 			;;
 	esac
 	[[ $TARGET_DEVICE =~ k2p|d2|360|nx30|ax3000t ]] || \
-		add_package automount autosamba luci-app-diskman luci-app-poweroff luci-app-filebrowser \
+		add_package automount autosamba luci-app-diskman luci-app-poweroff \
 			luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote \
 			luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils \
 			patch luci-app-qbittorrent luci-app-nikki luci-app-homeproxy luci-app-deluge luci-app-transmission luci-app-aria2
