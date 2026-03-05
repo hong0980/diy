@@ -307,6 +307,7 @@ set_config (){
 			export DEVICE_NAME="$D_NAME"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
 			add_package "luci-app-easymesh"
+			add_busybox "pkill lsof"
 			;;
 		newifi-d2)
 			cat >>.config<<-EOF
