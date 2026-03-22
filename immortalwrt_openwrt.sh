@@ -157,7 +157,7 @@ clone_dir() {
 		# [[ $repo_url =~ coolsnowwolf/packages ]] && set -- "$@" "bash" \
 		# 		"btrfs-progs" "gawk" "jq" "nginx-util" "pciutils" "curl"
 	}
-	[[ $repo_url =~ sbwml && $REPO =~ openwrt ]] && set -- "$@" "dns2socks" "dns2tcp" \
+	[[ $repo_url =~ sbwml && $REPO =~ openwrt ]] && set -- "$@" "dns2tcp" \
 		"ipt2socks" "microsocks" "naiveproxy" "pdnsd" "redsocks2" "tcping" "tuic-client" \
 		"v2ray-core" "v2ray-geodata" "v2ray-plugin" "xray-plugin" "hysteria"
 
@@ -307,6 +307,7 @@ set_config (){
 			export DEVICE_NAME="$D_NAME"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
 			add_package "luci-app-easymesh"
+			add_busybox "pkill lsof"
 			;;
 		newifi-d2)
 			cat >>.config<<-EOF
@@ -422,8 +423,8 @@ grep -qv "PKG_VERSION:=1.93.0" feeds/packages/lang/rust/Makefile && \
 clone_dir coolsnowwolf/packages rust
 
 clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
-clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus mosdns \
-		shadow-tls shadowsocks-libev shadowsocksr-libev simple-obfs trojan
+clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
+		shadow-tls shadowsocks-libev shadowsocksr-libev simple-obfs trojan dns2socks
 clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
 		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
