@@ -425,7 +425,7 @@ clone_dir coolsnowwolf/packages rust
 clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
 clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
 		shadow-tls shadowsocks-libev shadowsocksr-libev simple-obfs trojan dns2socks
-clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
+clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi mosdns \
 		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
 		luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
