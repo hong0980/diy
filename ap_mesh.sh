@@ -77,8 +77,8 @@ wifi_iface() {
     local iface="$1" dev band mode
     config_get mode "$iface" mode
     [ "$mode" = "ap" ] || return
-    config_get dev "$iface" device
-    config_get band "$dev" band
+
+    config_get band "$dev"   band
 
     uci -q batch <<EOF
 set wireless.${iface}.encryption='psk2+ccmp'
@@ -99,9 +99,9 @@ set wireless.${iface}.nasid='${iface_mac}'
 set wireless.${iface}.fast_transition='1'
 EOF
 
-    case "$band" in
-        5g|5GHz|a|an)   uci -q set wireless."$iface".ssid="${WIFI_SSID_5G}"  ;;
-        2g|2.4GHz|b|bg) uci -q set wireless."$iface".ssid="${WIFI_SSID_24G}" ;;
+    case "${band}" in
+        5g|5GHz|a|an)   uci -q set wireless."${iface}".ssid="${WIFI_SSID_5G}"  ;;
+        2g|2.4GHz|b|bg) uci -q set wireless."${iface}".ssid="${WIFI_SSID_24G}" ;;
     esac
 }
 
@@ -114,18 +114,18 @@ wifi_device() {
     uci -q set wireless."$dev".channel="${AP_5G_CHANNEL}"
 
     uci -q batch <<EOF
-delete wireless.mesh_backhaul
-set wireless.mesh_backhaul.disabled='0'
-set wireless.mesh_backhaul="wifi-iface"
-set wireless.mesh_backhaul.device="$dev"
-set wireless.mesh_backhaul.mode='mesh'
-set wireless.mesh_backhaul.mesh_id="${MESH_ID}"
-set wireless.mesh_backhaul.network='lan'
-set wireless.mesh_backhaul.encryption='sae'
-set wireless.mesh_backhaul.key="${MESH_PASS}"
-set wireless.mesh_backhaul.mesh_fwding='1'
-set wireless.mesh_backhaul.mesh_rssi_threshold='-75'
-set wireless.mesh_backhaul.time_zone="${timezone}"
+delete wireless.mesh0
+set wireless.mesh0='wifi-iface'
+set wireless.mesh0.mode='mesh'
+set wireless.mesh0.disabled='0'
+set wireless.mesh0.network='lan'
+set wireless.mesh0.device="$dev"
+set wireless.mesh0.mesh_fwding='1'
+set wireless.mesh0.encryption='sae'
+set wireless.mesh0.key="$MESH_PASS"
+set wireless.mesh0.mesh_id="$MESH_ID"
+set wireless.mesh0.time_zone="$timezone"
+set wireless.mesh0.mesh_rssi_threshold='-75'
 EOF
 }
 
