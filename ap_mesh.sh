@@ -58,11 +58,10 @@ set network.lan.gateway='${GATEWAY}'
 add_list network.lan.dns='${GATEWAY}'
 set network.lan.netmask='255.255.255.0'
 
+del dhcp.lan.ra
+del dhcp.lan.max_preferred_lifetime
+del dhcp.lan.max_valid_lifetime
 set dhcp.lan.ignore='1'
-set dhcp.lan.ra='disabled'
-del dhcp.lan.ra_slaac
-set dhcp.lan.dhcpv6='disabled'
-del dhcp.lan.dhcpv6
 set dhcp.lan.ra_manage='0'
 set dhcp.lan.dynamicdhcp='0'
 set upnpd.config.enabled='0'
@@ -78,6 +77,7 @@ wifi_iface() {
     config_get mode "$iface" mode
     [ "$mode" = "ap" ] || return
 
+    config_get dev  "$iface" device
     config_get band "$dev"   band
 
     uci -q batch <<EOF
@@ -135,12 +135,12 @@ config_foreach wifi_device wifi-device
 MAC_SUFFIX=$(echo "$iface_mac" | tr 'a-z' 'A-Z' | awk '{print substr($0, length($0)-5)}')
 uci -q set system.@system[0].hostname="OpenWrt-${LAN_IP##*.}-${MAC_SUFFIX}"
 
-uci commit system
-uci commit wireless
+uci -q commit system
+uci -q commit wireless
 
-/etc/init.d/dawn     disable && /etc/init.d/dawn     stop
-/etc/init.d/odhcpd   disable && /etc/init.d/odhcpd   stop
-/etc/init.d/firewall disable && /etc/init.d/firewall stop
+/etc/init.d/dawn     disable 1>/dev/null 2>&1 && /etc/init.d/dawn     stop 1>/dev/null 2>&1
+/etc/init.d/odhcpd   disable 1>/dev/null 2>&1 && /etc/init.d/odhcpd   stop 1>/dev/null 2>&1
+/etc/init.d/firewall disable 1>/dev/null 2>&1 && /etc/init.d/firewall stop 1>/dev/null 2>&1
 
 echo "-------------------------------------------------"
 echo "配置完毕！主机名: OpenWrt-${LAN_IP##*.}-${MAC_SUFFIX}"
