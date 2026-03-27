@@ -306,7 +306,7 @@ set_config (){
 			lan_ip "192.168.5.1"
 			export DEVICE_NAME="$D_NAME"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
-			add_package "luci-app-easymesh"
+			add_package "luci-app-easymesh luci-app-mesh-node"
 			add_busybox "pkill lsof"
 			;;
 		newifi-d2)
@@ -431,7 +431,7 @@ clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi mo
 		luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
 		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
 		python-pyasn1 python-pyxdg python-rencode python-setproctitle python-twisted \
-		sunpanel transmission qBittorrent-static luci-app-diskman-js luci-app-tinynote-js
+		sunpanel transmission qBittorrent-static luci-app-diskman-js luci-app-tinynote-js luci-app-mesh-node
 
 if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
