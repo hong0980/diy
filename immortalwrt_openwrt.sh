@@ -306,8 +306,9 @@ set_config (){
 			lan_ip "192.168.5.1"
 			export DEVICE_NAME="$D_NAME"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
-			add_package "luci-app-easymesh luci-app-mesh-node"
-			add_busybox "pkill lsof"
+			# add_package "luci-app-easymesh luci-app-mesh-node"
+			# add_busybox "pkill lsof"
+			add_package "luci-app-mesh-node"
 			;;
 		newifi-d2)
 			cat >>.config<<-EOF
