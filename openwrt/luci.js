@@ -1,18 +1,69 @@
 /**
- * @class LuCI
- * @classdesc
- * LuCI 基础类，全局变量 L 引用此类的实例
+ * ============================================================
+ * luci.js —— LuCI 核心运行时入口
+ * ============================================================
  *
- * @param {Object} env - LuCI 运行时环境设置
+ * 【文件作用】
+ *   本文件是 LuCI 前端框架的核心，定义了整个 LuCI JS 运行时的基础设施：
+ *
+ *   1. Class 系统   ── 原型继承、子类化、单例、super() 调用
+ *   2. Headers      ── HTTP 响应头封装（大小写不敏感）
+ *   3. Response     ── HTTP 响应体封装（JSON/Text/Blob）
+ *   4. Request      ── XMLHttpRequest 封装 + RPC 批处理 + 轮询
+ *   5. Poll         ── 定时轮询调度器（setInterval 驱动）
+ *   6. DOM          ── DOM 工具集（E() 函数的来源）
+ *   7. Session      ── 会话 ID/Token + sessionStorage 读写
+ *   8. View         ── 所有插件视图的基类（load→render→footer 生命周期）
+ *   9. LuCI 主类    ── 全局 L 对象：路径工具、模块加载、错误处理等
+ *  10. XHR 兼容层   ── 旧版 Lua CBI 代码的向后兼容接口
+ *
+ * 【全局变量】
+ *   window.L    → LuCI 主类实例（所有 LuCI API 的统一入口）
+ *   window.XHR  → 旧版兼容 XHR 类（新代码请勿使用）
+ *
+ * 【视图插件的典型用法】
+ *
+ *   'use strict';
+ *   'require form';   // 声明依赖，等价于 L.require('form')
+ *   'require uci';
+ *
+ *   return view.extend({
+ *       load()   { return uci.load('network'); },
+ *       render() {
+ *           var m = new form.Map('network', '网络配置');
+ *           // ... 添加 section/option
+ *           return m.render();
+ *       }
+ *   });
  */
 
 ((window, document, undefined) => {
 	'use strict';
 
-	// 环境变量对象
+	/**
+	 * LuCI 运行时环境变量（由后端模板在页面中注入）。
+	 * 常用字段：
+	 *   sessionid     当前会话 ID（32位十六进制）
+	 *   token         CSRF 防护令牌
+	 *   base_url      JS 文件基础 URL（从 luci.js script src 解析）
+	 *   scriptname    CGI 脚本路径（如 /cgi-bin/luci）
+	 *   resource      静态资源路径（如 /luci-static/resources）
+	 *   media         主题媒体路径（如 /luci-static/bootstrap）
+	 *   pollinterval  轮询间隔秒数（默认 5）
+	 *   rpctimeout    RPC 超时秒数（默认 20）
+	 *   ubuspath      ubus RPC 直接访问路径
+	 *   documentroot  服务器文档根目录
+	 *   nodespec      当前视图的 ACL 节点描述（含 readonly 等）
+	 *   requestpath   当前请求路径数组
+	 */
 	const env = {};
 
-	// 将字符串转换为驼峰命名法
+	// ── Class 系统辅助 ──────────────────────────────────────
+
+	/**
+	 * 将点/连字符/空格分隔的字符串转为驼峰命名（用于自动生成类 displayName）。
+	 * 例如：'luci.base-class' → 'LuciBaseClass'
+	 */
 	const toCamelCase = s => s.replace(/(?:^|[\. -])(.)/g, (m0, m1) => m1.toUpperCase());
 
 	/**
@@ -20,33 +71,48 @@
 	 * @hideconstructor
 	 * @memberof LuCI
 	 * @classdesc
-	 * LuCI.baseclass 是所有 LuCI 类的抽象基类
-	 * 提供创建子类和原型继承的简单方法
+	 *
+	 * LuCI.baseclass 是所有 LuCI 类的抽象基类，实现了原型继承机制。
+	 * 提供子类化、单例创建、super() 父类方法调用等能力。
 	 */
+
+	/** super() 调用上下文栈（多层继承时追踪当前调用层级） */
 	const superContext = {};
 
+	/** 类 ID 全局计数器（每次 extend 时递增，保证每个类的 __id__ 唯一） */
 	let classIndex = 0;
 
-	// 基础类定义
+	/**
+	 * Class：LuCI 类系统的根对象。不直接使用，通过 Class.extend() 创建子类。
+	 */
 	const Class = Object.assign(function() {}, {
+
 		/**
-		 * 扩展基类并返回新的子类
-		 * @param {Object<string, *>} properties - 要添加到子类的属性
-		 * @returns {LuCI.baseclass} 返回新的子类构造函数
+		 * 用给定属性创建本类的子类，返回新的类构造函数。
+		 *
+		 * @memberof LuCI.baseclass
+		 * @param {Object<string,*>} properties - 子类属性和方法
+		 * @returns {LuCI.baseclass} 可用 new 实例化的子类构造函数
+		 *
+		 * 【使用场景：在插件中创建自定义控件基类】
+		 *
+		 *   var MyWidget = baseclass.extend({
+		 *       __name__: 'MyWidget',
+		 *       __init__(title) { this.title = title; },
+		 *       render() { return E('div', this.title); }
+		 *   });
 		 */
 		extend(properties) {
 			const props = {
-				__id__: { value: classIndex },
+				__id__:   { value: classIndex },
 				__base__: { value: this.prototype },
 				__name__: { value: properties.__name__ ?? `anonymous${classIndex++}` }
 			};
 
-	  		// 类构造函数
 			const ClassConstructor = function() {
 				if (!(this instanceof ClassConstructor))
 					throw new TypeError('Constructor must not be called without "new"');
 
-				// 调用初始化函数
 				if (Object.getPrototypeOf(this).hasOwnProperty('__init__')) {
 					if (typeof(this.__init__) != 'function')
 						throw new TypeError('Class __init__ member is not a function');
@@ -58,12 +124,10 @@
 				}
 			};
 
-	  		// 添加属性
 			for (const key in properties)
 				if (!props[key] && properties.hasOwnProperty(key))
 					props[key] = { value: properties[key], writable: true };
 
-	  		// 设置原型链
 			ClassConstructor.prototype = Object.create(this.prototype, props);
 			ClassConstructor.prototype.constructor = ClassConstructor;
 			Object.assign(ClassConstructor, this);
@@ -73,58 +137,94 @@
 		},
 
 		/**
-		 * 扩展基类并立即实例化
-		 * @param {Object<string, *>} properties - 要添加到子类的属性
-		 * @param {...*} [new_args] - 传递给构造函数的参数
-		 * @returns {LuCI.baseclass} 返回子类实例
+		 * 用给定属性创建子类并立即实例化返回（extend + new 的简便写法）。
+		 *
+		 * @memberof LuCI.baseclass
+		 * @param {Object<string,*>} properties - 子类属性
+		 * @param {...*} [new_args] - 传给构造函数的参数
+		 * @returns {LuCI.baseclass} 已实例化的子类对象（单例）
 		 */
 		singleton(properties, ...new_args) {
 			return Class.extend(properties).instantiate(new_args);
 		},
 
 		/**
-		 * 使用参数数组实例化类
-		 * @param {Array<*>} params - 构造函数参数数组
-		 * @returns {LuCI.baseclass} 返回类实例
+		 * 将数组展开为参数，使用 new 实例化本类。
+		 *
+		 * @memberof LuCI.baseclass
+		 * @param {Array<*>} args - 构造函数参数数组
+		 * @returns {LuCI.baseclass} 新实例
 		 */
 		instantiate(args) {
 			return new (Function.prototype.bind.call(this, null, ...args))();
 		},
 
-		/* unused */
+		/* 未对外使用的静态方法，内部保留 */
 		call(self, method, ...args) {
 			if (typeof(this.prototype[method]) != 'function')
 				throw new ReferenceError(`${method} is not defined in class`);
 
 			return this.prototype[method].call(self, method, ...args);
 		},
+
 		/**
-		 * 检查给定类是否是当前类的子类
-		 * @param {LuCI.baseclass} classValue - 要测试的类
-		 * @returns {boolean} 如果是子类返回 true
+		 * 检查给定类值是否是本类的子类。
+		 *
+		 * @memberof LuCI.baseclass
+		 * @param {LuCI.baseclass} classValue - 待检测的类
+		 * @returns {boolean}
+		 *
+		 * 【使用场景：校验插件传入的 section 类是否合法】
+		 *   if (!CBIAbstractSection.isSubclass(UserClass))
+		 *       throw 'Not a valid section class';
 		 */
 		isSubclass(classValue) {
 			return (typeof(classValue) == 'function' && classValue.prototype instanceof this);
 		},
 
-		// 原型方法
 		prototype: {
 			/**
-			 * 从参数数组中提取值
-			 * @param {Array<*>} args - 源数组
-			 * @param {number} offset - 开始提取的偏移量
-			 * @param {...*} [extra_args] - 要添加到结果前面的额外参数
-			 * @returns {Array<*>} 返回新数组
+			 * 从 args 的 offset 处提取元素，并在前面追加 extra_args。
+			 * 常用于子类向父类转发剩余参数。
+			 *
+			 * @memberof LuCI.baseclass
+			 * @instance
+			 * @param {Array<*>} args    - 源参数数组
+			 * @param {number}   offset  - 起始提取偏移
+			 * @param {...*} [extra_args] - 前置追加的额外元素
+			 * @returns {Array<*>}
+			 *
+			 * 【使用场景】
+			 *   render(index, ...args) {
+			 *       return this.super('render', this.varargs(arguments, 1, index));
+			 *   }
 			 */
 			varargs(args, offset, ...extra_args) {
 				return extra_args.concat(Array.prototype.slice.call(args, offset));
 			},
 
 			/**
-			 * 调用父类方法或获取父类属性
-			 * @param {string} key - 成员名称
-			 * @param {Array<*>} [callArgs] - 调用参数数组
-			 * @returns {*|null} 返回父类成员值或方法调用结果
+			 * 调用父类链中的指定方法（或获取其值）。
+			 *
+			 * 两种形式（对参数数量敏感）：
+			 *   super('key')          → 返回父类 key 的值
+			 *   super('key', [args])  → 调用父类 key 方法并传参
+			 *
+			 * @memberof LuCI.baseclass
+			 * @instance
+			 * @param {string}   key       - 父类成员名称
+			 * @param {Array<*>} [callArgs] - 调用参数（有此参数时作为函数调用）
+			 * @returns {*|null} 父类成员值或方法返回值，找不到返回 null
+			 * @throws {ReferenceError} 指定了 callArgs 但父类成员不是函数时
+			 *
+			 * 【使用场景：在覆盖的 render() 中先调用父类渲染再追加内容】
+			 *
+			 *   render(index, sid) {
+			 *       return this.super('render', [index, sid]).then(node => {
+			 *           node.appendChild(E('span', '额外内容'));
+			 *           return node;
+			 *       });
+			 *   }
 			 */
 			super(key, ...callArgs) {
 				if (key == null)
@@ -134,7 +234,7 @@
 				const symStack = superContext[slotIdx];
 				let protoCtx = null;
 
-				// 查找父类中的成员
+				// 沿原型链向上查找包含该 key 的原型
 				for (protoCtx = Object.getPrototypeOf(symStack ? symStack[0] : Object.getPrototypeOf(this));
 					 protoCtx != null && !protoCtx.hasOwnProperty(key);
 					 protoCtx = Object.getPrototypeOf(protoCtx)) {}
@@ -144,7 +244,6 @@
 
 				let res = protoCtx[key];
 
-				// 如果是方法调用
 				if (callArgs.length > 0) {
 					if (typeof(res) != 'function')
 						throw new ReferenceError(`${key} is not a function in base class`);
@@ -152,16 +251,13 @@
 					if (Array.isArray(callArgs[0]) || LuCI.prototype.isArguments(callArgs[0]))
 						callArgs = callArgs[0];
 
-		  			// 设置调用上下文
 					if (symStack)
 						symStack.unshift(protoCtx);
 					else
 						superContext[slotIdx] = [ protoCtx ];
 
-		  			// 调用方法
 					res = res.apply(this, callArgs);
 
-		  			// 恢复上下文
 					if (symStack && symStack.length > 1)
 						symStack.shift(protoCtx);
 					else
@@ -172,8 +268,8 @@
 			},
 
 			/**
-			 * 返回类的字符串表示
-			 * @returns {string} 类描述字符串
+			 * 返回类实例的调试字符串（含类名和实例属性类型列表）。
+			 * @returns {string}
 			 */
 			toString() {
 				let s = `[${this.constructor.displayName}]`, f = true;
@@ -188,15 +284,22 @@
 		}
 	});
 
+	// ════════════════════════════════════════════════════════
+	// Headers 类（HTTP 响应头封装）
+	// ════════════════════════════════════════════════════════
+
 	/**
 	 * @class headers
 	 * @memberof LuCI
 	 * @hideconstructor
 	 * @classdesc
-	 * HTTP 响应头处理类
+	 * HTTP 响应头封装，通过 response.headers 访问。
+	 * 所有头名称均规范化为小写，实现大小写不敏感查询。
 	 */
 	const Headers = Class.extend(/** @lends LuCI.headers.prototype */ {
 		__name__: 'LuCI.headers',
+
+		/** 解析 XHR 响应头字符串，规范化键名为小写存入 this.headers */
 		__init__(xhr) {
 			const hdrs = this.headers = {};
 			xhr.getAllResponseHeaders().split(/\r\n/).forEach(line => {
@@ -207,18 +310,30 @@
 		},
 
 		/**
-		 * 检查是否包含指定头
-		 * @param {string} name - 头名称(不区分大小写)
-		 * @returns {boolean} 如果存在返回 true
+		 * 检查指定响应头是否存在（大小写不敏感）。
+		 *
+		 * @instance
+		 * @memberof LuCI.headers
+		 * @param {string} name - 头名称
+		 * @returns {boolean}
+		 *
+		 * 【使用场景：判断是否需要重定向到登录页】
+		 *   if (res.headers.has('X-LuCI-Login-Required')) redirectToLogin();
 		 */
 		has(name) {
 			return this.headers.hasOwnProperty(String(name).toLowerCase());
 		},
 
 		/**
-		 * 获取指定头的值
-		 * @param {string} name - 头名称(不区分大小写)
-		 * @returns {string|null} 头值或 null
+		 * 获取指定响应头的值（大小写不敏感）。
+		 *
+		 * @instance
+		 * @memberof LuCI.headers
+		 * @param {string} name - 头名称
+		 * @returns {string|null} 值或 null
+		 *
+		 * 【使用场景】
+		 *   var ct = res.headers.get('Content-Type');  // 'application/json'
 		 */
 		get(name) {
 			const key = String(name).toLowerCase();
@@ -226,26 +341,44 @@
 		}
 	});
 
+	// ════════════════════════════════════════════════════════
+	// Response 类（HTTP 响应体封装）
+	// ════════════════════════════════════════════════════════
+
 	/**
 	 * @class response
 	 * @memberof LuCI
 	 * @hideconstructor
 	 * @classdesc
-	 * HTTP 响应处理类
+	 * HTTP 响应封装，由 Request.request() 的 Promise 解析后返回。
+	 * 提供 ok/status/headers/json()/text()/blob() 等统一访问接口。
 	 */
 	const Response = Class.extend({
 		__name__: 'LuCI.response',
-		__init__(xhr, url, duration, headers, content) {
-	  		// 响应属性
-			this.ok = (xhr.status >= 200 && xhr.status <= 299);
-			this.status = xhr.status;
-			this.statusText = xhr.statusText;
-			this.headers = (headers != null) ? headers : new Headers(xhr);
-			this.duration = duration;
-			this.url = url;
-			this.xhr = xhr;
 
-	  		// 根据内容类型设置响应数据
+		/**
+		 * @param {XMLHttpRequest} xhr      - 底层 XHR 对象
+		 * @param {string}         url      - 实际请求 URL（跟随重定向后）
+		 * @param {number}         duration - 请求耗时毫秒数
+		 * @param {LuCI.headers}   headers  - 响应头（null 时从 xhr 解析）
+		 * @param {*}              content  - 预设内容（Blob/Object/string）
+		 */
+		__init__(xhr, url, duration, headers, content) {
+			/** @type {boolean} 是否为 2xx 成功响应 */
+			this.ok = (xhr.status >= 200 && xhr.status <= 299);
+			/** @type {number} HTTP 状态码 */
+			this.status = xhr.status;
+			/** @type {string} HTTP 状态描述（'OK'/'Not Found' 等） */
+			this.statusText = xhr.statusText;
+			/** @type {LuCI.headers} 响应头对象 */
+			this.headers = (headers != null) ? headers : new Headers(xhr);
+			/** @type {number} 请求总耗时（毫秒） */
+			this.duration = duration;
+			/** @type {string} 最终响应 URL（跟随重定向后） */
+			this.url = url;
+
+			this.xhr = xhr; /* 私有：供 clone() 使用 */
+
 			if (content instanceof Blob) {
 				this.responseBlob = content;
 				this.responseJSON = null;
@@ -263,7 +396,6 @@
 			}
 			else {
 				this.responseJSON = null;
-
 				if (xhr.responseType == 'blob') {
 					this.responseBlob = xhr.response;
 					this.responseText = null;
@@ -276,77 +408,97 @@
 		},
 
 		/**
-		 * 克隆响应对象
+		 * 克隆响应对象，可选地覆盖内容（用于批量 RPC 的结果分发）。
+		 *
+		 * @instance
+		 * @memberof LuCI.response
 		 * @param {*} [content] - 覆盖内容
-		 * @returns {LuCI.response} 克隆的响应对象
+		 * @returns {LuCI.response}
 		 */
 		clone(content) {
 			const copy = new Response(this.xhr, this.url, this.duration, this.headers, content);
-
 			copy.ok = this.ok;
 			copy.status = this.status;
 			copy.statusText = this.statusText;
-
 			return copy;
 		},
 
 		/**
-		 * 获取JSON格式响应数据
-		 * @throws {SyntaxError} 如果不是有效JSON
-		 * @returns {*} 解析后的JSON数据
+		 * 将响应内容解析为 JSON（结果缓存）。
+		 *
+		 * @instance
+		 * @memberof LuCI.response
+		 * @throws {SyntaxError} 非法 JSON 时抛出
+		 * @returns {*}
 		 */
 		json() {
 			if (this.responseJSON == null)
 				this.responseJSON = JSON.parse(this.responseText);
-
 			return this.responseJSON;
 		},
 
 		/**
-		 * 获取文本格式响应数据
-		 * @returns {string} 响应文本
+		 * 以字符串形式返回响应内容。
+		 *
+		 * @instance
+		 * @memberof LuCI.response
+		 * @returns {string}
 		 */
 		text() {
 			if (this.responseText == null && this.responseJSON != null)
 				this.responseText = JSON.stringify(this.responseJSON);
-
 			return this.responseText;
 		},
 
 		/**
-		 * 获取二进制格式响应数据
-		 * @returns {Blob} 响应二进制数据
+		 * 以 Blob 形式返回响应内容（用于二进制下载）。
+		 *
+		 * @instance
+		 * @memberof LuCI.response
+		 * @returns {Blob}
 		 */
 		blob() {
 			return this.responseBlob;
 		}
 	});
 
-	// 请求队列
+	// ════════════════════════════════════════════════════════
+	// RPC 请求批处理队列
+	// ════════════════════════════════════════════════════════
+
+	/**
+	 * 待批处理的 RPC 请求队列。
+	 * 同一帧内对相同 ubus 端点的多个 POST 请求会被合并为一条批量请求，
+	 * 从而减少网络往返，提升性能。每个元素格式：[requestOpt, rejectFn, resolveFn]
+	 */
 	const requestQueue = [];
 
-	// 检查请求是否可批量处理
+	/**
+	 * 判断请求是否满足批处理条件（同时满足4个条件时可批处理）：
+	 * 1. rpc 模块已加载
+	 * 2. 请求方法为 POST 且 content 为对象
+	 * 3. 未设置 nobatch=true
+	 * 4. 请求 URL 以 RPC 基础 URL 开头
+	 */
 	function isQueueableRequest(opt) {
 		if (!classes.rpc)
 			return false;
-
 		if (opt.method != 'POST' || typeof(opt.content) != 'object')
 			return false;
-
 		if (opt.nobatch === true)
 			return false;
-
 		const rpcBaseURL = Request.expandURL(classes.rpc.getBaseURL());
-
 		return (rpcBaseURL != null && opt.url.indexOf(rpcBaseURL) == 0);
 	}
 
-	// 刷新请求队列
+	/**
+	 * 将队列中所有请求合并为一条批量请求发送，响应后按序分发结果。
+	 * 在 requestAnimationFrame 回调中调用，确保同帧内所有请求都已入队。
+	 */
 	function flushRequestQueue() {
 		if (!requestQueue.length)
 			return;
 
-		// 合并请求
 		const reqopt = Object.assign({}, requestQueue[0][0], { content: [], nobatch: true }), batch = [];
 
 		for (let i = 0; i < requestQueue.length; i++) {
@@ -356,14 +508,10 @@
 
 		requestQueue.length = 0;
 
-		// 发送批量请求
 		Request.request(rpcBaseURL, reqopt).then(reply => {
 			let json = null, req = null;
-
 			try { json = reply.json() }
 			catch(e) { }
-
-	  		// 分发响应
 			while ((req = batch.shift()) != null)
 				if (Array.isArray(json) && json.length)
 					req[2].call(reqopt, reply.clone(json.shift()));
@@ -371,40 +519,88 @@
 					req[1].call(reqopt, new Error('No related RPC reply'));
 		}).catch(error => {
 			let req = null;
-
 			while ((req = batch.shift()) != null)
 				req[1].call(reqopt, error);
 		});
 	}
+
+	// ════════════════════════════════════════════════════════
+	// Request 类（HTTP 客户端）
+	// ════════════════════════════════════════════════════════
 
 	/**
 	 * @class request
 	 * @memberof LuCI
 	 * @hideconstructor
 	 * @classdesc
-	 * HTTP 请求处理类
+	 *
+	 * LuCI.request 类：封装 XMLHttpRequest，提供 Promise 风格 HTTP 接口。
+	 * 核心特性：
+	 *   - 支持 GET/POST 请求和完整配置（超时、凭据、进度回调等）
+	 *   - 内置 RPC 请求批处理（同帧合并，减少网络往返）
+	 *   - 支持响应拦截器（全局错误处理、登录超时检测）
+	 *   - Request.poll 子命名空间提供轮询 HTTP 请求注册
 	 */
 	const Request = Class.singleton(/** @lends LuCI.request.prototype */ {
 		__name__: 'LuCI.request',
+
+		/** 已注册的 HTTP 响应拦截器函数列表 */
 		interceptors: [],
 
 		/**
-		 * 将相对URL转换为绝对URL
-		 * @param {string} url - 要转换的URL
-		 * @returns {string} 绝对URL
+		 * 将相对 URL 转换为绝对 URL（补充协议和主机名）。
+		 *
+		 * @instance
+		 * @memberof LuCI.request
+		 * @param {string} url - 输入 URL（相对或已是绝对）
+		 * @returns {string} 绝对 URL
+		 *
+		 * 【使用场景】
+		 *   Request.expandURL('/cgi-bin/luci/admin/ubus')
+		 *   → 'http://192.168.1.1/cgi-bin/luci/admin/ubus'
 		 */
 		expandURL(url) {
 			if (!/^(?:[^/]+:)?\/\//.test(url))
 				url = `${location.protocol}//${location.host}${url}`;
-
 			return url;
 		},
 
 		/**
-		 * 发起HTTP请求
-		 * @param {string} target - 请求URL
-		 * @param {LuCI.request.RequestOptions} [options] - 请求选项
-		 * @returns {Promise<LuCI.response>} 响应Promise
+		 * @typedef {Object} RequestOptions
+		 * @memberof LuCI.request
+		 *
+		 * 请求配置选项：
+		 *   method      {string}  HTTP 方法（默认 'GET'）
+		 *   query       {Object}  URL 查询参数（对象值自动 JSON 序列化）
+		 *   cache       {boolean} 是否允许缓存（false 时追加时间戳，默认 false）
+		 *   username    {string}  Basic 认证用户名
+		 *   password    {string}  Basic 认证密码
+		 *   timeout     {number}  超时毫秒数
+		 *   credentials {boolean} 是否携带 Cookie 等凭据（默认 false）
+		 *   responseType {string} 响应类型：'text' 或 'blob'（默认 'text'）
+		 *   content     {*}       请求体（Object→JSON，FormData→原样，其他→字符串）
+		 *   headers     {Object}  自定义请求头 {头名: 值}
+		 *   progress    {Function}上传进度回调（接收 ProgressEvent）
+		 *   nobatch     {boolean} 禁止此请求加入批处理队列
+		 */
+
+		/**
+		 * 发起一个 HTTP 请求。
+		 *
+		 * @instance
+		 * @memberof LuCI.request
+		 * @param {string} target                   - 请求 URL
+		 * @param {LuCI.request.RequestOptions} [options] - 请求配置
+		 * @returns {Promise<LuCI.response>}
+		 *
+		 * 【使用场景：获取 JSON 数据文件】
+		 *   Request.request('/data.json', { cache: true }).then(res => {
+		 *       console.log(res.json());
+		 *   });
+		 *
+		 * 【批处理说明】
+		 *   满足条件的 RPC 请求不立即发送，而是入队等到帧末批量发送，
+		 *   可显著减少多个并发 RPC 调用的网络开销。
 		 */
 		request(target, options) {
 			return Promise.resolve(target).then(url => {
@@ -418,14 +614,13 @@
 					opt.xhr.onreadystatechange = callback.bind(opt, resolveFn, rejectFn);
 					opt.method = String(opt.method ?? 'GET').toUpperCase();
 
-		  			// 处理查询参数
+					// 处理 query 参数
 					if ('query' in opt) {
 						const q = (opt.query != null) ? Object.keys(opt.query).map(k => {
 							if (opt.query[k] != null) {
 								const v = (typeof(opt.query[k]) == 'object')
 									? JSON.stringify(opt.query[k])
 									: String(opt.query[k]);
-
 								return '%s=%s'.format(encodeURIComponent(k), encodeURIComponent(v));
 							}
 							else {
@@ -440,7 +635,6 @@
 							case 'OPTIONS':
 								opt.url += ((/\?/).test(opt.url) ? '&' : '?') + q;
 								break;
-
 							default:
 								if (content == null) {
 									content = q;
@@ -450,44 +644,40 @@
 						}
 					}
 
-		  			// 禁用缓存
+					// 禁用缓存：追加时间戳
 					if (!opt.cache)
 						opt.url += ((/\?/).test(opt.url) ? '&' : '?') + (new Date()).getTime();
 
-		  			// 批量处理请求
+					// 满足批处理条件时入队，延迟到下帧统一发送
 					if (isQueueableRequest(opt)) {
 						requestQueue.push([opt, rejectFn, resolveFn]);
 						requestAnimationFrame(flushRequestQueue);
 						return;
 					}
 
-		  			// 打开连接
+					// 打开连接（支持 Basic 认证）
 					if ('username' in opt && 'password' in opt)
 						opt.xhr.open(opt.method, opt.url, true, opt.username, opt.password);
 					else
 						opt.xhr.open(opt.method, opt.url, true);
 
-		  			// 设置响应类型
 					opt.xhr.responseType = opt.responseType ?? 'text';
 
 					if ('overrideMimeType' in opt.xhr)
 						opt.xhr.overrideMimeType('application/octet-stream');
 
-					// 设置超时
 					if ('timeout' in opt)
 						opt.xhr.timeout = +opt.timeout;
 
-		  			// 设置凭据
 					if ('credentials' in opt)
 						opt.xhr.withCredentials = !!opt.credentials;
 
-		  			// 处理请求内容
+					// 处理请求体
 					if (opt.content != null) {
 						switch (typeof(opt.content)) {
 						case 'function':
 							content = opt.content(opt.xhr);
 							break;
-
 						case 'object':
 							if (!(opt.content instanceof FormData)) {
 								content = JSON.stringify(opt.content);
@@ -497,13 +687,12 @@
 								content = opt.content;
 							}
 							break;
-
 						default:
 							content = String(opt.content);
 						}
 					}
 
-		  			// 设置请求头
+					// 设置自定义请求头（Content-Type 单独处理）
 					if ('headers' in opt)
 						for (const header in opt.headers)
 							if (opt.headers.hasOwnProperty(header)) {
@@ -513,15 +702,12 @@
 									contenttype = opt.headers[header];
 							}
 
-		  			// 进度回调
 					if ('progress' in opt && 'upload' in opt.xhr)
 						opt.xhr.upload.addEventListener('progress', opt.progress);
 
-		  			// 设置内容类型头
 					if (contenttype != null)
 						opt.xhr.setRequestHeader('Content-Type', contenttype);
 
-		  			// 发送请求
 					try {
 						opt.xhr.send(content);
 					}
@@ -532,14 +718,17 @@
 			});
 		},
 
-		// 处理XHR状态变化
+		/**
+		 * XHR readystatechange 内部回调：请求完成时解析响应，执行拦截器，resolve/reject Promise。
+		 * 状态码为 0 时区分超时和浏览器中止两种情况。
+		 * @private
+		 */
 		handleReadyStateChange(resolveFn, rejectFn, ev) {
 			const xhr = this.xhr, duration = Date.now() - this.start;
 
 			if (xhr.readyState !== 4)
 				return;
 
-	  		// 处理错误
 			if (xhr.status === 0 && xhr.statusText === '') {
 				if (duration >= this.timeout)
 					rejectFn.call(this, new Error('XHR request timed out'));
@@ -547,9 +736,7 @@
 					rejectFn.call(this, new Error('XHR request aborted by browser'));
 			}
 			else {
-
-				const response = new Response( // 创建响应对象并处理拦截器
-					xhr, xhr.responseURL ?? this.url, duration);
+				const response = new Response(xhr, xhr.responseURL ?? this.url, duration);
 
 				Promise.all(Request.interceptors.map(fn => fn(response)))
 					.then(resolveFn.bind(this, response))
@@ -558,30 +745,56 @@
 		},
 
 		/**
-		 * 发起GET请求
-		 * @param {string} url - 请求URL
-		 * @param {LuCI.request.RequestOptions} [options] - 请求选项
-		 * @returns {Promise<LuCI.response>} 响应Promise
+		 * 发起 HTTP GET 请求。
+		 *
+		 * @instance
+		 * @memberof LuCI.request
+		 * @param {string} url
+		 * @param {LuCI.request.RequestOptions} [options]
+		 * @returns {Promise<LuCI.response>}
+		 *
+		 * 【使用场景】
+		 *   Request.get(L.url('admin/status/overview')).then(res => {
+		 *       document.body.innerHTML = res.text();
+		 *   });
 		 */
 		get(url, options) {
 			return this.request(url, Object.assign({ method: 'GET' }, options));
 		},
 
 		/**
-		 * 发起POST请求
-		 * @param {string} url - 请求URL
-		 * @param {*} [data] - 请求数据
-		 * @param {LuCI.request.RequestOptions} [options] - 请求选项
-		 * @returns {Promise<LuCI.response>} 响应Promise
+		 * 发起 HTTP POST 请求。
+		 *
+		 * @instance
+		 * @memberof LuCI.request
+		 * @param {string} url
+		 * @param {*}      [data]    - 请求体（Object → JSON）
+		 * @param {LuCI.request.RequestOptions} [options]
+		 * @returns {Promise<LuCI.response>}
+		 *
+		 * 【使用场景：提交 JSON 数据到后端】
+		 *   Request.post('/api/save', { key: 'value' });
 		 */
 		post(url, data, options) {
 			return this.request(url, Object.assign({ method: 'POST', content: data }, options));
 		},
 
 		/**
-		 * 添加HTTP响应拦截器
-		 * @param {LuCI.request.interceptorFn} interceptorFn - 拦截器函数
-		 * @returns {LuCI.request.interceptorFn} 注册的函数
+		 * 注册一个 HTTP 响应拦截器（对所有请求生效）。
+		 * 可用于全局错误处理、登录超时检测、请求日志等。
+		 *
+		 * @instance
+		 * @memberof LuCI.request
+		 * @param {LuCI.request.interceptorFn} interceptorFn
+		 * @returns {LuCI.request.interceptorFn} 注册的函数（供 remove 使用）
+		 *
+		 * 【使用场景：检测 HTTP 403 + 登录要求头，跳转登录页】
+		 *
+		 *   Request.addInterceptor(function(res) {
+		 *       if (res.status == 403 &&
+		 *           res.headers.get('X-LuCI-Login-Required') == 'yes')
+		 *           window.location.href = L.url('admin/login');
+		 *   });
 		 */
 		addInterceptor(interceptorFn) {
 			if (typeof(interceptorFn) == 'function')
@@ -590,9 +803,12 @@
 		},
 
 		/**
-		 * 移除HTTP响应拦截器
-		 * @param {LuCI.request.interceptorFn} interceptorFn - 要移除的函数
-		 * @returns {boolean} 是否移除了函数
+		 * 移除一个已注册的 HTTP 响应拦截器。
+		 *
+		 * @instance
+		 * @memberof LuCI.request
+		 * @param {LuCI.request.interceptorFn} interceptorFn
+		 * @returns {boolean} 成功移除返回 true
 		 */
 		removeInterceptor(interceptorFn) {
 			const oldlen = this.interceptors.length;
@@ -603,15 +819,37 @@
 			return (this.interceptors.length < oldlen);
 		},
 
-		// 轮询相关功能
+		/**
+		 * @class
+		 * @memberof LuCI.request
+		 * @hideconstructor
+		 * @classdesc
+		 *
+		 * Request.poll：将 HTTP 请求封装为周期性轮询任务。
+		 * 主要用于页面数据的自动定期刷新。
+		 */
 		poll: {
 			/**
-			 * 添加轮询请求
-			 * @param {number} interval - 轮询间隔(秒)
-			 * @param {string} url - 请求URL
-			 * @param {LuCI.request.RequestOptions} [options] - 请求选项
-			 * @param {LuCI.request.poll~callbackFn} [callback] - 回调函数
-			 * @returns {function} 轮询函数
+			 * 注册一个周期性 HTTP 轮询请求。
+			 *
+			 * @instance
+			 * @memberof LuCI.request.poll
+			 * @param {number}   interval - 轮询间隔秒数（必须 > 0）
+			 * @param {string}   url      - 每次轮询请求的 URL
+			 * @param {LuCI.request.RequestOptions} [options] - 请求配置
+			 * @param {Function} [callback] - 每次收到响应时调用：cb(res, json, duration)
+			 * @throws {TypeError} interval 无效时抛出
+			 * @returns {function|null} 内部轮询函数（可传给 remove() 取消）
+			 *
+			 * 【使用场景：每5秒轮询网络接口状态并更新表格】
+			 *
+			 *   var pollFn = Request.poll.add(5,
+			 *       L.url('admin/status/interfaces'), {},
+			 *       function(res, data, duration) {
+			 *           if (data) updateIfaceTable(data.interfaces);
+			 *       }
+			 *   );
+			 *   // 离开页面时：Request.poll.remove(pollFn);
 			 */
 			add(interval, url, options, callback) {
 				if (isNaN(interval) || interval <= 0)
@@ -624,9 +862,7 @@
 						return;
 
 					let res_json = null;
-					try {
-						res_json = res.json();
-					}
+					try { res_json = res.json(); }
 					catch (err) {}
 
 					callback(res, res_json, res.duration);
@@ -635,36 +871,59 @@
 				return (Poll.add(fn, ival) ? fn : null);
 			},
 
-			/**
-			 * 移除轮询请求
-			 * @param {function} entry - 要移除的轮询函数
-			 * @returns {boolean} 是否移除了函数
-			 */
+			/** 移除一个轮询任务（Poll.remove 的别名）
+			 * @instance @memberof LuCI.request.poll */
 			remove(entry) { return Poll.remove(entry) },
 
-	  		// 以下是对Poll类的代理方法
+			/** 启动轮询循环（Poll.start 的别名）
+			 * @instance @memberof LuCI.request.poll */
 			start() { return Poll.start() },
+
+			/** 停止轮询循环（Poll.stop 的别名）
+			 * @instance @memberof LuCI.request.poll */
 			stop() { return Poll.stop() },
+
+			/** 检查轮询是否在运行（Poll.active 的别名）
+			 * @instance @memberof LuCI.request.poll */
 			active() { return Poll.active() }
 		}
 	});
+
+	// ════════════════════════════════════════════════════════
+	// Poll 类（定时轮询调度器）
+	// ════════════════════════════════════════════════════════
 
 	/**
 	 * @class poll
 	 * @memberof LuCI
 	 * @hideconstructor
 	 * @classdesc
-	 * 轮询管理类
+	 *
+	 * LuCI.poll 类：以1秒为粒度驱动的定时任务调度器。
+	 *
+	 * 【工作原理】
+	 *   启动后每秒触发一次 step()，step() 遍历队列中的所有任务，
+	 *   当 tick 数是任务间隔的整数倍时调用该任务。
+	 *   任务执行期间标记 r=false（防止并发），完成（finally）后恢复 r=true。
 	 */
 	const Poll = Class.singleton(/** @lends LuCI.poll.prototype */ {
 		__name__: 'LuCI.poll',
-	queue: [], // 轮询队列
+
+		/** 已注册的轮询任务：[{ r:就绪标志, i:间隔秒数, fn:函数 }, ...] */
+		queue: [],
 
 		/**
-		 * 添加轮询操作
-		 * @param {function} fn - 轮询函数
-		 * @param {number} interval - 轮询间隔(秒)
-		 * @returns {boolean} 是否添加成功
+		 * 添加一个轮询任务，若循环未启动则自动启动。
+		 *
+		 * @instance
+		 * @memberof LuCI.poll
+		 * @param {function} fn       - 要周期调用的函数（可返回 Promise）
+		 * @param {number}   interval - 调用间隔秒数（≤0 时用全局 pollinterval）
+		 * @throws {TypeError} 参数无效时抛出
+		 * @returns {boolean} 成功添加返回 true，已存在返回 false
+		 *
+		 * 【使用场景：每30秒检查一次系统负载】
+		 *   Poll.add(() => callSysInfo().then(info => updateLoadDisplay(info)), 30);
 		 */
 		add(fn, interval) {
 			if (interval == null || interval <= 0)
@@ -673,21 +932,18 @@
 			if (isNaN(interval) || typeof(fn) != 'function')
 				throw new TypeError('Invalid argument to LuCI.poll.add()');
 
-	  		// 检查是否已存在
 			for (let i = 0; i < this.queue.length; i++)
 				if (this.queue[i].fn === fn)
 					return false;
 
-	  		// 添加轮询项
 			const e = {
-				r: true,
-				i: interval >>> 0,
-				fn
+				r: true,        // 就绪标志（false 时表示正在执行，跳过调度）
+				i: interval >>> 0,  // 间隔秒数（整数）
+				fn              // 被调度的函数
 			};
 
 			this.queue.push(e);
 
-	  		// 自动启动轮询
 			if (this.tick != null && !this.active())
 				this.start();
 
@@ -695,9 +951,13 @@
 		},
 
 		/**
-		 * 移除轮询操作
-		 * @param {function} fn - 要移除的函数
-		 * @returns {boolean} 是否移除成功
+		 * 移除一个轮询任务，队列清空时自动停止轮询。
+		 *
+		 * @instance
+		 * @memberof LuCI.poll
+		 * @param {function} fn - 要移除的函数引用（必须与 add 时完全相同）
+		 * @throws {TypeError} 参数不是函数时抛出
+		 * @returns {boolean}
 		 */
 		remove(fn) {
 			if (typeof(fn) != 'function')
@@ -705,12 +965,10 @@
 
 			const len = this.queue.length;
 
-	  		// 从后向前查找移除
 			for (let i = len; i > 0; i--)
 				if (this.queue[i-1].fn === fn)
 					this.queue.splice(i-1, 1);
 
-	  		// 如果队列为空则停止轮询
 			if (!this.queue.length && this.stop())
 				this.tick = 0;
 
@@ -718,8 +976,11 @@
 		},
 
 		/**
-		 * 启动轮询循环
-		 * @returns {boolean} 是否启动成功
+		 * （重新）启动轮询循环，触发 document 的 'poll-start' 事件。
+		 *
+		 * @instance
+		 * @memberof LuCI.poll
+		 * @returns {boolean} 成功启动返回 true，已在运行返回 false
 		 */
 		start() {
 			if (this.active())
@@ -737,8 +998,11 @@
 		},
 
 		/**
-		 * 停止轮询循环
-		 * @returns {boolean} 是否停止成功
+		 * 停止轮询循环，触发 document 的 'poll-stop' 事件。
+		 *
+		 * @instance
+		 * @memberof LuCI.poll
+		 * @returns {boolean} 成功停止返回 true，未在运行返回 false
 		 */
 		stop() {
 			if (!this.active())
@@ -751,58 +1015,78 @@
 			return true;
 		},
 
-		// 轮询步骤
+		/**
+		 * 每秒执行一次的步进函数：遍历队列，调度到期且就绪的任务。
+		 * @private
+		 */
 		step() {
 			for (let i = 0, e = null; (e = Poll.queue[i]) != null; i++) {
-				// 检查是否到执行时间
-				if ((Poll.tick % e.i) != 0)
-					continue;
+				if ((Poll.tick % e.i) != 0) continue;  // 未到调度时刻
+				if (!e.r) continue;                     // 上次还未完成，跳过
 
-				if (!e.r)
-					continue;
+				e.r = false; // 标记为执行中
 
-				e.r = false;
-
-				// 执行轮询函数
+				// 调用任务，无论成功失败均恢复就绪标志
 				Promise.resolve(e.fn()).finally((function() { this.r = true }).bind(e));
 			}
 
-	  		// 更新计数器
+			// tick 自增（防止溢出：到 2^32 时回绕到 0）
 			Poll.tick = (Poll.tick + 1) % Math.pow(2, 32);
 		},
 
 		/**
-		 * 检查轮询是否活动
-		 * @returns {boolean} 是否活动
+		 * 检查轮询循环是否正在运行。
+		 *
+		 * @instance
+		 * @memberof LuCI.poll
+		 * @returns {boolean}
 		 */
 		active() {
 			return (this.timer != null);
 		}
 	});
 
+	// ════════════════════════════════════════════════════════
+	// DOM 类（DOM 操作工具集）
+	// ════════════════════════════════════════════════════════
+
 	/**
 	 * @class dom
 	 * @memberof LuCI
 	 * @hideconstructor
 	 * @classdesc
-	 * DOM操作辅助类
-		 */
+	 *
+	 * LuCI.dom 类：提供 DOM 元素的创建、属性设置、内容操作和类实例绑定工具。
+	 *
+	 * 引入方式：
+	 *   'require dom';              // 视图文件中
+	 *   L.require("dom").then(...)  // 外部 JS 中
+	 *
+	 * 全局别名 E() 等同于 dom.create()，是 LuCI 插件中最常用的 DOM 函数。
+	 */
 	const DOM = Class.singleton(/** @lends LuCI.dom.prototype */ {
 		__name__: 'LuCI.dom',
 
 		/**
-		 * 检查是否为DOM节点
-		 * @param {*} e - 要检查的值
-		 * @returns {boolean} 是否为DOM节点
+		 * 检查给定值是否是有效的 DOM Node。
+		 *
+		 * @instance @memberof LuCI.dom
+		 * @param {*} e - 待测试值
+		 * @returns {boolean}
 		 */
 		elem(e) {
 			return (e != null && typeof(e) == 'object' && 'nodeType' in e);
 		},
 
 		/**
-		 * 解析HTML字符串为DOM节点
-		 * @param {string} s - HTML字符串
-		 * @returns {Node} 解析后的第一个节点
+		 * 将 HTML 字符串解析为 DOM 节点（返回第一个子节点）。
+		 *
+		 * @instance @memberof LuCI.dom
+		 * @param {string} s - HTML 字符串
+		 * @returns {Node|null}
+		 *
+		 * 【使用场景】
+		 *   var el = dom.parse('<span class="badge">3</span>');
 		 */
 		parse(s) {
 			try {
@@ -814,10 +1098,12 @@
 		},
 
 		/**
-		 * 检查节点是否匹配选择器
-		 * @param {*} node - 要检查的节点
-		 * @param {string} [selector] - 选择器
-		 * @returns {boolean} 是否匹配
+		 * 测试 DOM Node 是否匹配 CSS 选择器（对非 Node 值安全返回 false）。
+		 *
+		 * @instance @memberof LuCI.dom
+		 * @param {*}      node     - 待测节点
+		 * @param {string} selector - CSS 选择器
+		 * @returns {boolean}
 		 */
 		matches(node, selector) {
 			const m = this.elem(node) ? (node.matches ?? node.msMatchesSelector) : null;
@@ -825,10 +1111,15 @@
 		},
 
 		/**
-		 * 查找匹配选择器的最近父节点
-		 * @param {*} node - 起始节点
-		 * @param {string} [selector] - 选择器
-		 * @returns {Node|null} 匹配的父节点或null
+		 * 返回最近匹配 CSS 选择器的父节点（closest 的安全封装）。
+		 *
+		 * @instance @memberof LuCI.dom
+		 * @param {*}      node     - 起始节点
+		 * @param {string} selector - CSS 选择器
+		 * @returns {Node|null}
+		 *
+		 * 【使用场景：从按钮向上找到所属的 .cbi-section 容器】
+		 *   var section = dom.parent(buttonEl, '.cbi-section');
 		 */
 		parent(node, selector) {
 			if (this.elem(node) && node.closest)
@@ -844,10 +1135,16 @@
 		},
 
 		/**
-		 * 添加子节点
-		 * @param {*} node - 父节点
-		 * @param {*} [children] - 子节点
-		 * @returns {Node|null} 最后添加的子节点
+		 * 向节点追加子内容（支持多种 children 类型）。
+		 *
+		 * @instance @memberof LuCI.dom
+		 * @param {*} node      - 目标节点
+		 * @param {*} [children] - 要追加的内容：
+		 *   Array   → 逐项追加（DOM Node 直接 appendChild，其他转文本节点）
+		 *   Function→ 调用，以返回值递归追加
+		 *   DOM Node→ 直接 appendChild
+		 *   其他非null→ 设置 innerHTML
+		 * @returns {Node|null} 最后追加的节点
 		 */
 		append(node, children) {
 			if (!this.elem(node))
@@ -859,7 +1156,6 @@
 						node.appendChild(children[i]);
 					else if (children !== null && children !== undefined)
 						node.appendChild(document.createTextNode(`${children[i]}`));
-
 				return node.lastChild;
 			}
 			else if (typeof(children) === 'function') {
@@ -877,22 +1173,24 @@
 		},
 
 		/**
-		 * 替换节点内容
-		 * @param {*} node - 要替换内容的节点
-		 * @param {*} [children] - 新内容
-		 * @returns {Node|null} 最后添加的子节点
+		 * 清空节点所有子内容，再追加新内容（content = clear + append）。
+		 *
+		 * @instance @memberof LuCI.dom
+		 * @param {*} node      - 目标节点
+		 * @param {*} [children] - 新内容（同 append 的 children 参数）
+		 * @returns {Node|null}
+		 *
+		 * 【使用场景：更新视图区域的内容（不保留旧内容）】
+		 *   DOM.content(document.getElementById('view'), E('div', 'Loading...'));
 		 */
 		content(node, children) {
 			if (!this.elem(node))
 				return null;
 
-	  		// 清理数据引用
 			const dataNodes = node.querySelectorAll('[data-idref]');
-
 			for (let i = 0; i < dataNodes.length; i++)
 				delete this.registry[dataNodes[i].getAttribute('data-idref')];
 
-	  		// 移除所有子节点
 			while (node.firstChild)
 				node.removeChild(node.firstChild);
 
@@ -900,10 +1198,21 @@
 		},
 
 		/**
-		 * 设置属性或事件监听器
-		 * @param {*} node - 目标节点
-		 * @param {string|Object<string, *>} key - 属性名或属性对象
-		 * @param {*} [val] - 属性值
+		 * 设置节点的属性或注册事件监听器。
+		 *
+		 * @instance @memberof LuCI.dom
+		 * @param {*}           node - 目标节点
+		 * @param {string|Object} key - 属性名，或 {属性名: 值} 批量对象
+		 * @param {*}           [val]- 属性值（key 为字符串时使用）
+		 *
+		 * 值类型处理规则：
+		 *   Function → addEventListener(key, val)（注册事件处理器）
+		 *   Object   → setAttribute(key, JSON.stringify(val))
+		 *   其他     → setAttribute(key, val)
+		 *
+		 * 【使用场景】
+		 *   dom.attr(el, 'class', 'cbi-button primary');
+		 *   dom.attr(el, { class: 'x', click: myHandler });
 		 */
 		attr(node, key, val) {
 			if (!this.elem(node))
@@ -916,7 +1225,6 @@
 			else if (typeof(key) === 'string')
 				attr = {}, attr[key] = val;
 
-	  		// 设置属性或事件
 			for (key in attr) {
 				if (!attr.hasOwnProperty(key) || attr[key] == null)
 					continue;
@@ -925,11 +1233,9 @@
 				case 'function':
 					node.addEventListener(key, attr[key]);
 					break;
-
 				case 'object':
 					node.setAttribute(key, JSON.stringify(attr[key]));
 					break;
-
 				default:
 					node.setAttribute(key, attr[key]);
 				}
@@ -937,11 +1243,33 @@
 		},
 
 		/**
-		 * 创建DOM节点
-		 * @param {*} html - 节点描述
-		 * @param {Object<string, *>} [attr] - 属性
-		 * @param {*} [data] - 子节点
-		 * @returns {Node} 创建的节点
+		 * 创建 DOM 节点（LuCI 最常用的工具函数，全局别名 E()）。
+		 *
+		 * 调用形式：
+		 *   create(html[, attr[, data]])
+		 *   create(html[, data])
+		 *
+		 * @instance @memberof LuCI.dom
+		 * @param {*}      html - 节点描述：
+		 *   Array     → 创建 DocumentFragment，成员递归转为节点
+		 *   DOM Node  → 直接使用
+		 *   '<...'    → 解析 HTML（以 '<' 开头）
+		 *   其他字符串  → document.createElement(html)
+		 * @param {Object} [attr] - 属性/事件对象（参见 dom.attr()）
+		 * @param {*}      [data] - 子内容（参见 dom.append()）
+		 * @returns {Node}
+		 *
+		 * 【使用场景1：创建带属性的按钮】
+		 *   E('button', { class: 'btn cbi-button-save', click: myFn }, '保存')
+		 *
+		 * 【使用场景2：创建嵌套结构】
+		 *   E('div', { class: 'cbi-section' }, [
+		 *       E('h3', '标题'),
+		 *       E('p', { class: 'description' }, '说明文字')
+		 *   ])
+		 *
+		 * 【使用场景3：DocumentFragment（用于批量追加）】
+		 *   E([ E('li', 'item1'), E('li', 'item2') ])
 		 */
 		create() {
 			const html = arguments[0];
@@ -949,11 +1277,9 @@
 			let data = arguments[2];
 			let elem;
 
-	  		// 处理参数重载
 			if (!(attr instanceof Object) || Array.isArray(attr))
 				data = attr, attr = null;
 
-	  		// 根据输入类型创建节点
 			if (Array.isArray(html)) {
 				elem = document.createDocumentFragment();
 				for (let i = 0; i < html.length; i++)
@@ -962,7 +1288,7 @@
 			else if (this.elem(html)) {
 				elem = html;
 			}
-			else if (html.charCodeAt(0) === 60) {
+			else if (html.charCodeAt(0) === 60) { // '<' 字符
 				elem = this.parse(html);
 			}
 			else {
@@ -972,21 +1298,27 @@
 			if (!elem)
 				return null;
 
-	  		// 设置属性和子节点
 			this.attr(elem, attr);
 			this.append(elem, data);
 
 			return elem;
 		},
 
+		/** 节点数据注册表（存储通过 data() 绑定到节点的非字符串数据） */
 		registry: {},
 
 		/**
-		 * 获取/设置节点数据
-		 * @param {Node} node - 目标节点
-		 * @param {string|null} [key] - 数据键
-		 * @param {*|null} [val] - 数据值
-		 * @returns {*} 数据值
+		 * 读取/写入/删除节点关联的任意数据（避免污染 DOM 属性）。
+		 * 数据存储在 registry 中，节点持有 data-idref 属性作为索引键。
+		 *
+		 * 调用形式：
+		 *   dom.data(node)               → 获取全部数据
+		 *   dom.data(node, key)          → 获取指定 key
+		 *   dom.data(node, key, val)     → 设置 key = val
+		 *   dom.data(node, null)         → 清除所有数据
+		 *   dom.data(node, key, null)    → 删除指定 key
+		 *
+		 * @instance @memberof LuCI.dom
 		 */
 		data(node, key, val) {
 			if (!node?.getAttribute)
@@ -994,147 +1326,159 @@
 
 			let id = node.getAttribute('data-idref');
 
-	  		// 清除所有数据
 			if (arguments.length > 1 && key == null) {
 				if (id != null) {
 					node.removeAttribute('data-idref');
-					val = this.registry[id]
+					val = this.registry[id];
 					delete this.registry[id];
 					return val;
 				}
-
 				return null;
 			}
-	  		// 清除指定键
 			else if (arguments.length > 2 && key != null && val == null) {
 				if (id != null) {
 					val = this.registry[id][key];
 					delete this.registry[id][key];
 					return val;
 				}
-
 				return null;
 			}
-	  		// 设置数据
 			else if (arguments.length > 2 && key != null && val != null) {
 				if (id == null) {
-		  			// 生成唯一ID
 					do { id = Math.floor(Math.random() * 0xffffffff).toString(16) }
 					while (this.registry.hasOwnProperty(id));
-
 					node.setAttribute('data-idref', id);
 					this.registry[id] = {};
 				}
-
 				return (this.registry[id][key] = val);
 			}
-	  		// 获取所有数据
 			else if (arguments.length == 1) {
-				if (id != null)
-					return this.registry[id];
-
+				if (id != null) return this.registry[id];
 				return null;
 			}
-	  		// 获取指定键
 			else if (arguments.length == 2) {
-				if (id != null)
-					return this.registry[id][key];
+				if (id != null) return this.registry[id][key];
 			}
 
 			return null;
 		},
 
 		/**
-		 * 绑定类实例到节点
-		 * @param {Node} node - 目标节点
+		 * 将类实例绑定到 DOM 节点（方便后续通过节点反向查找控件实例）。
+		 *
+		 * @instance @memberof LuCI.dom
+		 * @param {Node}  node - DOM 节点
 		 * @param {Class} inst - 类实例
-		 * @returns {Class} 绑定的实例
+		 * @returns {Class}
+		 * @throws {TypeError} inst 不是类实例时抛出
+		 *
+		 * 【使用场景：绑定 Table 实例到节点后，可用 findClassInstance 反向恢复】
+		 *   dom.bindClassInstance(tableEl, new L.ui.Table(tableEl));
 		 */
 		bindClassInstance(node, inst) {
 			if (!(inst instanceof Class))
 				LuCI.prototype.error('TypeError', 'Argument must be a class instance');
-
 			return this.data(node, '_class', inst);
 		},
 
 		/**
-		 * 查找节点或其父节点上的类实例
+		 * 从节点或其最近父节点上查找绑定的类实例。
+		 *
+		 * @instance @memberof LuCI.dom
 		 * @param {Node} node - 起始节点
-		 * @returns {Class|null} 找到的类实例
+		 * @returns {Class|null}
 		 */
 		findClassInstance(node) {
 			let inst = null;
-
 			do {
 				inst = this.data(node, '_class');
 				node = node.parentNode;
 			}
 			while (!(inst instanceof Class) && node != null);
-
 			return inst;
 		},
 
 		/**
-		 * 调用节点或其父节点上类实例的方法
-		 * @param {Node} node - 起始节点
+		 * 查找节点或父节点上绑定的类实例，并调用其指定方法。
+		 *
+		 * @instance @memberof LuCI.dom
+		 * @param {Node}   node   - 起始节点
 		 * @param {string} method - 方法名
-		 * @param {...*} params - 方法参数
-		 * @returns {*|null} 方法返回值
+		 * @param {...*}   params - 传给方法的参数
+		 * @returns {*|null}
+		 *
+		 * 【使用场景：对所有 .cbi-map 表单调用 save()】
+		 *   document.querySelectorAll('.cbi-map').forEach(map =>
+		 *       DOM.callClassMethod(map, 'save'));
 		 */
 		callClassMethod(node, method, ...args) {
 			const inst = this.findClassInstance(node);
-
 			if (typeof(inst?.[method]) != 'function')
 				return null;
-
 			return inst[method].call(inst, ...args);
 		},
 
 		/**
-		 * 检查节点是否为空
-		 * @param {Node} node - 要检查的节点
-		 * @param {LuCI.dom~ignoreCallbackFn} [ignoreFn] - 忽略回调
-		 * @returns {boolean} 是否为空
+		 * 检查节点是否无可见子节点（hidden 类的子节点及 ignoreFn 返回 true 的节点会被忽略）。
+		 *
+		 * @instance @memberof LuCI.dom
+		 * @param {Node}     node      - 待检测节点
+		 * @param {Function} [ignoreFn]- 可选忽略回调（返回 true 则忽略该子节点）
+		 * @returns {boolean}
 		 */
 		isEmpty(node, ignoreFn) {
 			for (let child = node?.firstElementChild; child != null; child = child.nextElementSibling)
 				if (!child.classList.contains('hidden') && !ignoreFn?.(child))
 					return false;
-
 			return true;
 		}
 	});
+
+	// ════════════════════════════════════════════════════════
+	// Session 类（会话和本地存储管理）
+	// ════════════════════════════════════════════════════════
 
 	/**
 	 * @class session
 	 * @memberof LuCI
 	 * @hideconstructor
 	 * @classdesc
-	 * 会话管理类
+	 *
+	 * LuCI.session 类：提供会话 ID/Token 访问，以及与 session 绑定的
+	 * 浏览器 sessionStorage 读写（用于跨页面缓存少量数据）。
+	 *
+	 * 常见缓存用途：
+	 *   rpcBaseURL  —— 避免每次页面加载都重新探测 RPC 端点
+	 *   features    —— 系统特性标志（避免重复 RPC 查询）
+	 *   preload     —— 预加载类列表
 	 */
 	const Session = Class.singleton(/** @lends LuCI.session.prototype */ {
 		__name__: 'LuCI.session',
 
 		/**
-		 * 获取会话ID
-		 * @returns {string} 会话ID
+		 * 获取当前登录会话 ID（32位十六进制字符串）。
+		 * @returns {string}
 		 */
 		getID() {
 			return env.sessionid ?? '00000000000000000000000000000000';
 		},
 
 		/**
-		 * 获取会话令牌
-		 * @returns {string|null} 会话令牌
+		 * 获取当前 CSRF 令牌（用于防止跨站请求伪造）。
+		 * @returns {string|null}
 		 */
 		getToken() {
 			return env.token ?? null;
 		},
 
 		/**
-		 * 获取本地会话数据
-		 * @param {string} [key] - 数据键
-		 * @returns {*} 数据值
+		 * 从 sessionStorage 读取与当前 session 绑定的本地数据。
+		 *
+		 * @param {string} [key] - 键名，省略时返回全部数据对象
+		 * @returns {*} 值或 null
+		 *
+		 * 【使用场景】
+		 *   var url = L.session.getLocalData('rpcBaseURL');
 		 */
 		getLocalData(key) {
 			try {
@@ -1158,10 +1502,14 @@
 		},
 
 		/**
-		 * 设置本地会话数据
-		 * @param {string} key - 数据键
-		 * @param {*} value - 数据值
-		 * @returns {boolean} 是否成功
+		 * 向 sessionStorage 写入与当前 session 绑定的本地数据。
+		 *
+		 * @param {string} key   - 键名
+		 * @param {*}      value - 值（自动 JSON 序列化）。null 表示删除该键
+		 * @returns {boolean} 成功返回 true
+		 *
+		 * 【使用场景】
+		 *   L.session.setLocalData('features', { fwl3: true });
 		 */
 		setLocalData(key, value) {
 			if (key == null)
@@ -1183,7 +1531,6 @@
 					delete data[sid][key];
 
 				window.sessionStorage.setItem(item, JSON.stringify(data));
-
 				return true;
 			}
 			catch (e) {
@@ -1192,66 +1539,135 @@
 		}
 	});
 
+	// ════════════════════════════════════════════════════════
+	// View 类（视图基类）
+	// ════════════════════════════════════════════════════════
+
 	/**
 	 * @class view
 	 * @memberof LuCI
 	 * @hideconstructor
 	 * @classdesc
-	 * 视图基类
+	 *
+	 * LuCI.view 类：所有 LuCI 插件视图的基类，定义了标准的视图生命周期：
+	 *   load() → render() → addFooter()
+	 *
+	 * 【典型插件视图结构】
+	 *
+	 *   'use strict';
+	 *   'require form';
+	 *   'require uci';
+	 *
+	 *   return view.extend({
+	 *       // 阶段1：加载数据
+	 *       load() {
+	 *           return uci.load('mypackage');
+	 *       },
+	 *
+	 *       // 阶段2：构建 UI（接收 load 返回值）
+	 *       render(data) {
+	 *           var m = new form.Map('mypackage', '我的配置');
+	 *           var s = m.section(form.TypedSection, 'main');
+	 *           s.option(form.Value, 'host', '主机地址');
+	 *           return m.render();
+	 *       },
+	 *
+	 *       // 可选：禁用"保存并应用"按钮
+	 *       handleSaveApply: null,
+	 *   });
 	 */
 	const View = Class.extend(/** @lends LuCI.view.prototype */ {
 		__name__: 'LuCI.view',
 
-		// 初始化视图
+		/**
+		 * 视图构造：显示加载状态，依次调用 load → render → addFooter。
+		 * @private
+		 */
 		__init__() {
 			const vp = document.getElementById('view');
-
 			DOM.content(vp, E('div', { 'class': 'spinning' }, _('Loading view…')));
 
-	  		// 加载并渲染视图
-			return Promise.resolve(this.load())
+			const ready = L.loaded
+				? Promise.resolve()
+				: new Promise((resolve) => {
+					document.addEventListener('luci-loaded', resolve, { once: true });
+				});
+
+			return ready
+				.then(LuCI.prototype.bind(this.load, this))
 				.then(LuCI.prototype.bind(this.render, this))
 				.then(LuCI.prototype.bind(function(nodes) {
 					const vp = document.getElementById('view');
-
 					DOM.content(vp, nodes);
 					DOM.append(vp, this.addFooter());
 				}, this)).catch(LuCI.prototype.error);
 		},
 
 		/**
-		 * 视图加载方法(需子类实现)
-		 * @returns {*|Promise<*>} 加载结果
+		 * 视图加载阶段（生命周期第1阶段）：在渲染前执行的数据获取。
+		 *
+		 * 子类覆盖此方法以加载所需数据（如 uci.load/RPC 调用）。
+		 * 返回值将作为 render() 的第一个参数传入，可返回 Promise。
+		 *
+		 * @instance @abstract @memberof LuCI.view
+		 * @returns {*|Promise<*>}
+		 *
+		 * 【覆盖示例】
+		 *   load() {
+		 *       return Promise.all([
+		 *           uci.load('network'),
+		 *           callNetworkDevices()
+		 *       ]);
+		 *   }
 		 */
 		load() {},
 
 		/**
-		 * 视图渲染方法(需子类实现)
-		 * @param {*|null} load_results - 加载结果
-		 * @returns {Node|Promise<Node>} 渲染的DOM节点
+		 * 视图渲染阶段（生命周期第2阶段）：构建并返回视图 DOM。
+		 *
+		 * 子类必须覆盖此方法并返回 DOM 节点（或 Promise<Node>）。
+		 * 渲染结果插入页面主内容区域 #view。
+		 *
+		 * @instance @abstract @memberof LuCI.view
+		 * @param {*|null} load_results - load() 的返回值
+		 * @returns {Node|Promise<Node>}
+		 *
+		 * 【覆盖示例】
+		 *   render(data) {
+		 *       var m = new form.Map('network', '网络配置');
+		 *       // ... 配置 section/option
+		 *       return m.render();
+		 *   }
 		 */
 		render() {},
 
 		/**
-		 * 处理保存操作
-		 * @param {Event} ev - 触发事件
-		 * @returns {*|Promise<*>} 处理结果
+		 * 处理"保存"按钮点击事件。
+		 * 默认实现：对页面所有 .cbi-map 表单调用 save()。
+		 * 要禁用此按钮：子类中设 handleSave: null。
+		 *
+		 * @instance @memberof LuCI.view
+		 * @param {Event} ev
+		 * @returns {Promise}
 		 */
 		handleSave(ev) {
 			const tasks = [];
-
 			document.getElementById('maincontent')
 				.querySelectorAll('.cbi-map').forEach(map => {
 					tasks.push(DOM.callClassMethod(map, 'save'));
 				});
-
 			return Promise.all(tasks);
 		},
 
 		/**
-		 * 处理保存并应用操作
-		 * @param {Event} ev - 触发事件
-		 * @returns {*|Promise<*>} 处理结果
+		 * 处理"保存并应用"按钮点击事件。
+		 * 默认实现：先 handleSave()，再调用 ui.changes.apply() 触发应用流程。
+		 * 要禁用此按钮：子类中设 handleSaveApply: null。
+		 *
+		 * @instance @memberof LuCI.view
+		 * @param {Event}  ev
+		 * @param {string} mode - '0'=带确认应用，其他=直接应用
+		 * @returns {Promise}
 		 */
 		handleSaveApply(ev, mode) {
 			return this.handleSave(ev).then(() => {
@@ -1260,24 +1676,29 @@
 		},
 
 		/**
-		 * 处理重置操作
-		 * @param {Event} ev - 触发事件
-		 * @returns {*|Promise<*>} 处理结果
+		 * 处理"重置"按钮点击事件。
+		 * 默认实现：对页面所有 .cbi-map 表单调用 reset()。
+		 * 要禁用此按钮：子类中设 handleReset: null。
+		 *
+		 * @instance @memberof LuCI.view
+		 * @param {Event} ev
+		 * @returns {Promise}
 		 */
 		handleReset(ev) {
 			const tasks = [];
-
 			document.getElementById('maincontent')
 				.querySelectorAll('.cbi-map').forEach(map => {
 					tasks.push(DOM.callClassMethod(map, 'reset'));
 				});
-
 			return Promise.all(tasks);
 		},
 
 		/**
-		 * 添加页脚
-		 * @returns {DocumentFragment} 页脚DOM片段
+		 * 渲染页面底部操作栏（保存/保存并应用/重置按钮）。
+		 * 对应 handle*() 为 null 的按钮不渲染。只读视图自动禁用所有按钮。
+		 *
+		 * @instance @memberof LuCI.view
+		 * @returns {DocumentFragment}
 		 */
 		addFooter() {
 			const footer = E([]);
@@ -1285,21 +1706,17 @@
 			let hasmap = false;
 			let readonly = true;
 
-	  		// 检查是否有表单和权限
 			vp.querySelectorAll('.cbi-map').forEach(map => {
 				const m = DOM.findClassInstance(map);
 				if (m) {
 					hasmap = true;
-
-					if (!m.readonly)
-						readonly = false;
+					if (!m.readonly) readonly = false;
 				}
 			});
 
 			if (!hasmap)
 				readonly = !LuCI.prototype.hasViewPermission();
 
-	  		// 创建保存并应用按钮
 			const saveApplyBtn = this.handleSaveApply ? new classes.ui.ComboButton('0', {
 				0: [ _('Save & Apply') ],
 				1: [ _('Apply unchecked') ]
@@ -1312,7 +1729,6 @@
 				disabled: readonly || null
 			}).render() : E([]);
 
-	  		// 添加按钮到页脚
 			if (this.handleSaveApply || this.handleSave || this.handleReset) {
 				footer.appendChild(E('div', { 'class': 'cbi-page-actions' }, [
 					saveApplyBtn, ' ',
@@ -1333,14 +1749,20 @@
 		}
 	});
 
-  	// 全局变量初始化
-	const domParser = new DOMParser();
-	let originalCBIInit = null;
-	let rpcBaseURL = null;
-	let sysFeatures = null;
-	let preloadClasses = null;
+	// ════════════════════════════════════════════════════════
+	// 框架内部变量
+	// ════════════════════════════════════════════════════════
 
-  	// 预加载核心类
+	const domParser = new DOMParser();
+	let originalCBIInit = null;  // 保存原始 cbi_init（框架就绪前替换为空操作）
+	let rpcBaseURL = null;       // 探测到的 RPC 基础 URL 缓存
+	let sysFeatures = null;      // 系统特性标志缓存
+	let preloadClasses = null;   // 预加载类列表缓存
+
+	/**
+	 * 内置模块注册表（框架启动时直接注册，无需 HTTP 加载）。
+	 * 通过 require() 加载的外部模块也会存入此表（如 ui、rpc、form 等）。
+	 */
 	const classes = {
 		baseclass: Class,
 		dom: DOM,
@@ -1350,16 +1772,28 @@
 		view: View
 	};
 
-  	// 自然排序比较器
+	/** 自然排序比较器（数字字符串按数值大小排序，如 eth10 排在 eth9 之后）*/
 	const naturalCompare = new Intl.Collator(undefined, { numeric: true }).compare;
 
-  	// LuCI 主类
+
+	// ════════════════════════════════════════════════════════
+	// LuCI 主类（全局 L 对象）
+	// ════════════════════════════════════════════════════════
+
 	const LuCI = Class.extend(/** @lends LuCI.prototype */ {
 		__name__: 'LuCI',
 
-		// 初始化LuCI环境
+		/**
+		 * 框架初始化入口（由页面底部内联脚本调用，传入后端注入的环境配置）。
+		 *
+		 * 初始化流程：
+		 *   1. 从 luci.js script src 解析 base_url 和 resource_version
+		 *   2. 等待 DOMContentLoaded + 核心模块加载（ui/rpc/form）+ RPC URL 探测
+		 *   3. 调用 setupDOM() 完成拦截器注册、系统特性探测、预加载类加载
+		 *   4. 调用 initDOM() 启动轮询并触发 luci-loaded 事件
+		 * @private
+		 */
 		__init__(setenv) {
-	  		// 从脚本URL获取基础URL
 			document.querySelectorAll('script[src*="/luci.js"]').forEach(s => {
 				if (setenv.base_url == null || setenv.base_url == '') {
 					const m = (s.getAttribute('src') ?? '').match(/^(.*)\/luci\.js(?:\?v=([^?]+))?$/);
@@ -1374,10 +1808,8 @@
 				this.error('InternalError', 'Cannot find url of luci.js');
 
 			setenv.cgi_base = setenv.scriptname.replace(/\/[^\/]+$/, '');
-
 			Object.assign(env, setenv);
 
-	  		// 等待DOM就绪并加载必要模块
 			const domReady = new Promise((resolveFn, rejectFn) => {
 				document.addEventListener('DOMContentLoaded', resolveFn);
 			});
@@ -1390,17 +1822,22 @@
 				this.probeRPCBaseURL()
 			]).then(this.setupDOM.bind(this)).catch(this.error);
 
-	  		// 保存原始CBI初始化函数
 			originalCBIInit = window.cbi_init;
 			window.cbi_init = () => {};
 		},
 
 		/**
-		 * 抛出错误并记录堆栈
-		 * @param {Error|string} [type=Error] - 错误类型
-		 * @param {string} [fmt=Unspecified error] - 错误格式字符串
-		 * @param {...*} [args] - 格式参数
-		 * @throws {Error} 抛出的错误
+		 * 抛出指定类型的错误（附带调用栈），并记录到控制台。
+		 *
+		 * @instance @memberof LuCI
+		 * @param {Error|string} [type=Error] - 错误类型字符串或已有 Error 实例
+		 * @param {string}       [fmt]        - 格式化字符串（支持 %s %d 等占位符）
+		 * @param {...*}         [args]        - 格式化参数
+		 * @throws {Error}
+		 *
+		 * 【使用场景：在 RPC 出错时抛出自定义错误】
+		 *   L.raise('RPCError', 'Call to %s/%s failed with code %d',
+		 *       object, method, code);
 		 */
 		raise(type, fmt, ...args) {
 			let e = null;
@@ -1409,9 +1846,7 @@
 
 			if (type instanceof Error) {
 				e = type;
-
-				if (msg)
-					e.message = `${msg}: ${e.message}`;
+				if (msg) e.message = `${msg}: ${e.message}`;
 			}
 			else {
 				try { throw new Error('stacktrace') }
@@ -1421,25 +1856,18 @@
 				e.name = type ?? 'Error';
 			}
 
-	  		// 清理堆栈跟踪
 			for (let i = 0; i < stack.length; i++) {
 				const frame = stack[i].replace(/(.*?)@(.+):(\d+):(\d+)/g, 'at $1 ($2:$3:$4)').trim();
 				stack[i] = frame ? `  ${frame}` : '';
 			}
 
-			if (!/^  at /.test(stack[0]))
-				stack.shift();
-
-			if (/\braise /.test(stack[0]))
-				stack.shift();
-
-			if (/\berror /.test(stack[0]))
-				stack.shift();
+			if (!/^  at /.test(stack[0])) stack.shift();
+			if (/\braise /.test(stack[0])) stack.shift();
+			if (/\berror /.test(stack[0])) stack.shift();
 
 			if (stack.length)
 				e.message += `\n${stack.join('\n')}`;
 
-	  		// 记录错误
 			if (window.console && console.debug)
 				console.debug(e);
 
@@ -1447,16 +1875,18 @@
 		},
 
 		/**
-		 * 抛出错误并显示给用户
-		 * @param {Error|string} [type=Error] - 错误类型
-		 * @param {string} [fmt=Unspecified error] - 错误格式字符串
-		 * @param {...*} [args] - 格式参数
-		 * @throws {Error} 抛出的错误
+		 * raise() 的包装：除抛出错误外，还将错误渲染到页面。
+		 * UI 已加载时显示模态通知，否则直接替换 #maincontent 内容。
+		 *
+		 * @instance @memberof LuCI
+		 * @param {Error|string} [type=Error]
+		 * @param {string}       [fmt]
+		 * @param {...*}         [args]
+		 * @throws {Error}
 		 */
 		error(type, fmt /*, ...*/) {
 			try {
-				LuCI.prototype.raise.apply(LuCI.prototype,
-					Array.prototype.slice.call(arguments));
+				LuCI.prototype.raise.apply(LuCI.prototype, Array.prototype.slice.call(arguments));
 			}
 			catch (e) {
 				if (!e.reported) {
@@ -1475,27 +1905,48 @@
 		},
 
 		/**
-		 * 绑定函数上下文
-		 * @param {function} fn - 要绑定的函数
-		 * @param {*} self - this上下文
-		 * @param {...*} [args] - 绑定参数
-		 * @returns {function} 绑定后的函数
+		 * 创建绑定指定 this 和前置参数的函数（Function.bind 的简便封装）。
+		 *
+		 * @instance @memberof LuCI
+		 * @param {function} fn   - 要绑定的函数
+		 * @param {*}        self - 绑定的 this 值
+		 * @param {...*}     args - 前置绑定参数
+		 * @returns {function}
+		 *
+		 * 【使用场景：确保回调中 this 指向视图实例】
+		 *   Poll.add(L.bind(this.update, this), 5);
 		 */
 		bind(fn, self, ...args) {
 			return Function.prototype.bind.call(fn, self, ...args);
 		},
 
 		/**
-		 * 加载JavaScript类
-		 * @param {string} name - 类名(点分格式)
-		 * @param {Array} [from=[]] - 依赖链(用于检测循环依赖)
-		 * @returns {Promise<LuCI.baseclass>} 类实例Promise
+		 * 按需加载指定的 LuCI JavaScript 模块（每个模块只加载一次，结果缓存）。
+		 *
+		 * @instance @memberof LuCI
+		 * @param {string} name - 模块名（点分格式，'form'、'ui'、'luci.tools' 等）
+		 * @throws {DependencyError} 循环依赖时
+		 * @throws {NetworkError}   HTTP 加载失败时
+		 * @throws {SyntaxError}    模块代码语法错误时
+		 * @throws {TypeError}      模块未返回有效类实例时
+		 * @returns {Promise<LuCI.baseclass>} 解析为模块实例
+		 *
+		 * 【在插件中使用 'require' 字符串语法声明依赖（推荐方式）】
+		 *
+		 *   'use strict';
+		 *   'require form';    // 框架解析后等价于 L.require('form')
+		 *   'require uci';     // 依赖的模块实例作为参数注入
+		 *
+		 * 【模块加载机制】
+		 *   1. 将模块名转换为 URL：'form' → '{base_url}/form.js?v=...'
+		 *   2. 解析文件头部的 'require xxx' 声明，递归加载所有依赖
+		 *   3. 通过 eval() 执行模块代码，将依赖实例作为参数注入
+		 *   4. 将返回的类实例存入 classes 表，并挂载到 L 对象对应路径
 		 */
 		require(name, from = []) {
 			const L = this;
 			let url = null;
 
-			// 检查是否已加载
 			if (classes[name] != null) {
 				if (from.indexOf(name) != -1)
 					LuCI.prototype.raise('DependencyError',
@@ -1505,11 +1956,10 @@
 				return Promise.resolve(classes[name]);
 			}
 
-			// 构建类文件URL
-			url = '%s/%s.js%s'.format(env.base_url, name.replace(/\./g, '/'), (env.resource_version ? `?v=${env.resource_version}` : ''));
+			url = '%s/%s.js%s'.format(env.base_url, name.replace(/\./g, '/'),
+				(env.resource_version ? `?v=${env.resource_version}` : ''));
 			from = [ name ].concat(from);
 
-			// 编译类
 			const compileClass = res => {
 				if (!res.ok)
 					LuCI.prototype.raise('NetworkError',
@@ -1521,23 +1971,17 @@
 				const depends = [];
 				let args = '';
 
-				// 解析依赖
+				/* 扫描源码头部，提取所有 'require xxx' 声明 */
 				for (let i = 0, off = -1, prev = -1, quote = -1, comment = -1, esc = false; i < source.length; i++) {
 					const chr = source.charCodeAt(i);
 
-					if (esc) {
-						esc = false;
-					}
+					if (esc) { esc = false; }
 					else if (comment != -1) {
 						if ((comment == 47 && chr == 10) || (comment == 42 && prev == 42 && chr == 47))
 							comment = -1;
 					}
-					else if ((chr == 42 || chr == 47) && prev == 47) {
-						comment = chr;
-					}
-					else if (chr == 92) {
-						esc = true;
-					}
+					else if ((chr == 42 || chr == 47) && prev == 47) { comment = chr; }
+					else if (chr == 92) { esc = true; }
 					else if (chr == quote) {
 						const s = source.substring(off, i), m = requirematch.exec(s);
 
@@ -1546,9 +1990,7 @@
 							depends.push(LuCI.prototype.require(dep, from));
 							args += `, ${as}`;
 						}
-						else if (!strictmatch.exec(s)) {
-							break;
-						}
+						else if (!strictmatch.exec(s)) { break; }
 
 						off = -1;
 						quote = -1;
@@ -1561,7 +2003,7 @@
 					prev = chr;
 				}
 
-				// 加载依赖并实例化类
+				/* 等所有依赖加载完毕后，eval 执行模块代码并实例化 */
 				return Promise.all(depends).then(instances => {
 					let _factory, _class;
 
@@ -1584,7 +2026,7 @@
 					if (_class.displayName == 'AnonymousClass')
 						_class.displayName = toCamelCase(`${name}Class`);
 
-		  			// 将类实例挂载到LuCI原型链
+					/* 将模块实例挂载到 L 对象对应路径（如 L.form、L.ui 等） */
 					let ptr = Object.getPrototypeOf(L);
 					let idx = 0;
 					const parts = name.split(/\./);
@@ -1597,43 +2039,39 @@
 						ptr[parts[idx]] = instance;
 
 					classes[name] = instance;
-
 					return instance;
 				});
 			};
 
-			// 请求类文件
 			classes[name] = Request.get(url, { cache: true }).then(compileClass);
-
 			return classes[name];
 		},
 
-		/* DOM 初始化相关方法 */
-
-		// 探测RPC基础URL
+		/**
+		 * 探测 RPC 基础 URL（优先读 sessionStorage 缓存，再尝试直连 ubus，失败回退 CGI 代理）。
+		 * @private
+		 */
 		probeRPCBaseURL() {
 			if (rpcBaseURL == null)
 				rpcBaseURL = Session.getLocalData('rpcBaseURL');
 
 			if (rpcBaseURL == null) {
-				const msg = {
-					jsonrpc: '2.0',
-					id:	  'init',
-					method:  'list',
-					params:  undefined
-				};
+				const msg = { jsonrpc: '2.0', id: 'init', method: 'list', params: undefined };
 				const rpcFallbackURL = this.url('admin/ubus');
 
-				rpcBaseURL = Request.post(env.ubuspath, msg, { nobatch: true }).then(res => rpcBaseURL = res.status == 200 ? env.ubuspath : rpcFallbackURL, () => rpcBaseURL = rpcFallbackURL).then(url => {
-					Session.setLocalData('rpcBaseURL', url);
-					return url;
-				});
+				rpcBaseURL = Request.post(env.ubuspath, msg, { nobatch: true })
+					.then(res => rpcBaseURL = res.status == 200 ? env.ubuspath : rpcFallbackURL,
+					      () => rpcBaseURL = rpcFallbackURL)
+					.then(url => {
+						Session.setLocalData('rpcBaseURL', url);
+						return url;
+					});
 			}
 
 			return Promise.resolve(rpcBaseURL);
 		},
 
-		// 探测系统特性
+		/** 探测并缓存系统特性标志（通过 luci.getFeatures RPC 调用）。@private */
 		probeSystemFeatures() {
 			if (sysFeatures == null)
 				sysFeatures = Session.getLocalData('features');
@@ -1646,7 +2084,6 @@
 				})().then(features => {
 					Session.setLocalData('features', features);
 					sysFeatures = features;
-
 					return features;
 				});
 			}
@@ -1654,7 +2091,7 @@
 			return Promise.resolve(sysFeatures);
 		},
 
-		// 探测预加载类
+		/** 探测并缓存预加载类列表（从 preload 目录读取 JS 文件列表）。@private */
 		probePreloadClasses() {
 			if (preloadClasses == null)
 				preloadClasses = Session.getLocalData('preload');
@@ -1669,18 +2106,13 @@
 					const classes = [];
 
 					for (let i = 0; i < entries.length; i++) {
-						if (entries[i].type != 'file')
-							continue;
-
+						if (entries[i].type != 'file') continue;
 						const m = entries[i].name.match(/(.+)\.js$/);
-
-						if (m)
-							classes.push('preload.%s'.format(m[1]));
+						if (m) classes.push('preload.%s'.format(m[1]));
 					}
 
 					Session.setLocalData('preload', classes);
 					preloadClasses = classes;
-
 					return classes;
 				});
 			}
@@ -1689,21 +2121,31 @@
 		},
 
 		/**
-		 * 检查系统是否支持某特性
-		 * @param {string} feature - 特性名称
-		 * @param {string} [subfeature] - 子特性名称
-		 * @return {boolean|null} 是否支持
+		 * 检测指定系统特性是否可用（session 开始时查询一次并缓存）。
+		 *
+		 * @instance @memberof LuCI
+		 * @param {string} feature      - 特性名（如 'fwl3'、'ipv6'、'hostapd'）
+		 * @param {string} [subfeature] - 子特性名（如 'sae'、'11w'）
+		 * @returns {boolean|null}
+		 *   true  → 特性可用
+		 *   false → 特性不可用
+		 *   null  → 查询了不支持子特性的特性的子特性
+		 *
+		 * 【使用场景：根据硬件能力动态显示配置选项】
+		 *   if (L.hasSystemFeature('hostapd', 'sae'))
+		 *       s.option(form.Flag, 'sae', '启用 WPA3 SAE 认证');
 		 */
 		hasSystemFeature() {
 			const ft = sysFeatures[arguments[0]];
-
 			if (arguments.length == 2)
 				return this.isObject(ft) ? ft[arguments[1]] : null;
-
 			return (ft != null && ft != false);
 		},
 
-		// 通知会话过期
+		/**
+		 * session 过期时：停止轮询，弹出重新登录对话框，抛出 SessionError。
+		 * @private
+		 */
 		notifySessionExpiry() {
 			Poll.stop();
 
@@ -1723,13 +2165,17 @@
 			LuCI.prototype.raise('SessionError', 'Login session is expired');
 		},
 
-		// 设置DOM环境
+		/**
+		 * DOM 就绪且核心模块加载完成后的初始化：注册拦截器、绑定轮询指示器、
+		 * 探测系统特性、加载预加载模块，最后调用 initDOM()。
+		 * @private
+		 */
 		setupDOM(res) {
 			const domEv = res[0], uiClass = res[1], rpcClass = res[2], formClass = res[3], rpcBaseURL = res[4];
 
 			rpcClass.setBaseURL(rpcBaseURL);
 
-	  		// 添加RPC拦截器(处理会话过期)
+			/* RPC 拦截器：检测 JSON-RPC 错误码 -32002（session 过期/权限问题） */
 			rpcClass.addInterceptor((msg, req) => {
 				if (!LuCI.prototype.isObject(msg) ||
 					!LuCI.prototype.isObject(msg.error) ||
@@ -1748,20 +2194,16 @@
 				})('uci', 'luci', 'read').catch(LuCI.prototype.notifySessionExpiry);
 			});
 
-	  		// 添加请求拦截器(处理权限拒绝)
+			/* HTTP 拦截器：检测 403 + X-LuCI-Login-Required 头 */
 			Request.addInterceptor(res => {
 				let isDenied = false;
-
 				if (res.status == 403 && res.headers.get('X-LuCI-Login-Required') == 'yes')
 					isDenied = true;
-
-				if (!isDenied)
-					return;
-
+				if (!isDenied) return;
 				LuCI.prototype.notifySessionExpiry();
 			});
 
-	  		// 轮询事件处理
+			/* 轮询状态指示器（右上角"正在刷新"/"已暂停"） */
 			document.addEventListener('poll-start', ev => {
 				uiClass.showIndicator('poll-status', _('Refreshing'), ev => {
 					Request.poll.active() ? Request.poll.stop() : Request.poll.start();
@@ -1772,142 +2214,169 @@
 				uiClass.showIndicator('poll-status', _('Paused'), null, 'inactive');
 			});
 
-	  		// 加载系统特性和预加载类
 			return Promise.all([
 				this.probeSystemFeatures(),
 				this.probePreloadClasses()
 			]).finally(LuCI.prototype.bind(function() {
 				const tasks = [];
-
 				if (Array.isArray(preloadClasses))
 					for (let i = 0; i < preloadClasses.length; i++)
 						tasks.push(this.require(preloadClasses[i]));
-
 				return Promise.all(tasks);
 			}, this)).finally(this.initDOM);
 		},
 
-		// 初始化DOM
+		/**
+		 * 最终 DOM 初始化：恢复并调用 cbi_init()、启动轮询、发出 luci-loaded 事件。
+		 * 触发 luci-loaded 后，视图的 load()/render() 生命周期才会开始执行。
+		 * @private
+		 */
 		initDOM() {
-			originalCBIInit(); // 恢复原始CBI初始化
-			Poll.start(); // 启动轮询
-			document.dispatchEvent(new CustomEvent('luci-loaded')); // 触发加载完成事件
+			originalCBIInit();
+			Poll.start();
+			L.loaded = true;
+			document.dispatchEvent(new CustomEvent('luci-loaded'));
 		},
 
-	/* 实用方法 */
+		/** 标记 LuCI 是否完成初始化（视图在 load/render 前会等待此标志变为 true）*/
+		loaded: false,
+
+		/** 暴露运行时环境变量（供外部读取 env.sessionid 等）*/
+		env,
 
 		/**
-		 * 环境变量对象
-		 * @member {Object} env
+		 * 构建相对于服务器文档根目录的绝对文件系统路径（处理 .. 和多余 /）。
+		 *
+		 * @instance @memberof LuCI
+		 * @param {...string} [parts] - 路径各部分
+		 * @returns {string}
+		 *
+		 * 【使用场景：构建 preload 目录的完整路径】
+		 *   L.fspath(L.resource('preload'))  → '/www/luci-static/resources/preload'
 		 */
-			env,
-
-		/**
-		 * 构建文件系统路径
-		 * @param {...string} [parts] - 路径部分
-		 * @return {string} 完整路径
-		 */
-		fspath() /* ... */{
+		fspath() /* ... */ {
 			let path = env.documentroot;
-
 			for (let i = 0; i < arguments.length; i++)
 				path += `/${arguments[i]}`;
 
-	  		// 规范化路径
 			const p = path.replace(/\/+$/, '').replace(/\/+/g, '/').split(/\//), res = [];
-
 			for (let i = 0; i < p.length; i++)
-				if (p[i] == '..')
-					res.pop();
-				else if (p[i] != '.')
-					res.push(p[i]);
+				if (p[i] == '..') res.pop();
+				else if (p[i] != '.') res.push(p[i]);
 
 			return res.join('/');
 		},
 
 		/**
-		 * 构建URL路径
-		 * @param {string} [prefix] - 路径前缀
-		 * @param {...string} [parts] - 路径部分
-		 * @return {string} 完整路径
+		 * 构建带白名单过滤的安全 URL（内部使用，防止路径注入）。
+		 * 允许字符：a-z A-Z 0-9 _ . % , ; - / 以及 ?key=value 查询串。
+		 * @private
 		 */
 		path(prefix = '', parts) {
 			const url = [ prefix ];
 
-			for (let i = 0; i < parts.length; i++){
+			for (let i = 0; i < parts.length; i++) {
 				const part = parts[i];
 				if (Array.isArray(part))
 					url.push(this.path('', part));
 				else
-					if (/^(?:[a-zA-Z0-9_.%,;-]+\/)*[a-zA-Z0-9_.%,;-]+$/.test(part) || /^\?[a-zA-Z0-9_.%=&;-]+$/.test(part))
+					if (/^(?:[a-zA-Z0-9_.%,;-]+\/)*[a-zA-Z0-9_.%,;-]+$/.test(part) ||
+					    /^\?[a-zA-Z0-9_.%=&;-]+$/.test(part))
 						url.push(part.startsWith('?') ? part : '/' + part);
 			}
 
-			if (url.length === 1)
-				url.push('/');
-
+			if (url.length === 1) url.push('/');
 			return url.join('');
 		},
 
 		/**
-		 * 构建相对于脚本路径的URL
-		 * @param {...string} [parts] - 路径部分
-		 * @return {string} 完整URL
+		 * 构建相对于 CGI 脚本路径的 URL（如 /cgi-bin/luci/...）。
+		 *
+		 * @instance @memberof LuCI
+		 * @param {...string} [parts] - URL 路径各部分
+		 * @returns {string}
+		 *
+		 * 【使用场景】
+		 *   L.url('admin/network/interfaces')
+		 *   → '/cgi-bin/luci/admin/network/interfaces'
+		 *
+		 *   L.url('admin/ubus')  // RPC CGI 代理端点
 		 */
 		url() {
 			return this.path(env.scriptname, arguments);
 		},
 
 		/**
-		 * 构建相对于静态资源路径的URL
-		 * @param {...string} [parts] - 路径部分
-		 * @return {string} 完整URL
+		 * 构建相对于静态资源目录的 URL（/luci-static/resources/...）。
+		 *
+		 * @instance @memberof LuCI
+		 * @param {...string} [parts]
+		 * @returns {string}
+		 *
+		 * 【使用场景】
+		 *   L.resource('icons', 'wifi.png')
+		 *   → '/luci-static/resources/icons/wifi.png'
 		 */
 		resource() {
 			return this.path(env.resource, arguments);
 		},
 
 		/**
-		 * 构建相对于主题媒体路径的URL
-		 * @param {...string} [parts] - 路径部分
-		 * @return {string} 完整URL
+		 * 构建相对于主题媒体目录的 URL（/luci-static/themes/xxx/...）。
+		 *
+		 * @instance @memberof LuCI
+		 * @param {...string} [parts]
+		 * @returns {string}
 		 */
 		media() {
 			return this.path(env.media, arguments);
 		},
 
 		/**
-		 * 获取当前视图路径
-		 * @return {string} 当前路径
+		 * 返回当前视图的完整 URL 路径。
+		 * @instance @memberof LuCI
+		 * @returns {string}
 		 */
 		location() {
 			return this.path(env.scriptname, env.requestpath);
 		},
 
 		/**
-		 * 检查是否为对象
-		 * @param {*} [val] - 要检查的值
-		 * @return {boolean} 是否为对象
+		 * 检查给定值是否是非 null 的 JavaScript 对象（Array.isArray 的对象版本）。
+		 *
+		 * @instance @memberof LuCI
+		 * @param {*} [val]
+		 * @returns {boolean}
+		 *
+		 * 【使用场景】
+		 *   if (L.isObject(response)) { ... }   // 排除 null 和原始类型
 		 */
 		isObject(val) {
 			return (val != null && typeof(val) == 'object');
 		},
 
 		/**
-		 * 检查是否为arguments对象
-		 * @param {*} [val] - 要检查的值
-		 * @return {boolean} 是否为arguments
+		 * 检查给定值是否是函数 arguments 对象。
+		 * @instance @memberof LuCI
+		 * @param {*} [val]
+		 * @returns {boolean}
 		 */
 		isArguments(val) {
 			return (Object.prototype.toString.call(val) == '[object Arguments]');
 		},
 
 		/**
-		 * 获取排序后的对象键
-		 * @param {object} obj - 源对象
-		 * @param {string|null} [key] - 排序依据的键
-		 * @param {"addr"|"num"} [sortmode] - 排序模式
-		 * @return {string[]} 排序后的键数组
+		 * 返回对象键的自然排序数组，支持按嵌套值排序和多种排序模式。
+		 *
+		 * @instance @memberof LuCI
+		 * @param {object} obj       - 要排序的对象
+		 * @param {string} [key]     - 按哪个子键排序（用于对象数组）
+		 * @param {string} [sortmode]- 'addr'=IP/MAC 地址排序，'num'=纯数值排序
+		 * @returns {string[]} 排序后的键数组
+		 *
+		 * 【使用场景：对网络接口状态对象按名称自然排序】
+		 *   var ifaceNames = L.sortedKeys(statusObj);
+		 *   // ['eth0', 'eth1', 'eth10'] — 而非 ['eth0', 'eth1', 'eth10'] 的字典序
 		 */
 		sortedKeys(obj, key, sortmode) {
 			if (obj == null || typeof(obj) != 'object')
@@ -1921,8 +2390,7 @@
 					v = (v != null) ? v.replace(/(?:^|[.:])([0-9a-fA-F]{1,4})/g,
 						(m0, m1) => (`000${m1.toLowerCase()}`).substr(-4)) : null;
 					break;
-
-				case 'num': // 数字排序
+				case 'num':
 					v = (v != null) ? +v : null;
 					break;
 				}
@@ -1932,64 +2400,95 @@
 		},
 
 		/**
-		 * 自然排序比较函数
+		 * 自然排序比较器（可直接用于 Array.sort()）。
+		 * 能正确处理含数字的字符串：'eth10' 排在 'eth9' 之后。
+		 *
 		 * @type {function}
+		 * @memberof LuCI
+		 *
+		 * 【使用场景】
+		 *   ['eth10', 'eth2', 'eth1'].sort(L.naturalCompare)
+		 *   → ['eth1', 'eth2', 'eth10']
 		 */
 		naturalCompare,
 
 		/**
-		 * 转换为数组并排序
-		 * @param {*} val - 输入值
-		 * @return {Array<*>} 排序后的数组
+		 * 将值转换为数组后自然排序（若已是数组则原地排序）。
+		 *
+		 * @instance @memberof LuCI
+		 * @param {*} val
+		 * @returns {Array<*>}
 		 */
 		sortedArray(val) {
 			return this.toArray(val).sort(naturalCompare);
 		},
 
 		/**
-		 * 转换为数组
-		 * @param {*} val - 输入值
-		 * @return {Array<*>} 结果数组
+		 * 将任意值统一转换为数组：
+		 *   null/undefined → []
+		 *   已是数组       → 原样返回
+		 *   对象           → [val]（单元素数组）
+		 *   字符串         → trim 后按空白拆分
+		 *
+		 * @instance @memberof LuCI
+		 * @param {*} val
+		 * @returns {Array<*>}
+		 *
+		 * 【使用场景：统一处理 UCI option（字符串）和 list（数组）】
+		 *   var dns = L.toArray(uci.get('network', 'lan', 'dns'));
+		 *   // 无论原始值是 '8.8.8.8' 还是 ['8.8.8.8','1.1.1.1'] 都返回数组
 		 */
 		toArray(val) {
-			if (val == null)
-				return [];
-			else if (Array.isArray(val))
-				return val;
-			else if (typeof(val) == 'object')
-				return [ val ];
+			if (val == null) return [];
+			else if (Array.isArray(val)) return val;
+			else if (typeof(val) == 'object') return [ val ];
 
 			const s = String(val).trim();
-
-			if (s == '')
-				return [];
-
+			if (s == '') return [];
 			return s.split(/\s+/);
 		},
 
-	/**
-	 * 解析Promise并使用默认值
-	 * @param {*} value - 输入值
-	 * @param {*} defvalue - 默认值
-	 * @returns {Promise<*>} 结果Promise
-	 */
+		/**
+		 * 返回一个 Promise，当 value 是 rejecting Promise 时改为解析为 defvalue。
+		 *
+		 * @instance @memberof LuCI
+		 * @param {*} value    - 可能是普通值或 Promise
+		 * @param {*} defvalue - reject 时的默认值
+		 * @returns {Promise<*>}
+		 *
+		 * 【使用场景：允许可选的 RPC 调用失败而不影响整体流程】
+		 *   L.resolveDefault(callOptionalApi(), {}).then(data => {
+		 *       // data 要么是 API 返回值，要么是空对象 {}
+		 *   });
+		 */
 		resolveDefault(value, defvalue) {
 			return Promise.resolve(value).catch(() => defvalue);
 		},
 
-	/* 向后兼容的旧方法 */
+		// ────────────────────────────────────────────────────
+		// 已废弃的旧版 API（向后兼容，新代码勿用）
+		// ────────────────────────────────────────────────────
 
-		// 旧版GET请求
+		/**
+		 * @deprecated 请使用 Request.get() 代替
+		 * 发起 GET 请求，通过回调返回结果（旧版 Lua CBI 兼容接口）。
+		 */
 		get(url, args, cb) {
 			return this.poll(null, url, args, cb, false);
 		},
 
-		// 旧版POST请求
+		/**
+		 * @deprecated 请使用 Request.post() 代替
+		 * 发起 POST 请求，自动附加 token 字段（旧版 Lua CBI 兼容接口）。
+		 */
 		post(url, args, cb) {
 			return this.poll(null, url, args, cb, true);
 		},
 
-		// 旧版轮询
+		/**
+		 * @deprecated 请使用 Request.poll.add() 代替
+		 * 注册周期性 HTTP 请求，通过回调返回结果（旧版兼容接口）。
+		 */
 		poll(interval, url, args, cb, post) {
 			if (interval !== null && interval <= 0)
 				interval = env.pollinterval;
@@ -2012,80 +2511,135 @@
 					});
 		},
 
-	// 旧版方法别名
-
-	/**
-	 * 检查视图权限
-	 * @return {boolean|null} 是否有权限
-	 */
+		/**
+		 * 检查当前视图的 ACL 访问权限。
+		 * @instance @memberof LuCI
+		 * @returns {boolean|null}
+		 *   null  → 无任何访问权限（节点未满足）
+		 *   false → 只读权限
+		 *   true  → 读写权限
+		 */
 		hasViewPermission() {
 			if (!this.isObject(env.nodespec) || !env.nodespec.satisfied)
 				return null;
-
 			return !env.nodespec.readonly;
 		},
+
+		/** @deprecated 使用 Poll.remove() 代替 */
 		stop(entry) { return Poll.remove(entry) },
+
+		/** @deprecated 使用 Poll.stop() 代替 */
 		halt() { return Poll.stop() },
+
+		/** @deprecated 使用 Poll.start() 代替 */
 		run() { return Poll.start() },
 
-		/* 向后兼容的旧属性 */
+		/** @deprecated 使用 'require dom' 代替 */
 		dom: DOM,
+
+		/** @deprecated 使用 'require view' 代替 */
 		view: View,
+
+		/** @deprecated 使用 'require poll' 代替 */
 		Poll,
+
+		/** @deprecated 使用 'require request' 代替 */
 		Request,
+
+		/** @deprecated 使用 'require baseclass' 代替 */
 		Class
 	});
+
+	// ════════════════════════════════════════════════════════
+	// XHR 兼容层（仅供旧版 Lua CBI 模板使用）
+	// ════════════════════════════════════════════════════════
 
 	/**
 	 * @class xhr
 	 * @memberof LuCI
 	 * @deprecated
 	 * @classdesc
-	 * 旧版XHR兼容类
+	 *
+	 * LuCI.xhr 是 xhr.js 的兼容垫片，注册为全局 window.XHR。
+	 * 新代码请勿直接使用此类，改用 LuCI.request 类。
+	 *
+	 * 【主要方法】
+	 *   get(url, data, callback, timeout)  → 发起 GET 请求（回调式）
+	 *   post(url, data, callback, timeout) → 发起 POST 请求（回调式）
+	 *   cancel()  → 取消请求（仅阻止回调，不中止 XHR）
+	 *   busy()    → 检查请求是否还在进行中
+	 *   abort()   → 空操作（向后兼容）
+	 *   send_form() → 抛出 InternalError（向后兼容）
 	 */
 	const XHR = Class.extend(/** @lends LuCI.xhr.prototype */ {
 		__name__: 'LuCI.xhr',
+
 		__init__() {
 			if (window.console && console.debug)
 				console.debug('Direct use XHR() is deprecated, please use L.Request instead');
 		},
 
-		// 响应处理
+		/** 内部：若请求仍活跃则调用回调 @private */
 		_response(cb, res, json, duration) {
-			if (this.active)
-				cb(res, json, duration);
+			if (this.active) cb(res, json, duration);
 			delete this.active;
 		},
 
-		// 旧版GET
+		/**
+		 * @deprecated 使用 L.get() 代替
+		 * 发起 GET 请求并通过回调返回结果。
+		 */
 		get(url, data, callback, timeout) {
 			this.active = true;
 			LuCI.prototype.get(url, data, this._response.bind(this, callback), timeout);
 		},
 
-		// 旧版POST
+		/**
+		 * @deprecated 使用 L.post() 代替
+		 * 发起 POST 请求并通过回调返回结果。
+		 */
 		post(url, data, callback, timeout) {
 			this.active = true;
 			LuCI.prototype.post(url, data, this._response.bind(this, callback), timeout);
 		},
 
-		// 取消请求
+		/**
+		 * @deprecated
+		 * 取消请求（仅阻止回调触发，XHR 本身不被中止）。
+		 */
 		cancel() { delete this.active },
+
+		/**
+		 * @deprecated
+		 * 检查请求是否仍在进行中。
+		 * @returns {boolean}
+		 */
 		busy() { return (this.active === true) },
+
+		/**
+		 * @deprecated
+		 * 空操作，向后兼容保留。
+		 */
 		abort() {},
+
+		/**
+		 * @deprecated
+		 * 始终抛出 InternalError，向后兼容保留。
+		 * @throws {InternalError}
+		 */
 		send_form() { LuCI.prototype.error('InternalError', 'Not implemented') },
 	});
 
-	// 设置XHR静态方法
-	XHR.get = (...args) => LuCI.prototype.get.call(LuCI.prototype, ...args);
-	XHR.post = (...args) => LuCI.prototype.post.call(LuCI.prototype, ...args);
-	XHR.poll = (...args) => LuCI.prototype.poll.call(LuCI.prototype, ...args);
-	XHR.stop = Request.poll.remove.bind(Request.poll);
-	XHR.halt = Request.poll.stop.bind(Request.poll);
-	XHR.run = Request.poll.start.bind(Request.poll);
+	// XHR 静态方法别名（旧版调用方式：XHR.get(...)、XHR.poll(...) 等）
+	XHR.get     = (...args) => LuCI.prototype.get.call(LuCI.prototype, ...args);
+	XHR.post    = (...args) => LuCI.prototype.post.call(LuCI.prototype, ...args);
+	XHR.poll    = (...args) => LuCI.prototype.poll.call(LuCI.prototype, ...args);
+	XHR.stop    = Request.poll.remove.bind(Request.poll);
+	XHR.halt    = Request.poll.stop.bind(Request.poll);
+	XHR.run     = Request.poll.start.bind(Request.poll);
 	XHR.running = Request.poll.active.bind(Request.poll);
 
-	// 暴露全局对象
-	window.XHR = XHR;
-	window.LuCI = LuCI;
+	// 注册全局变量
+	window.XHR   = XHR;
+	window.LuCI  = LuCI;
 })(window, document);
