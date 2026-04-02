@@ -272,10 +272,21 @@ const CBIJSONConfig = baseclass.extend({
 			this.data[section_ids[i]]['.index'] = i;
 	},
 
+	/**
+	 * 加载内部数据（无网络请求，立即返回已解析的内存对象）。
+	 * 与 LuCI.uci.load() 接口保持一致，JSONMap 调用时触发。
+	 * @returns {Promise<Object>}
+	 */
 	load() {
 		return Promise.resolve(this.data);
 	},
 
+	/**
+	 * 保存操作（空实现，JSON 数据持久化需调用方自行处理）。
+	 * JSONMap.save() 会调用此方法，但对 JSON 数据源无任何副作用。
+	 * 如需将更改持久化，请在 map.save() 的回调中访问 this.data 并处理。
+	 * @returns {Promise<void>}
+	 */
 	save() {
 		return Promise.resolve();
 	},
@@ -464,7 +475,15 @@ const CBIAbstractElement = baseclass.extend(/** @lends LuCI.form.AbstractElement
 		L.error('InternalError', 'Not implemented');
 	},
 
-	/** @private */
+	/**
+	 * 【私有】并行加载所有未禁用子元素的数据。
+	 *
+	 * 遍历 children 数组，对每个 disable 不为 true 的子元素调用 load(args)，
+	 * 全部加载完成后返回。由 Map.load() 和 Section.load() 调用。
+	 *
+	 * @param {...*} args - 透传给每个子元素 load() 的参数（通常是 section_id）
+	 * @returns {Promise<Array>} 所有子元素 load 结果的数组
+	 */
 	loadChildren(...args) /* ... */{
 		const tasks = [];
 
@@ -476,7 +495,15 @@ const CBIAbstractElement = baseclass.extend(/** @lends LuCI.form.AbstractElement
 		return Promise.all(tasks);
 	},
 
-	/** @private */
+	/**
+	 * 【私有】并行渲染指定 Tab 下（或所有）未禁用子元素的 DOM。
+	 *
+	 * @param {string|null} tab_name
+	 *   要渲染的 Tab 名称；null 表示渲染所有不属于任何 Tab 的子元素；
+	 *   非 null 时只渲染 child.tab === tab_name 的子元素。
+	 * @param {...*} args - 透传给每个子元素 render() 的参数（option_index, section_id, in_table）
+	 * @returns {Promise<Array<Node>>} 渲染结果节点数组
+	 */
 	renderChildren(tab_name, ...args) {
 		const tasks = [];
 		let index = 0;
@@ -969,7 +996,19 @@ const CBIMap = CBIAbstractElement.extend(/** @lends LuCI.form.Map.prototype */ {
 		return this.load().then(this.renderContents.bind(this));
 	},
 
-	/** @private */
+	/**
+	 * 【私有】真正完成表单 DOM 渲染的核心方法。
+	 *
+	 * render() 和 save() 最终都调用此方法。执行流程：
+	 *   1. 创建或复用 this.root（div.cbi-map）
+	 *   2. 渲染所有子 section（renderChildren）
+	 *   3. 按顺序装配：标题 h2 → 描述段落 → section 节点
+	 *   4. 非首次渲染时添加 flash 动画效果
+	 *   5. 更新依赖状态（checkDepends）
+	 *   6. 初始化 Tab 组件
+	 *
+	 * @returns {Promise<Node>} 表单根节点（div.cbi-map）
+	 */
 	renderContents() {
 		const mapEl = (this.root ??= E('div', {
 			'id': 'cbi-%s'.format(this.config),
@@ -1051,7 +1090,16 @@ const CBIMap = CBIAbstractElement.extend(/** @lends LuCI.form.Map.prototype */ {
 		return (inst instanceof CBIAbstractValue) ? [ inst, sid ] : null;
 	},
 
-	/** @private */
+	/**
+	 * 【私有】递归检查并更新所有 option 的依赖显示状态。
+	 *
+	 * 遍历所有子 section，调用各 section 的 checkDepends()，
+	 * 任何依赖状态发生变化时递归重新检查（最多10次，避免死循环）。
+	 * 最后调用 ui.tabs.updateTabs() 更新 Tab 的显示状态（隐藏全空的 Tab）。
+	 *
+	 * @param {Event}  [ev] - 触发依赖检查的 DOM 事件（可为 undefined）
+	 * @param {number} [n]  - 当前递归深度（内部使用，调用时无需传入）
+	 */
 	checkDepends(ev, n) {
 		let changed = false;
 
@@ -1065,7 +1113,22 @@ const CBIMap = CBIAbstractElement.extend(/** @lends LuCI.form.Map.prototype */ {
 		ui.tabs.updateTabs(ev, this.root);
 	},
 
-	/** @private */
+	/**
+	 * 【私有】判断给定的依赖条件组是否满足（由 AbstractValue.checkDepends 调用）。
+	 *
+	 * 依赖条件的判断规则：
+	 *   - depends 数组中每个对象是一个"条件组"（AND 关系）
+	 *   - 多个条件组之间是 OR 关系（任一满足即为 true）
+	 *   - 对象中特殊 key：
+	 *     '!reverse'：本组条件取反
+	 *     '!contains'：使用包含匹配（isContained）而非精确匹配（isEqual）
+	 *     '!default'：所有组都不满足时的默认返回值（true=默认显示）
+	 *
+	 * @param {Array}  depends      - 依赖条件数组（来自 option.deps）
+	 * @param {string} config_name  - UCI 配置名（用于 lookupOption 定位字段）
+	 * @param {string} section_id   - UCI section ID
+	 * @returns {boolean} 依赖条件满足时返回 true，否则返回 false
+	 */
 	isDependencySatisfied(depends, config_name, section_id) {
 		let def = false;
 
@@ -1224,6 +1287,18 @@ const CBIMap = CBIAbstractElement.extend(/** @lends LuCI.form.Map.prototype */ {
  *   sp.option(form.Value, 'pubkey',   _('公钥'));
  */
 const CBIJSONMap = CBIMap.extend(/** @lends LuCI.form.JSONMap.prototype */ {
+	/**
+	 * 构造 JSONMap。
+	 *
+	 * @param {Object} data  - JS 对象格式的配置数据（格式见 CBIJSONConfig 注释）
+	 * @param {string} [title]       - 表单标题
+	 * @param {string} [description] - 表单描述
+	 *
+	 * 【与 Map 的区别】
+	 *   Map：   this.data = uci（LuCI.uci 全局实例）
+	 *   JSONMap：this.data = new CBIJSONConfig(data)（内存对象）
+	 *   因此 JSONMap 的 save() 只更新内存，不写入路由器 UCI 文件。
+	 */
 	__init__(data, ...args) {
 		this.super('__init__', [ 'json', ...args ]);
 
@@ -1704,7 +1779,15 @@ const CBIAbstractSection = CBIAbstractElement.extend(/** @lends LuCI.form.Abstra
 		return rv;
 	},
 
-	/** @private */
+	/**
+	 * 【私有】渲染单个 UCI section 实例的内容（含 Tab 支持）。
+	 *
+	 * 若 section 定义了 Tab，则并行渲染各 Tab 的内容再组合；
+	 * 否则直接调用 renderOptions(null, section_id)。
+	 *
+	 * @param {string} section_id - 要渲染的 UCI section ID
+	 * @returns {Promise<Node>} 渲染完成的 section 内容节点
+	 */
 	renderUCISection(section_id) {
 		const renderTasks = [];
 
@@ -1718,7 +1801,16 @@ const CBIAbstractSection = CBIAbstractElement.extend(/** @lends LuCI.form.Abstra
 			.then(this.renderTabContainers.bind(this, section_id));
 	},
 
-	/** @private */
+	/**
+	 * 【私有】将各 Tab 内容节点包装为带 data-tab 属性的容器元素。
+	 *
+	 * 每个 Tab 生成一个 div，设置 data-tab、data-tab-title 等属性，
+	 * ui.tabs.initTabGroup() 会识别这些属性并激活 Tab 切换功能。
+	 *
+	 * @param {string}       section_id - UCI section ID
+	 * @param {Array<Node>}  nodes      - 各 Tab 渲染结果（与 tab_names 顺序对应）
+	 * @returns {DocumentFragment} 包含所有 Tab 容器的 DocumentFragment
+	 */
 	renderTabContainers(section_id, nodes) {
 		const config_name = this.uciconfig ?? this.map.config;
 		const containerEls = E([]);
@@ -1744,7 +1836,16 @@ const CBIAbstractSection = CBIAbstractElement.extend(/** @lends LuCI.form.Abstra
 		return containerEls;
 	},
 
-	/** @private */
+	/**
+	 * 【私有】渲染指定 Tab（或无 Tab）下的所有 option 控件。
+	 *
+	 * 调用 renderChildren(tab_name, section_id, in_table)，
+	 * 将返回的节点数组收集到一个 DocumentFragment 中返回。
+	 *
+	 * @param {string|null} tab_name  - Tab 名称，null 表示无 Tab 模式
+	 * @param {string}      section_id - UCI section ID
+	 * @returns {Promise<Node>} 包含所有 option 节点的 DocumentFragment
+	 */
 	renderOptions(tab_name, section_id) {
 		const in_table = (this instanceof CBITableSection);
 		return this.renderChildren(tab_name, section_id, in_table).then((nodes) =>  {
@@ -1755,7 +1856,18 @@ const CBIAbstractSection = CBIAbstractElement.extend(/** @lends LuCI.form.Abstra
 		});
 	},
 
-	/** @private */
+	/**
+	 * 【私有】检查并更新本 section 中所有 option 的依赖显示状态。
+	 *
+	 * 遍历所有 section 实例的所有 option 子元素：
+	 *   - 调用 option.checkDepends(sid) 判断依赖是否满足
+	 *   - 若状态改变（isActive != isSatisfied），调用 setActive 切换显示/隐藏
+	 *   - 对可见且激活的 option 触发 triggerValidation
+	 *
+	 * @param {Event}  [ev] - 触发事件（可为 undefined）
+	 * @param {number} [n]  - 递归深度
+	 * @returns {boolean} 有任何状态改变时返回 true
+	 */
 	checkDepends(ev, n) {
 		let changed = false;
 		const sids = this.cfgsections();
@@ -2364,7 +2476,19 @@ const CBIAbstractValue = CBIAbstractElement.extend(/** @lends LuCI.form.Abstract
 		this.deps.push(deps);
 	},
 
-	/** @private */
+	/**
+	 * 【私有】将 deps 数组转换为 DOM data-depends 格式（cbid 路径）。
+	 *
+	 * depends() 中用户填写的是相对字段名（如 'proto'），
+	 * 此方法将其转换为完整的 DOM 元素 ID 格式：
+	 *   'proto' → 'cbid.network.lan.proto'
+	 *   'net.lan.proto' → 'cbid.net.lan.proto'（点分格式保留）
+	 *   '!reverse'、'!contains' 等特殊 key 原样保留
+	 *
+	 * @param {string}  section_id - 当前 section ID（用于构造完整路径）
+	 * @param {Array}   [deplist]  - 要转换的依赖列表，省略时使用 this.deps
+	 * @returns {Array} 转换后的依赖条件数组（可直接用于 data-depends 属性）
+	 */
 	transformDepList(section_id, deplist) {
 		const list = deplist ?? this.deps;
 		const deps = [];
@@ -2400,7 +2524,15 @@ const CBIAbstractValue = CBIAbstractElement.extend(/** @lends LuCI.form.Abstract
 		return deps;
 	},
 
-	/** @private */
+	/**
+	 * 【私有】将 keylist/vallist 数组对转换为 {key: val} 的 choices 对象。
+	 *
+	 * Value/ListValue 等控件调用 value(key, val) 时，key 存入 this.keylist，
+	 * val 存入 this.vallist。此方法将两个数组合并为控件渲染所需的 choices 对象。
+	 * 若 keylist 为空，返回 null（表示无候选选项，使用纯输入框）。
+	 *
+	 * @returns {Object<string,*>|null} choices 对象，或 null（无候选选项时）
+	 */
 	transformChoices() {
 		if (!Array.isArray(this.keylist) || this.keylist.length == 0)
 			return null;
@@ -2413,7 +2545,15 @@ const CBIAbstractValue = CBIAbstractElement.extend(/** @lends LuCI.form.Abstract
 		return choices;
 	},
 
-	/** @private */
+	/**
+	 * 【私有】检查本 option 的依赖是否满足，并在满足时更新默认值。
+	 *
+	 * 调用 map.isDependencySatisfied() 判断 this.deps 中的条件，
+	 * 若依赖满足则调用 updateDefaultValue() 处理条件默认值（defaults 属性）。
+	 *
+	 * @param {string} section_id - 当前 section ID
+	 * @returns {boolean} 依赖满足时返回 true，否则返回 false
+	 */
 	checkDepends(section_id) {
 		const config_name = this.uciconfig ?? this.section.uciconfig ?? this.map.config;
 		const active = this.map.isDependencySatisfied(this.deps, config_name, section_id);
@@ -2424,7 +2564,23 @@ const CBIAbstractValue = CBIAbstractElement.extend(/** @lends LuCI.form.Abstract
 		return active;
 	},
 
-	/** @private */
+	/**
+	 * 【私有】根据条件依赖动态更新 option 的默认值（this.defaults 属性）。
+	 *
+	 * this.defaults 是一个特殊对象，允许根据其他 option 的值动态切换默认值：
+	 *   { '值1': [条件组], '值2': [], ... }
+	 *   空数组（[]）表示无条件的兜底默认值。
+	 *
+	 * 【this.defaults 用法示例】
+	 *   // 当 proto=dhcp 时，mtu 默认 1500；proto=pppoe 时默认 1492
+	 *   o.defaults = {
+	 *     '1500': [{ proto: 'dhcp' }],
+	 *     '1492': [{ proto: 'pppoe' }],
+	 *     '1500': []   // 兜底默认
+	 *   };
+	 *
+	 * @param {string} section_id - 当前 section ID
+	 */
 	updateDefaultValue(section_id) {
 		if (!L.isObject(this.defaults))
 			return;
@@ -2638,17 +2794,27 @@ const CBIAbstractValue = CBIAbstractElement.extend(/** @lends LuCI.form.Abstract
 	},
 
 	/**
-	 * Get the validator function for the widget, handling both single functions
-	 * and arrays of functions.
+	 * 【私有】获取绑定了 section_id 的验证函数，供底层 UI 控件使用。
 	 *
-	 * @private
-	 * @param {string} section_id
-	 * The configuration section ID
+	 * 处理两种情况：
+	 *   1. this.validate 是函数：返回绑定了 (section_id) 的方法引用
+	 *   2. this.validate 是数组：返回串行执行所有验证器的包装函数
+	 *      （第一个返回非 true 的验证器结果作为最终结果）
 	 *
-	 * @returns {function}
-	 * Returns a bound validator function suitable for passing to UI widgets.
-	 * If this.validate is an array, returns a wrapper that calls each validator
-	 * serially. Otherwise returns the bound validate method.
+	 * 通常在 renderWidget() 中调用，将结果传给 ui.Textfield/ui.Select 等控件
+	 * 的 validate 选项，实现实时输入验证（blur/keyup 时触发）。
+	 *
+	 * @param {string} section_id - 当前 section ID
+	 * @returns {function} 可直接传给 LuCI.ui 控件 validate 选项的验证函数
+	 *
+	 * 【示例：在自定义控件中使用】
+	 *   renderWidget(section_id, option_index, cfgvalue) {
+	 *     const widget = new ui.Textfield(cfgvalue, {
+	 *       validate: this.getValidator(section_id),  // 绑定验证器
+	 *       datatype: this.datatype
+	 *     });
+	 *     return widget.render();
+	 *   }
 	 */
 	getValidator(section_id) {
 		if (Array.isArray(this.validate)) {
@@ -2715,7 +2881,16 @@ const CBIAbstractValue = CBIAbstractElement.extend(/** @lends LuCI.form.Abstract
 		return (field != null && !field.classList.contains('hidden'));
 	},
 
-	/** @private */
+	/**
+	 * 【私有】设置 option 的激活（显示）或隐藏状态。
+	 *
+	 * 通过切换对应 DOM 元素上的 'hidden' CSS 类控制显示/隐藏。
+	 * 在 TableSection 中同时处理父 td 的 'inactive' 类（影响行高）。
+	 *
+	 * @param {string}  section_id - 当前 section ID
+	 * @param {boolean} active     - true=显示，false=隐藏
+	 * @returns {boolean} 状态确实发生了改变时返回 true，已是目标状态时返回 false
+	 */
 	setActive(section_id, active) {
 		const field = this.map.findElement('data-field', this.cbid(section_id));
 
@@ -2731,7 +2906,15 @@ const CBIAbstractValue = CBIAbstractElement.extend(/** @lends LuCI.form.Abstract
 		return false;
 	},
 
-	/** @private */
+	/**
+	 * 【私有】主动触发 UI 控件的验证（在依赖状态变更后刷新校验提示）。
+	 *
+	 * 调用底层 LuCI.ui 控件的 triggerValidation() 方法，
+	 * 使控件重新执行 datatype 和 validate 的校验并更新错误提示样式。
+	 *
+	 * @param {string} section_id - 当前 section ID
+	 * @returns {boolean} 控件当前有效时返回 true
+	 */
 	triggerValidation(section_id) {
 		const elem = this.getUIElement(section_id);
 		return elem ? elem.triggerValidation() : true;
@@ -3087,14 +3270,33 @@ const CBITypedSection = CBIAbstractSection.extend(/** @lends LuCI.form.TypedSect
 	 * @default null
 	 */
 
-	/** @override */
+	/**
+	 * 返回本 section 覆盖的所有 UCI section ID 列表（已应用 filter 过滤）。
+	 *
+	 * 调用 uci.sections() 获取指定类型的所有 section，
+	 * 提取 .name 字段，再通过 filter() 方法过滤，返回最终列表。
+	 * 渲染时按此顺序渲染 section 实例。
+	 *
+	 * @override
+	 * @returns {string[]} 过滤后的 UCI section ID 数组
+	 */
 	cfgsections() {
 		return this.map.data.sections(this.uciconfig ?? this.map.config, this.sectiontype)
 			.map((s) => { return s['.name'] })
 			.filter(L.bind(this.filter, this));
 	},
 
-	/** @private */
+	/**
+	 * 【私有】处理"添加 section"按钮点击事件。
+	 *
+	 * 调用 uci.add() 创建新 section，然后触发 map.save() 保存并重新渲染。
+	 * anonymous=true 时 name 为 undefined（系统自动生成 ID）；
+	 * anonymous=false 时 name 为用户在输入框中填写的名称。
+	 *
+	 * @param {Event}  ev   - 点击事件
+	 * @param {string} name - 新 section 的名称（命名 section 时由输入框提供）
+	 * @returns {Promise<void>}
+	 */
 	handleAdd(ev, name) {
 		const config_name = this.uciconfig ?? this.map.config;
 
@@ -3102,7 +3304,15 @@ const CBITypedSection = CBIAbstractSection.extend(/** @lends LuCI.form.TypedSect
 		return this.map.save(null, true);
 	},
 
-	/** @private */
+	/**
+	 * 【私有】处理"删除 section"按钮点击事件。
+	 *
+	 * 调用 uci.remove() 从配置中删除指定 section，然后触发 map.save() 保存重渲。
+	 *
+	 * @param {string} section_id - 要删除的 UCI section ID
+	 * @param {Event}  ev         - 点击事件
+	 * @returns {Promise<void>}
+	 */
 	handleRemove(section_id, ev) {
 		const config_name = this.uciconfig ?? this.map.config;
 
@@ -3110,7 +3320,16 @@ const CBITypedSection = CBIAbstractSection.extend(/** @lends LuCI.form.TypedSect
 		return this.map.save(null, true);
 	},
 
-	/** @private */
+	/**
+	 * 【私有】渲染 section 底部的"添加"按钮区域。
+	 *
+	 * anonymous=true：渲染单个"添加"按钮（无需输入名称）
+	 * anonymous=false：渲染"名称输入框 + 添加按钮"组合（用户需填写 section 名称）
+	 *   - 输入框为空时按钮禁用，并实时验证输入是否符合 uciname 格式
+	 *
+	 * @param {string} [extra_class] - 额外追加到容器元素的 CSS 类名
+	 * @returns {Node} 添加区域的 DOM 节点（addremove=false 时返回空 DocumentFragment）
+	 */
 	renderSectionAdd(extra_class) {
 		if (!this.addremove)
 			return E([]);
@@ -3170,12 +3389,33 @@ const CBITypedSection = CBIAbstractSection.extend(/** @lends LuCI.form.TypedSect
 		return createEl;
 	},
 
-	/** @private */
+	/**
+	 * 【私有】渲染 section 无内容时的占位提示文字。
+	 *
+	 * 当 cfgsections() 返回空数组（配置中没有该类型的 section）时调用，
+	 * 渲染一段斜体提示文字："This section contains no values yet"。
+	 * 可在子类中覆盖此方法以自定义空状态提示。
+	 *
+	 * @returns {Node} 占位提示节点（em 元素）
+	 */
 	renderSectionPlaceholder() {
 		return E('em', _('This section contains no values yet'));
 	},
 
-	/** @private */
+	/**
+	 * 【私有】将渲染完成的各 section 节点组装为最终的 section DOM 结构。
+	 *
+	 * 结构：div.cbi-section
+	 *         ├── h3（标题，anonymous=false 时为 section 名称大写）
+	 *         ├── div.cbi-section-descr（描述，若有）
+	 *         ├── div.cbi-section-remove（删除按钮，addremove=true 时）
+	 *         ├── div.cbi-section-node（section 内容节点，含 option 控件）
+	 *         └── div.cbi-section-create（添加按钮区域）
+	 *
+	 * @param {string[]}      cfgsections - UCI section ID 数组
+	 * @param {Array<Node>}   nodes       - 各 section 渲染结果（与 cfgsections 一一对应）
+	 * @returns {Node} 完整的 section 容器节点
+	 */
 	renderContents(cfgsections, nodes) {
 		const section_id = null;
 		const config_name = this.uciconfig ?? this.map.config;
@@ -3381,6 +3621,24 @@ const CBITableSection = CBITypedSection.extend(/** @lends LuCI.form.TableSection
 	__name__: 'CBI.TableSection',
 
 	/**
+	 * sectiontitle：覆盖表格第一列（section 名称列）中每行的标题文字。
+	 *
+	 * 默认值（null）：使用 UCI section 名称本身（如 'lan'、'rule0'）。
+	 * 字符串模式：作为 String.format() 模板，%s 替换为 section 名称。
+	 *   示例：s.sectiontitle = _('接口 %s'); → 显示"接口 lan"
+	 * 函数模式：(section_id) => string，返回该行的标题文字。
+	 *   示例：s.sectiontitle = sid => uci.get('network', sid, 'proto') || sid;
+	 *
+	 * 【常见用法】在 anonymous=true 时隐藏 section ID，显示更友好的名称：
+	 *   s.anonymous    = true;
+	 *   s.sectiontitle = false;  // 不显示名称列（完全匿名）
+	 *
+	 * @name LuCI.form.TableSection.prototype#sectiontitle
+	 * @type string|function
+	 * @default null
+	 */
+
+	/**
 	 * Override the per-section instance title caption shown in the first
 	 * column of the table unless `anonymous` is set to true. Set to a
 	 * string, it will be used as a `String.format()` pattern with the name of
@@ -3411,11 +3669,45 @@ const CBITableSection = CBITypedSection.extend(/** @lends LuCI.form.TableSection
 	 */
 
 	/**
+	 * actionstitle：自定义操作按钮列（最右列）表头的文字。
+	 *
+	 * 默认（null）：操作列表头为空白。
+	 * 字符串：直接作为表头文字。
+	 * 函数：(has_action) => string，根据是否有操作按钮动态返回文字。
+	 *
+	 * 【使用示例】
+	 *   s.actionstitle = _('操作');
+	 *
+	 * @name LuCI.form.TableSection.prototype#actionstitle
+	 * @type string|function
+	 * @default null
+	 */
+
+	/**
 	 * Set a custom text for the actions column header row when actions buttons
 	 * are present.
 	 *
 	 * @name LuCI.form.TableSection.prototype#actionstitle
 	 * @type string|function
+	 * @default null
+	 */
+
+	/**
+	 * max_cols：限制表格最大显示列数。
+	 *
+	 * 默认（null）：每个 option 对应一列，全部显示。
+	 * 设为正整数 N：只显示前 N 列，超出部分在最后一列显示"更多…"按钮，
+	 *   点击后弹出模态框显示所有 option（NamedSection 风格）。
+	 *
+	 * 与 modalonly 配合使用：
+	 *   - max_cols 控制表格列数（哪些列显示在表格中）
+	 *   - modalonly=true 的 option 不计入 max_cols（只在模态框中出现）
+	 *
+	 * 【使用示例】
+	 *   s.max_cols = 4;  // 只在表格中显示4列，其他在"更多…"模态框中
+	 *
+	 * @name LuCI.form.TableSection.prototype#max_cols
+	 * @type number
 	 * @default null
 	 */
 
@@ -3434,11 +3726,38 @@ const CBITableSection = CBITypedSection.extend(/** @lends LuCI.form.TableSection
 	 */
 
 	/**
+	 * rowcolors：启用交替行颜色（斑马纹效果）。
+	 *
+	 * true：奇偶行分别添加 cbi-rowstyle-1/cbi-rowstyle-2 CSS 类。
+	 * 实际显示效果取决于主题 CSS 是否定义了这两个样式类。
+	 * bootstrap 等主题支持此效果，其他主题可能无视。
+	 *
+	 * @name LuCI.form.TableSection.prototype#rowcolors
+	 * @type boolean
+	 * @default false
+	 */
+
+	/**
 	 * Set to `true`, alternating `cbi-rowstyle-1` and `cbi-rowstyle-2` CSS
 	 * classes are added to the table row elements. Not all LuCI themes
 	 * implement these row style classes. The default is `false`.
 	 *
 	 * @name LuCI.form.TableSection.prototype#rowcolors
+	 * @type boolean
+	 * @default false
+	 */
+
+	/**
+	 * cloneable：启用克隆按钮，允许用户复制已有的 section 实例。
+	 *
+	 * true：每行操作列中添加"复制"按钮，点击后立即在该行后面
+	 *   插入一个相同配置的新 section（通过 handleClone 实现）。
+	 * 新 section 与原 section 拥有相同的所有 option 值，
+	 * 用户可以在新行中修改需要改变的部分。
+	 *
+	 * 【使用场景】规则列表、端口映射等需要"以现有条目为模板"新建的场景。
+	 *
+	 * @name LuCI.form.TypedSection.prototype#cloneable
 	 * @type boolean
 	 * @default false
 	 */
@@ -3451,6 +3770,18 @@ const CBITableSection = CBITypedSection.extend(/** @lends LuCI.form.TableSection
 	 * @name LuCI.form.TypedSection.prototype#cloneable
 	 * @type boolean
 	 * @default false
+	 */
+
+	/**
+	 * clonebtntitle：自定义克隆按钮的显示文字。
+	 *
+	 * 默认（null）：显示 _('Clone') 翻译文字。
+	 * 字符串：直接使用该字符串。
+	 * 函数：() => string，动态返回按钮文字。
+	 *
+	 * @name LuCI.form.TypedSection.prototype#clonebtntitle
+	 * @type string|function
+	 * @default null
 	 */
 
 	/**
@@ -3482,6 +3813,27 @@ const CBITableSection = CBITypedSection.extend(/** @lends LuCI.form.TableSection
 	 */
 
 	/**
+	 * filterrow：启用表格列过滤功能（搜索栏）。
+	 *
+	 * true：在表头行下方添加一行过滤输入框（每列一个），
+	 *   用户输入时实时过滤匹配的行（大小写敏感，部分匹配）。
+	 * 过滤条件是累加的（AND 逻辑）：所有列的过滤条件须同时满足才显示该行。
+	 * 需要在 LuCI 全局设置中启用 tablefilters（uci.get('luci','main','tablefilters')）。
+	 *
+	 * 特殊处理：
+	 *   - 复选框（Flag）列：过滤框只接受 '0' 或 '1'（宽度受限）
+	 *   - 下拉框（ListValue）列：匹配选中选项的文字
+	 *   - 操作列右侧显示"重置"按钮，清空所有过滤条件
+	 *
+	 * 【使用示例】
+	 *   s.filterrow = true;  // 启用过滤行（同时需路由器 luci.main.tablefilters=1）
+	 *
+	 * @name LuCI.form.TableSection.prototype#filterrow
+	 * @type boolean
+	 * @default null
+	 */
+
+	/**
 	 * Optional table filtering for table sections.
 	 *
 	 * Set `filterrow` to `true` to display a filter header row in the generated
@@ -3501,6 +3853,40 @@ const CBITableSection = CBITypedSection.extend(/** @lends LuCI.form.TableSection
 	 * @name LuCI.form.TableSection.prototype#filterrow
 	 * @type boolean
 	 * @default null
+	 */
+
+	/**
+	 * footer：在表格底部添加汇总行或自定义内容。
+	 *
+	 * 支持两种形式：
+	 *
+	 * 【形式1：字符串数组】
+	 *   每个字符串对应一列的内容（从左到右）：
+	 *   - 第一项对应名称列（anonymous=false 时）
+	 *   - 后续项对应各 option 列
+	 *   - 最后一项（可选）对应操作列
+	 *   示例：
+	 *     s.footer = [
+	 *       _('合计'),         // 名称列
+	 *       '—',              // mac 列
+	 *       computeTotalIPs() // ip 列汇总
+	 *     ];
+	 *
+	 * 【形式2：函数】
+	 *   (has_action) => Node | null
+	 *   返回完整的 <tr> 节点或任意 DOM 节点（直接插入 tfoot 中）。
+	 *   has_action：是否有操作按钮列（用于决定是否需要空操作列单元格）。
+	 *   示例：
+	 *     s.footer = function(has_action) {
+	 *       return E('tr', { class: 'tr' }, [
+	 *         E('td', { class: 'td', colspan: '99' },
+	 *           E('em', _('共 %d 条记录').format(totalCount)))
+	 *       ]);
+	 *     };
+	 *
+	 * @name LuCI.form.TableSection.prototype#footer
+	 * @type string[]|function
+	 * @default E([])（空节点，不显示页脚）
 	 */
 
 	/**
@@ -3542,12 +3928,24 @@ const CBITableSection = CBITypedSection.extend(/** @lends LuCI.form.TableSection
 	 */
 
 	/**
-	 * The `TableSection` implementation does not support option tabbing, so
-	 * its implementation of `tab()` will always throw an exception when
-	 * invoked.
+	 * TableSection 不支持 Tab 分组（选项只能在表格列中平铺显示）。
+	 *
+	 * 若需要 Tab 功能请改用 GridSection（支持 taboption 将字段放入展开面板的 Tab）。
+	 * 在 TableSection 上调用 tab() 会直接抛出异常，这是有意的设计。
 	 *
 	 * @override
-	 * @throws Throws an exception when invoked.
+	 * @throws {string} 始终抛出 'Tabs are not supported by TableSection'
+	 *
+	 * 【迁移建议】
+	 *   // 错误：TableSection 不支持 tab
+	 *   var s = m.section(form.TableSection, 'rule');
+	 *   s.tab('basic', '基本');       // ← 会抛出异常！
+	 *   s.taboption('basic', ...);    // ← 同上
+	 *
+	 *   // 正确：换用 GridSection
+	 *   var s = m.section(form.GridSection, 'rule');
+	 *   s.tab('basic', '基本');       // ← 正常工作
+	 *   s.taboption('basic', ...);    // ← 正常工作
 	 */
 	tab() {
 		throw 'Tabs are not supported by TableSection';
@@ -3555,10 +3953,17 @@ const CBITableSection = CBITypedSection.extend(/** @lends LuCI.form.TableSection
 
 
 	/**
-	 * Clone the section_id, putting the clone immediately after if put_next
-	 * is true. Optionally supply a name for the new section_id.
+	 * 【私有】处理"克隆"按钮点击事件，复制指定 section 并立即保存。
+	 *
+	 * 调用 uci.clone() 在内存中创建 section 的副本，
+	 * put_next=true 时新 section 紧接在原 section 后面，
+	 * 最后调用 map.save() 提交并重新渲染。
+	 *
+	 * @param {string}  section_id - 要克隆的源 section ID
+	 * @param {boolean} put_next   - true=克隆到原 section 的下一位；false=追加到末尾
+	 * @param {string}  [name]     - 新 section 的名称；省略则使用自动生成的匿名 ID
+	 * @returns {Promise<void>}
 	 */
-	/** @private */
 	handleClone(section_id, put_next, name) {
 		let config_name = this.uciconfig || this.map.config;
 
@@ -3891,6 +4296,23 @@ const CBITableSection = CBITypedSection.extend(/** @lends LuCI.form.TableSection
 
 
 	/**
+	 * stabilizeActionColumnWidth：稳定操作列宽度（防止过滤/隐藏行时列宽抖动）。
+	 *
+	 * 测量所有可见操作单元格（td.cbi-section-actions > div）的最大宽度，
+	 * 将该宽度固定设置到表头、过滤行表头、页脚、所有操作格上，
+	 * 从而避免因行显示/隐藏而导致的列宽变化。
+	 *
+	 * 同时在首次调用时绑定 window.resize 事件，视口大小变化时重新测量。
+	 *
+	 * 【内部调用时机】
+	 *   - renderContents() 完成后（setTimeout 0 延迟，确保布局已完成）
+	 *   - 过滤操作后（filterrow 功能调用）
+	 *   - 窗口大小改变时（resize 事件）
+	 *
+	 * @param {HTMLTableElement} tableEl - 要处理的 table 元素
+	 */
+
+	/**
 	 * Ensure the actions column keeps a stable width even when rows are hidden
 	 * (e.g., due to filtering). Measures the widest actions cell and applies
 	 * a fixed width to header/filter/footer/action cells. Stores measured width
@@ -3933,7 +4355,21 @@ const CBITableSection = CBITypedSection.extend(/** @lends LuCI.form.TableSection
 		}
 	},
 
-	/** @private */
+	/**
+	 * 【私有】渲染表格每行右侧的操作按钮组（删除/排序/编辑/克隆等）。
+	 *
+	 * 根据 section 配置决定显示哪些按钮：
+	 *   sortable=true   → 显示拖拽排序手柄（桌面端）或长按排序（触摸端）
+	 *   extedit         → 显示"编辑"按钮（跳转到 URL 或触发函数）
+	 *   more_label      → 显示"更多…"按钮（触发 renderMoreOptionsModal）
+	 *   cloneable=true  → 显示"克隆"按钮
+	 *   addremove=true  → 显示"删除"按钮
+	 *
+	 * @param {string} section_id - 当前行的 UCI section ID
+	 * @param {string|null} more_label - "更多…"按钮文字，null 表示不显示
+	 * @param {Node}   [trEl]     - 当前行的 tr 元素（触摸排序时使用）
+	 * @returns {Node} td.cbi-section-actions 操作列节点
+	 */
 	renderRowActions(section_id, more_label, trEl) {
 		const config_name = this.uciconfig ?? this.map.config;
 
@@ -4027,11 +4463,21 @@ const CBITableSection = CBITypedSection.extend(/** @lends LuCI.form.TableSection
 	},
 
 	/** @private */
+	/**
+	 * 【私有】初始化拖拽排序（mousedown 事件处理）。
+	 * 记录拖拽开始时鼠标位置，防止与普通点击冲突。
+	 */
 	handleDragInit(ev) {
 		scope.dragState = { node: ev.target };
 	},
 
 	/** @private */
+	/**
+	 * 【私有】拖拽开始（dragstart 事件处理）。
+	 * 设置拖拽数据、记录被拖拽行，给行添加 dragging CSS 类以改变外观。
+	 * @param {DragEvent} ev   - 浏览器 dragstart 事件
+	 * @param {HTMLElement} trEl - 被拖拽的 tr 元素
+	 */
 	handleDragStart(ev, trEl) {
 		// Only allow drag from the handle
 		if (!ev.target || !ev.target.classList || !ev.target.classList.contains('drag-handle')) {
@@ -4046,6 +4492,11 @@ const CBITableSection = CBITypedSection.extend(/** @lends LuCI.form.TableSection
 	},
 
 	/** @private */
+	/**
+	 * 【私有】拖拽经过其他行时的处理（dragover 事件，需调用 preventDefault）。
+	 * 阻止默认行为以允许 drop，并更新拖拽位置指示器。
+	 * @param {DragEvent} ev - 浏览器 dragover 事件
+	 */
 	handleDragOver(ev) {
 		if (scope.dragState === null ) return;
 		const n = scope.dragState.targetNode;
@@ -4067,6 +4518,11 @@ const CBITableSection = CBITypedSection.extend(/** @lends LuCI.form.TableSection
 	},
 
 	/** @private */
+	/**
+	 * 【私有】拖拽进入某行时的样式处理（dragenter 事件）。
+	 * 给目标行添加 drag-over 高亮 CSS 类。
+	 * @param {DragEvent} ev - 浏览器 dragenter 事件
+	 */
 	handleDragEnter(ev) {
 		if (scope.dragState === null ) return;
 		scope.dragState.rect = ev.currentTarget.getBoundingClientRect();
@@ -4074,12 +4530,23 @@ const CBITableSection = CBITypedSection.extend(/** @lends LuCI.form.TableSection
 	},
 
 	/** @private */
+	/**
+	 * 【私有】拖拽离开某行时的样式清理（dragleave 事件）。
+	 * 移除目标行的 drag-over 高亮 CSS 类。
+	 * @param {DragEvent} ev - 浏览器 dragleave 事件
+	 */
 	handleDragLeave(ev) {
 		ev.currentTarget.classList.remove('drag-over-above');
 		ev.currentTarget.classList.remove('drag-over-below');
 	},
 
 	/** @private */
+	/**
+	 * 【私有】拖拽结束（dragend 事件，无论是否成功 drop）。
+	 * 清除拖拽状态、恢复行外观、提交新顺序到 UCI（调用 map.save）。
+	 * @param {DragEvent}   ev   - 浏览器 dragend 事件
+	 * @param {HTMLElement} trEl - 被拖拽的 tr 元素
+	 */
 	handleDragEnd(ev, trEl) {
 		let n;
 		if (trEl) {
@@ -4103,6 +4570,11 @@ const CBITableSection = CBITypedSection.extend(/** @lends LuCI.form.TableSection
 	},
 
 	/** @private */
+	/**
+	 * 【私有】拖拽释放（drop 事件）。
+	 * 将被拖拽行插入到目标位置，更新 UCI section 顺序（调用 uci.move()）。
+	 * @param {DragEvent} ev - 浏览器 drop 事件
+	 */
 	handleDrop(ev) {
 		const s = scope.dragState;
 		if (!s) return;
@@ -4132,6 +4604,12 @@ const CBITableSection = CBITypedSection.extend(/** @lends LuCI.form.TableSection
 	},
 
 	/** @private */
+	/**
+	 * 【私有】获取指定 DOM 节点的背景颜色（用于触摸拖拽时的视觉反馈）。
+	 * 向上遍历父节点直到找到非透明背景色，用于绘制拖拽预览的背景。
+	 * @param {HTMLElement} node - 目标节点
+	 * @returns {string} CSS 颜色字符串（如 'rgb(255,255,255)'）
+	 */
 	determineBackgroundColor(node) {
 		let r = 255;
 		let g = 255;
@@ -4163,6 +4641,12 @@ const CBITableSection = CBITypedSection.extend(/** @lends LuCI.form.TableSection
 	},
 
 	/** @private */
+	/**
+	 * 【私有】触摸排序：手指移动事件处理（touchmove）。
+	 * 在触摸设备上实现长按拖拽排序（桌面端使用 HTML5 Drag API 代替）。
+	 * 跟踪手指位置，更新拖拽预览浮层位置，确定目标插入行。
+	 * @param {TouchEvent} ev - 浏览器 touchmove 事件
+	 */
 	handleTouchMove(ev) {
 		if (!ev.target.classList.contains('drag-handle'))
 			return;
@@ -4249,6 +4733,12 @@ const CBITableSection = CBITypedSection.extend(/** @lends LuCI.form.TableSection
 	},
 
 	/** @private */
+	/**
+	 * 【私有】触摸排序：手指抬起事件处理（touchend）。
+	 * 完成触摸拖拽操作：将被排序行移动到目标位置，
+	 * 移除拖拽预览浮层，调用 uci.move() 提交新顺序后保存。
+	 * @param {TouchEvent} ev - 浏览器 touchend 事件
+	 */
 	handleTouchEnd(ev) {
 		const rowElem = dom.parent(ev.target, '.tr');
 		const htmlElem = document.querySelector('html');
@@ -4291,6 +4781,16 @@ const CBITableSection = CBITypedSection.extend(/** @lends LuCI.form.TableSection
 	},
 
 	/** @private */
+	/**
+	 * 【私有】处理模态框"取消/关闭"按钮点击。
+	 *
+	 * 调用 ui.hideModal() 关闭弹框，并对 GridSection 等子类：
+	 * 若刚刚通过"添加"按钮创建了新 section 但用户取消，则删除该 section。
+	 *
+	 * @param {CBIMap}  modalMap - 模态框内的临时 Map 实例
+	 * @param {Event}   ev       - 点击事件
+	 * @returns {Promise<void>}
+	 */
 	handleModalCancel(modalMap, ev) {
 		const prevNode = this.getPreviousModalMap();
 		let resetTasks = Promise.resolve();
@@ -4326,6 +4826,16 @@ const CBITableSection = CBITypedSection.extend(/** @lends LuCI.form.TableSection
 	},
 
 	/** @private */
+	/**
+	 * 【私有】处理模态框"保存"按钮点击。
+	 *
+	 * 调用临时 modalMap.save() 验证并保存模态框中的所有输入，
+	 * 成功后关闭弹框并触发父 Map 的 save() 刷新表格行。
+	 *
+	 * @param {CBIMap}  modalMap - 模态框内的临时 Map 实例
+	 * @param {Event}   ev       - 点击事件
+	 * @returns {Promise<void>}
+	 */
 	handleModalSave(modalMap, ev) {
 		const mapNode = this.getActiveModalMap();
 		let activeMap = dom.findClassInstance(mapNode);
@@ -4344,6 +4854,15 @@ const CBITableSection = CBITypedSection.extend(/** @lends LuCI.form.TableSection
 	},
 
 	/** @private */
+	/**
+	 * 【私有】处理表格标题行点击排序（按列排序）。
+	 *
+	 * 点击某列表头时，按该列的文字内容对所有行进行字典序排序，
+	 * 再次点击同一列表头则反向排序。排序结果通过 uci.move() 持久化。
+	 * 适用于 sortable=true 时的"点击列头排序"功能。
+	 *
+	 * @param {Event} ev - 点击事件（target 为 th 元素）
+	 */
 	handleSort(ev) {
 		if (!ev.target.matches('th[data-sortable-row]'))
 			return;
@@ -4428,6 +4947,36 @@ const CBITableSection = CBITypedSection.extend(/** @lends LuCI.form.TableSection
 	 * it is run to completion before the rendering is continued, allowing
 	 * custom logic to perform asynchronous work before the modal dialog
 	 * is shown.
+	 */
+	/**
+	 * 在模态框中添加额外的 option（自定义扩展点）。
+	 *
+	 * 这是一个空的"钩子方法"，供子类或使用者覆盖，
+	 * 用于在弹出的编辑模态框中动态追加额外的 option 控件，
+	 * 而无需在初始渲染时就存在于 section 中。
+	 *
+	 * 调用时机：renderMoreOptionsModal() 创建临时 Map 后、渲染前调用此方法。
+	 * 返回 Promise 时会等待其完成后再渲染。
+	 *
+	 * @param {LuCI.form.NamedSection} modalSection
+	 *   模态框内临时 Map 的 NamedSection 实例，可以对其调用 option()/taboption()。
+	 * @param {string} section_id - 当前编辑的 UCI section ID
+	 * @param {Event}  ev         - 触发模态框打开的原始点击事件
+	 * @returns {void|Promise<void>}
+	 *
+	 * 【使用示例：在模态框中动态添加字段】
+	 *
+	 *   // 继承 TableSection 并覆盖 addModalOptions
+	 *   var MySection = form.TableSection.extend({
+	 *     addModalOptions(s, section_id, ev) {
+	 *       // 根据当前 section 的某个值决定是否添加额外字段
+	 *       var proto = uci.get('network', section_id, 'proto');
+	 *       if (proto === 'pppoe') {
+	 *         s.option(form.Value, 'pppoe_user', _('PPPoE 用户名'));
+	 *         s.option(form.Value, 'pppoe_pass', _('PPPoE 密码')).password = true;
+	 *       }
+	 *     }
+	 *   });
 	 */
 	addModalOptions(modalSection, section_id, ev) {
 
@@ -5015,6 +5564,15 @@ const CBINamedSection = CBIAbstractSection.extend(/** @lends LuCI.form.NamedSect
 	},
 
 	/** @private */
+	/**
+	 * 【私有】处理"创建此 section"按钮点击（addremove=true 且 section 不存在时显示）。
+	 *
+	 * 使用 NamedSection 构造时指定的固定 section 名称创建 UCI section，
+	 * 然后触发 map.save() 重新渲染（此后按钮变为"删除"按钮）。
+	 *
+	 * @param {Event} ev - 点击事件
+	 * @returns {Promise<void>}
+	 */
 	handleAdd(ev) {
 		const section_id = this.section;
 		const config_name = this.uciconfig ?? this.map.config;
@@ -5023,7 +5581,15 @@ const CBINamedSection = CBIAbstractSection.extend(/** @lends LuCI.form.NamedSect
 		return this.map.save(null, true);
 	},
 
-	/** @private */
+	/**
+	 * 【私有】处理"删除此 section"按钮点击（addremove=true 且 section 存在时显示）。
+	 *
+	 * 删除 NamedSection 对应的固定名称 UCI section，
+	 * 然后触发 map.save() 重新渲染（此后按钮变为"创建"按钮）。
+	 *
+	 * @param {Event} ev - 点击事件
+	 * @returns {Promise<void>}
+	 */
 	handleRemove(ev) {
 		const section_id = this.section;
 		const config_name = this.uciconfig ?? this.map.config;
@@ -5032,7 +5598,24 @@ const CBINamedSection = CBIAbstractSection.extend(/** @lends LuCI.form.NamedSect
 		return this.map.save(null, true);
 	},
 
-	/** @private */
+	/**
+	 * 【私有】将渲染结果组装为 NamedSection 的最终 DOM 结构。
+	 *
+	 * 根据 ucidata（section 是否存在于 UCI 中）分两种情况：
+	 *
+	 * 【section 存在时（ucidata 非 null）】
+	 *   显示 section 内容节点（option 控件），
+	 *   若 addremove=true 同时显示"删除"按钮。
+	 *
+	 * 【section 不存在时（ucidata 为 null）】
+	 *   若 addremove=true，显示"创建"按钮；
+	 *   否则什么都不显示（section 整体为空）。
+	 *
+	 * @param {Array} data - [ucidata, nodes]（由 render() 传入的 Promise.all 结果）
+	 *   ucidata：UCI section 对象（存在时）或 null（不存在时）
+	 *   nodes：renderUCISection() 的渲染结果
+	 * @returns {Node} 完整的 section 容器节点
+	 */
 	renderContents(data) {
 		const ucidata = data[0];
 		const nodes = data[1];
@@ -5086,7 +5669,18 @@ const CBINamedSection = CBIAbstractSection.extend(/** @lends LuCI.form.NamedSect
 		return sectionEl;
 	},
 
-	/** @override */
+	/**
+	 * 渲染 NamedSection（加载数据并组装 DOM）。
+	 *
+	 * 并行执行：
+	 *   1. uci.get(config, section_id) - 检查 section 是否存在（结果传给 renderContents）
+	 *   2. renderUCISection(section_id) - 渲染所有 option 控件
+	 *
+	 * 两个操作都完成后调用 renderContents 组装最终结构。
+	 *
+	 * @override
+	 * @returns {Promise<Node>}
+	 */
 	render() {
 		const config_name = this.uciconfig ?? this.map.config;
 		const section_id = this.section;
@@ -5283,7 +5877,17 @@ const CBIValue = CBIAbstractValue.extend(/** @lends LuCI.form.Value.prototype */
 			.then(this.renderFrame.bind(this, section_id, in_table, option_index));
 	},
 
-	/** @private */
+	/**
+	 * 【私有】处理 UI 控件值变化事件（widget-change 事件触发）。
+	 *
+	 * 读取当前控件值，与上次记录的值比较，
+	 * 若确实发生变化则调用 this.onchange(ev, section_id, newValue)。
+	 * 使用 state.previousValue 记录上次值，避免重复触发。
+	 *
+	 * @param {string}  section_id - 当前 section ID
+	 * @param {Object}  state      - 状态对象（持有 previousValue）
+	 * @param {Event}   ev         - 原始 widget-change 事件
+	 */
 	handleValueChange(section_id, state, ev) {
 		if (typeof(this.onchange) != 'function')
 			return;
@@ -5297,7 +5901,32 @@ const CBIValue = CBIAbstractValue.extend(/** @lends LuCI.form.Value.prototype */
 		this.onchange.call(this, ev, section_id, value);
 	},
 
-	/** @private */
+	/**
+	 * 【私有】将 renderWidget() 返回的控件节点包装为完整的 option 容器。
+	 *
+	 * 根据所在上下文生成不同的容器结构：
+	 *
+	 * 【表格模式（in_table=true，用于 TableSection/GridSection）】
+	 *   生成 td.td.cbi-value-field，data-title 用于移动端折叠显示列标题。
+	 *
+	 * 【普通模式（in_table=false，用于 TypedSection/NamedSection）】
+	 *   生成 div.cbi-value，包含：
+	 *   - label.cbi-value-title（标题，可带 titleref 链接）
+	 *   - div.cbi-value-field（控件容器）
+	 *   - div.cbi-value-description（描述文字，可选）
+	 *
+	 * 公共处理：
+	 *   - 设置 data-field（cbid）、data-depends（依赖列表）等属性
+	 *   - 依赖不满足时添加 hidden 类（初始隐藏）
+	 *   - 绑定 widget-change 事件（触发依赖更新和 onchange 回调）
+	 *   - 绑定类实例到 DOM 节点（供 lookupOption 等反向查找）
+	 *
+	 * @param {string}  section_id   - UCI section ID
+	 * @param {boolean} in_table     - true=表格单元格模式，false=普通卡片模式
+	 * @param {number}  option_index - 当前 option 在 section 中的序号
+	 * @param {Node}    nodes        - renderWidget() 返回的控件节点
+	 * @returns {Node} 完整的 option 容器节点（td 或 div）
+	 */
 	renderFrame(section_id, in_table, option_index, nodes) {
 		const config_name = this.uciconfig ?? this.section.uciconfig ?? this.map.config;
 		const depend_list = this.transformDepList(section_id);
@@ -5380,7 +6009,44 @@ const CBIValue = CBIAbstractValue.extend(/** @lends LuCI.form.Value.prototype */
 		return optionEl;
 	},
 
-	/** @private */
+	/**
+	 * 【私有】渲染实际的 UI 输入控件（核心渲染方法，子类通常覆盖此方法）。
+	 *
+	 * Value 的实现逻辑：
+	 *   - 若有候选选项（transformChoices() 非 null）：渲染为 ui.Combobox
+	 *     （自由输入 + 下拉候选列表）
+	 *   - 否则：渲染为 ui.Textfield（纯文本输入框）
+	 *
+	 * 所有子类（ListValue、Flag、DynamicList 等）都覆盖此方法，
+	 * 使用不同的 ui.* 控件渲染。
+	 *
+	 * @param {string} section_id   - UCI section ID
+	 * @param {number} option_index - 当前 option 在 section 中的序号
+	 * @param {*}      cfgvalue     - load() 加载的 UCI 配置值（null 时用 this.default）
+	 * @returns {Promise<Node>|Node} 渲染完成的控件 DOM 节点
+	 *
+	 * 【子类覆盖示例】
+	 *   // 自定义一个颜色选择器控件
+	 *   var ColorPicker = form.Value.extend({
+	 *     renderWidget(section_id, option_index, cfgvalue) {
+	 *       const val = cfgvalue ?? this.default ?? '#ffffff';
+	 *       const input = E('input', {
+	 *         type: 'color',
+	 *         id: this.cbid(section_id),
+	 *         value: val,
+	 *         change: (ev) => {
+	 *           // 触发 widget-change 让依赖系统感知变化
+	 *           ev.target.dispatchEvent(new CustomEvent('widget-change', { bubbles: true }));
+	 *         }
+	 *       });
+	 *       return input;
+	 *     },
+	 *     formvalue(section_id) {
+	 *       const el = this.map.findElement('id', this.cbid(section_id));
+	 *       return el ? el.value : null;
+	 *     }
+	 *   });
+	 */
 	renderWidget(section_id, option_index, cfgvalue) {
 		const value = (cfgvalue != null) ? cfgvalue : this.default;
 		const choices = this.transformChoices();
@@ -6061,14 +6727,16 @@ const CBIRangeSliderValue = CBIValue.extend(/** @lends LuCI.form.RangeSliderValu
 	},
 
 	/**
-	 * Query the current form input value.
+	 * 读取当前滑块的选中值。
 	 *
-	 * @param {string} section_id
-	 * The configuration section ID
+	 * 特殊处理：若当前值等于 this.default，返回 null（表示"使用默认值"）。
+	 * 这与 AbstractValue.parse() 的逻辑配合：
+	 *   返回 null 时，rmempty=true 的字段会从 UCI 中删除该选项，
+	 *   从而让该选项使用 OpenWrt 服务/守护进程的内置默认值。
 	 *
-	 * @returns {*}
-	 * Returns the currently selected value if it does not match the default.
-	 * If the currently selected value matches the default value, returns null.
+	 * @override
+	 * @param {string} section_id - UCI section ID
+	 * @returns {string|null} 当前值字符串，或等于默认值时返回 null
 	 */
 	formvalue(section_id) {
 		const elem = this.getUIElement(section_id);
@@ -6202,9 +6870,9 @@ const CBIFlagValue = CBIValue.extend(/** @lends LuCI.form.FlagValue.prototype */
 	__init__(...args) {
 		this.super('__init__', args);
 
-		this.enabled = '1';
-		this.disabled = '0';
-		this.default = this.disabled;
+		this.enabled  = '1';   // 勾选时写入 UCI 的值（可覆盖为 'yes'/'on'/'true' 等）
+		this.disabled = '0';   // 未勾选时写入 UCI 的值（可覆盖为 'no'/'off' 等）
+		this.default  = this.disabled;  // 默认值（建议在构造后显式设置）
 	},
 
 	/**
@@ -6298,7 +6966,19 @@ const CBIFlagValue = CBIValue.extend(/** @lends LuCI.form.FlagValue.prototype */
 		return (cval == this.enabled) ? _('Yes') : _('No');
 	},
 
-	/** @override */
+	/**
+	 * 解析 Flag 控件的当前值并写入 UCI（覆盖 AbstractValue.parse）。
+	 *
+	 * Flag 的特殊逻辑：
+	 *   - 若当前值等于 default，且 optional=true 或 rmempty=true，
+	 *     则调用 remove() 从 UCI 中删除该选项（恢复 UCI 默认值状态）
+	 *   - 否则调用 write() 写入 enabled 或 disabled 值
+	 *   - 依赖不满足（隐藏）且 retain=false 时调用 remove()
+	 *
+	 * @override
+	 * @param {string} section_id - UCI section ID
+	 * @returns {Promise<void>}
+	 */
 	parse(section_id) {
 		if (this.isActive(section_id)) {
 			const fval = this.formvalue(section_id);
@@ -6414,6 +7094,10 @@ const CBIFlagValue = CBIValue.extend(/** @lends LuCI.form.FlagValue.prototype */
 const CBIMultiValue = CBIDynamicList.extend(/** @lends LuCI.form.MultiValue.prototype */ {
 	__name__: 'CBI.MultiValue',
 
+	/**
+	 * 初始化 MultiValue，设置默认占位提示文字。
+	 * 下拉框未选中任何选项时显示 '-- Please choose --'（已国际化）。
+	 */
 	__init__(...args) {
 		this.super('__init__', args);
 		this.placeholder = _('-- Please choose --');
@@ -6574,7 +7258,12 @@ const CBIMultiValue = CBIDynamicList.extend(/** @lends LuCI.form.MultiValue.prot
 const CBITextValue = CBIValue.extend(/** @lends LuCI.form.TextValue.prototype */ {
 	__name__: 'CBI.TextValue',
 
-	/** @ignore */
+	/**
+	 * TextValue 禁用了 Value.value() 方法。
+	 * textarea 不支持候选下拉列表，调用 value() 无效（被设为 null）。
+	 * 若需要多选输入，请改用 DynamicList 或 MultiValue。
+	 * @ignore
+	 */
 	value: null,
 
 	/**
@@ -7670,47 +8359,57 @@ const CBISectionValue = CBIValue.extend(/** @lends LuCI.form.SectionValue.protot
 	 * @readonly
 	 */
 
-	/** @override */
+	/**
+	 * 委托给内嵌 subsection 执行加载（数据由 subsection 的 option 负责读取）。
+	 * @override
+	 */
 	load(section_id) {
 		return this.subsection.load(section_id);
 	},
 
-	/** @override */
+	/**
+	 * 委托给内嵌 subsection 执行解析和验证（所有数据写入由 subsection 的 option 处理）。
+	 * @override
+	 */
 	parse(section_id) {
 		return this.subsection.parse(section_id);
 	},
 
-	/** @private */
+	/**
+	 * 将 subsection 渲染为控件节点（替代普通 input 控件的位置）。
+	 * 返回完整的 section DOM，嵌入到父 section 的 option 位置中。
+	 * @private
+	 */
 	renderWidget(section_id, option_index, cfgvalue) {
 		return this.subsection.render(section_id);
 	},
 
-	/** @private */
+	/**
+	 * 同时检查内嵌 subsection 和自身的依赖状态。
+	 * 先更新 subsection 内部所有 option 的依赖，再检查自身的依赖条件。
+	 * @private
+	 */
 	checkDepends(section_id) {
 		this.subsection.checkDepends(section_id);
 		return CBIValue.prototype.checkDepends.apply(this, [ section_id ]);
 	},
 
 	/**
-	 * Since the section container is not rendering an own widget,
-	 * its `value()` implementation is a no-op.
-	 *
+	 * SectionValue 不是输入控件，不支持添加候选选项。
+	 * 调用 value() 无任何效果（空操作）。
+	 * 若需要在内嵌 section 的 option 中添加候选，请通过 subsection.option() 设置。
 	 * @override
 	 */
 	value() {},
 
 	/**
-	 * Since the section container is not tied to any UCI configuration,
-	 * its `write()` implementation is a no-op.
-	 *
+	 * SectionValue 本身不写入 UCI（实际写入由 subsection 的 option 控件负责）。
 	 * @override
 	 */
 	write() {},
 
 	/**
-	 * Since the section container is not tied to any UCI configuration,
-	 * its `remove()` implementation is a no-op.
-	 *
+	 * SectionValue 本身不删除 UCI 值（实际删除由 subsection 的 option 控件负责）。
 	 * @override
 	 */
 	remove() {},
