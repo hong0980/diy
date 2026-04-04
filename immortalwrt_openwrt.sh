@@ -490,6 +490,11 @@ profile='package/base-files/files/etc/profile.d/apk-cheatsheet.sh'
 [ -e "$profile" ] && \
 grep -Fq '[ -x /usr/bin/apk ]' "$profile" && sed -i 's|\[ -x /usr/bin/apk \]|false|' "$profile"
 
+[ -f "feeds/routing/mesh11sd/Makefile" ] && \
+	sed -i \
+	    -e 's/PKG_VERSION:=.*/PKG_VERSION:=5.1.3/' \
+	    -e 's/PKG_HASH:=.*/PKG_HASH:=skip/' \
+	    feeds/routing/mesh11sd/Makefile
 # sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
 sed -i 's|/bin/login|/bin/login -f root|' feeds/packages/utils/ttyd/files/ttyd.config
 REPLACEMENT=$([[ $REPO == openwrt ]] && echo "" || echo "${REPO}/")
