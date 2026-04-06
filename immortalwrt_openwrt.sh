@@ -308,8 +308,8 @@ set_config (){
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
 			# add_package "luci-app-easymesh luci-app-mesh-node"
 			# add_busybox "pkill lsof"
-			add_package "luci-app-mesh-node"
-			del_package "wpad-basic-mbedtls wpad-openssl"
+			add_package "luci-app-mesh-node libustream-mbedtls"
+			del_package "wpad-basic-mbedtls wpad-openssl libustream-openssl libustream-wolfssl"
 			;;
 		newifi-d2)
 			cat >>.config<<-EOF
