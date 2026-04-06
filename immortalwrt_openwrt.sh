@@ -64,7 +64,7 @@ add_busybox() {
 	done
 }
 
-delpackage() {
+del_package() {
 	for z in $@; do
 		[[ $z =~ ^# ]] || echo "# CONFIG_PACKAGE_$z is not set" >> .config
 		# [[ $z =~ ^# ]] || sed -Ei "s/(CONFIG_PACKAGE_.*$z)=y/# \1 is not set/" .config
@@ -309,6 +309,7 @@ set_config (){
 			# add_package "luci-app-easymesh luci-app-mesh-node"
 			# add_busybox "pkill lsof"
 			add_package "luci-app-mesh-node"
+			del_package "wpad-basic-mbedtls"
 			sed -i 's/wpad-openssl//g' target/linux/mediatek/filogic/target.mk
 			;;
 		newifi-d2)
@@ -437,7 +438,7 @@ clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi mo
 
 if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
-		delpackage "dnsmasq"
+		del_package "dnsmasq"
 		create_directory "package/emortal"
 		git clone -q https://github.com/immortalwrt/homeproxy package/A/luci-app-homeproxy
 		[[ $REPO_BRANCH =~ master|24|25 ]] || ucode=ucode
@@ -469,7 +470,7 @@ else
 fi
 
 [[ $REPO_BRANCH =~ master|25 ]] || clone_dir openwrt/packages docker dockerd containerd docker-compose runc #nlbwmon
-delpackage "luci-app-filetransfer luci-app-turboacc"
+del_package "luci-app-filetransfer luci-app-turboacc"
 clone_dir sbwml/openwrt_helloworld shadowsocks-rust sing-box xray-core
 clone_dir vernesong/OpenClash luci-app-openclash
 clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
