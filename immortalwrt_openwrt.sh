@@ -308,9 +308,8 @@ set_config (){
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
 			# add_package "luci-app-easymesh luci-app-mesh-node"
 			# add_busybox "pkill lsof"
-			add_package "luci-app-mesh-node wpad-mbedtls"
-			# delpackage "wpad-basic-mbedtls"
-			sed -i 's/$(eval $(call BuildPackage,wpad-basic-mbedtls))//' package/network/services/hostapd/Makefile
+			add_package "luci-app-mesh-node"
+			sed -i 's/wpad-openssl//g' target/linux/mediatek/filogic/target.mk
 			;;
 		newifi-d2)
 			cat >>.config<<-EOF
