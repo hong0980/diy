@@ -121,10 +121,153 @@
  *   'range(a,b)'    值域限制（如 range(1,100)）
  *   'min(a)'        最小值限制
  *   'max(a)'        最大值限制
+ *   'maxlength(n)'  字符串最大长度
+ *   'minlength(n)'  字符串最小长度
  *   'ipmask'        IP 地址+掩码（空格分隔）
  *   'netmask4'      IPv4 子网掩码
  *   'neg(type)'     可带负号的指定类型（如 neg(ipaddr)）
  *   'list(t,sep)'   以 sep 分隔的类型列表
+ *   'or(t1,t2)'     满足 t1 或 t2 之一（如 or(ip4addr,ip6addr)）
+ *   'and(t1,t2)'    同时满足 t1 和 t2
+ *   'file'          文件路径（以 '/' 开头的字符串）
+ *
+ * 【Section 类型快速对比】
+ *
+ *   ┌─────────────────┬──────────┬──────────┬──────────┬──────────────────────────────┐
+ *   │ Section 类型    │ 展示方式  │ Tab 支持  │ 编辑方式  │ 适用场景                     │
+ *   ├─────────────────┼──────────┼──────────┼──────────┼──────────────────────────────┤
+ *   │ NamedSection    │ 单块展开  │ ✓         │ 直接编辑  │ 一个已知名称的 section       │
+ *   │ TypedSection    │ 垂直堆叠  │ ✓         │ 直接编辑  │ 多个同类 section，字段多     │
+ *   │ TableSection    │ 表格行   │ ✗         │ 直接/模态框│ 多个同类 section，字段少     │
+ *   │ GridSection     │ 表格行   │ ✓（模态框）│ 格内/展开 │ 表格概览 + 详细编辑          │
+ *   └─────────────────┴──────────┴──────────┴──────────┴──────────────────────────────┘
+ *
+ * 【控件类型快速选择指南】
+ *
+ *   用户场景                          推荐控件
+ *   ─────────────────────────────────────────────────────────────
+ *   输入任意文本                      form.Value
+ *   输入文本，但有常用建议             form.Value + value()（Combobox）
+ *   从固定列表选一个                   form.ListValue
+ *   从固定列表选一个（需说明）          form.RichListValue
+ *   从固定列表选多个                   form.MultiValue
+ *   输入多个值（UCI list）             form.DynamicList
+ *   布尔开关（是/否）                  form.Flag
+ *   数值范围                          form.RangeSliderValue
+ *   多行文本（代码/证书）              form.TextValue
+ *   只读展示值                        form.DummyValue
+ *   操作按钮（不存储值）               form.Button
+ *   隐藏携带内部值                     form.HiddenValue
+ *   选择文件路径                       form.FileUpload
+ *   选择目录路径                       form.DirectoryPicker
+ *   在 option 位置内嵌子表单           form.SectionValue
+ *
+ * 【onchange 高级用法——响应字段变化实时更新 UI】
+ *
+ *   // 场景：proto 改变时，动态显示/隐藏相关字段（这是 depends() 的替代方案，
+ *   //        适合需要"主动驱动"而非被动响应的场景）
+ *   var proto = s.option(form.ListValue, 'proto', _('协议'));
+ *   proto.value('dhcp', 'DHCP');
+ *   proto.value('static', _('静态'));
+ *   proto.onchange = function(ev, section_id, value) {
+ *     // 手动切换另一个 option 的可见性
+ *     var ipOpt = this.map.lookupOption('ipaddr', section_id);
+ *     if (ipOpt) ipOpt[0].setActive(section_id, value === 'static');
+ *   };
+ *
+ *   // 场景：根据输入值动态更新另一个字段的选项（Combobox 内容联动）
+ *   var zone = s.option(form.ListValue, 'zone', _('防火墙区域'));
+ *   zone.onchange = function(ev, section_id, value) {
+ *     // 当区域改变时，更新相关联的规则列表
+ *     var ruleOpt = this.map.lookupOption('rule', section_id);
+ *     if (ruleOpt) {
+ *       var uiEl = ruleOpt[0].getUIElement(section_id);
+ *       if (uiEl) uiEl.setChoices(getRulesForZone(value));
+ *     }
+ *   };
+ *
+ * 【defaults 属性——条件驱动的动态默认值】
+ *
+ *   // defaults 是一个特殊对象，用于根据其他字段的值动态切换默认值。
+ *   // 格式：{ '默认值': [依赖条件数组], ... }
+ *   // 空数组 [] 表示兜底默认值（无条件生效）。
+ *
+ *   // 示例：当 proto=pppoe 时 mtu 默认 1492，否则默认 1500
+ *   var mtu = s.option(form.Value, 'mtu', _('MTU'));
+ *   mtu.datatype = 'uinteger';
+ *   mtu.optional = true;
+ *   mtu.defaults = {
+ *     '1492': [{ proto: 'pppoe' }],   // proto=pppoe 时默认 1492
+ *     '1492': [{ proto: 'pptp' }],    // ⚠️ JS 对象 key 唯一，同值无法区分
+ *     '1500': []                      // 兜底默认 1500
+ *   };
+ *   // 注意：JS 对象 key 必须唯一！若多个 proto 值对应同一 MTU 默认值，
+ *   // 需要使用 depends() 嵌套或合并条件（依赖条件数组中的对象是 OR 关系）：
+ *   mtu.defaults = {
+ *     '1492': [{ proto: 'pppoe' }, { proto: 'pptp' }],  // pppoe OR pptp → 1492
+ *     '1500': []
+ *   };
+ *
+ * 【自定义控件扩展——继承 Value 实现自定义输入控件】
+ *
+ *   // 方式1：覆盖 renderWidget() 渲染自定义 HTML 控件
+ *   var ColorPicker = form.Value.extend({
+ *     renderWidget(section_id, option_index, cfgvalue) {
+ *       const val = cfgvalue ?? this.default ?? '#ffffff';
+ *       return E('input', {
+ *         type: 'color',
+ *         id: this.cbid(section_id),       // 必须设置 id 供 getUIElement() 查找
+ *         value: val,
+ *         change: (ev) => {
+ *           // 必须触发 widget-change 事件，否则 depends() 和 onchange 不工作
+ *           ev.target.dispatchEvent(new CustomEvent('widget-change', { bubbles: true }));
+ *         }
+ *       });
+ *     },
+ *     // 若没有使用 ui.* 控件，必须覆盖 formvalue() 读取输入值
+ *     formvalue(section_id) {
+ *       const el = this.map.findElement('id', this.cbid(section_id));
+ *       return el ? el.value : null;
+ *     }
+ *   });
+ *
+ *   // 方式2：覆盖 cfgvalue()/write() 实现数据转换（不改变渲染）
+ *   var IpOnlyValue = form.Value.extend({
+ *     // UCI 存 '192.168.1.1/24'，但只让用户编辑 IP 部分
+ *     cfgvalue(section_id) {
+ *       const raw = uci.get(this.map.config, section_id, this.option) || '';
+ *       return raw.split('/')[0];
+ *     },
+ *     write(section_id, value) {
+ *       const mask = uci.get(this.map.config, section_id, 'netmask') || '24';
+ *       uci.set(this.map.config, section_id, this.option, `${value}/${mask}`);
+ *     }
+ *   });
+ *
+ * 【开发 Checklist——新建 LuCI 视图时的常见步骤】
+ *
+ *   □ 1. 在 load() 中预加载所有需要的 UCI 配置：
+ *          return Promise.all([ uci.load('network'), uci.load('firewall') ]);
+ *
+ *   □ 2. 若需要 RPC 数据，在 load() 中并行获取：
+ *          return Promise.all([ uci.load('myapp'), callGetStatus() ]).then(([,status]) => {
+ *            this._status = status;
+ *          });
+ *
+ *   □ 3. 使用 map.chain('otherconfig') 关联额外 UCI 文件（而非重复 uci.load）
+ *
+ *   □ 4. 为每个表单控件设置合理的 datatype 验证
+ *
+ *   □ 5. 明确设置 rmempty / optional：
+ *          - 必填字段：o.rmempty = false;
+ *          - 可选字段：o.optional = true;
+ *
+ *   □ 6. 为 Flag 控件始终显式设置 enabled/disabled/default 三个属性
+ *
+ *   □ 7. 在 render() 最后返回 m.render()（不要 await，直接返回 Promise）
+ *
+ *   □ 8. 若视图有自定义操作按钮（Button），处理函数要返回 Promise
+ *          并在出错时用 ui.addNotification() 展示错误，而非静默失败
  */
 'use strict';
 'require ui';
@@ -2568,16 +2711,31 @@ const CBIAbstractValue = CBIAbstractElement.extend(/** @lends LuCI.form.Abstract
 	 * 【私有】根据条件依赖动态更新 option 的默认值（this.defaults 属性）。
 	 *
 	 * this.defaults 是一个特殊对象，允许根据其他 option 的值动态切换默认值：
-	 *   { '值1': [条件组], '值2': [], ... }
-	 *   空数组（[]）表示无条件的兜底默认值。
+	 *   { '默认值': [依赖条件数组], ... }
+	 *
+	 *   - 依赖条件数组中的每个对象是一个 AND 条件组（对象内多字段须同时满足）
+	 *   - 数组中多个对象之间是 OR 关系（任一对象满足即匹配该默认值）
+	 *   - 空数组（[]）表示无条件的兜底默认值（无任何其他条件匹配时使用）
+	 *   - 注意：JS 对象 key 必须唯一，不能用重复 key 表示多个默认值 ！
 	 *
 	 * 【this.defaults 用法示例】
-	 *   // 当 proto=dhcp 时，mtu 默认 1500；proto=pppoe 时默认 1492
 	 *   o.defaults = {
-	 *     '1500': [{ proto: 'dhcp' }],
-	 *     '1492': [{ proto: 'pppoe' }],
-	 *     '1500': []   // 兜底默认
+	 *     '1492': [
+	 *       { proto: 'pppoe' },   // proto=pppoe 时默认 1492
+	 *       { proto: 'pptp' }     // 或 proto=pptp 时默认 1492（OR）
+	 *     ],
+	 *     '1500': []              // 兜底：以上条件都不满足时默认 1500
 	 *   };
+	 *
+	 *   // 高级示例：AND 条件（proto=pppoe 且 compress=1 时默认 1488）
+	 *   o.defaults = {
+	 *     '1488': [{ proto: 'pppoe', compress: '1' }],  // 同一对象内是 AND 关系
+	 *     '1492': [{ proto: 'pppoe' }],
+	 *     '1500': []
+	 *   };
+	 *
+	 *   // 注意：defaults 只在 UCI 中无值（cfgvalue=null）时生效，
+	 *   //        若 UCI 中已有值则优先使用 UCI 的值（不会覆盖已保存的配置）。
 	 *
 	 * @param {string} section_id - 当前 section ID
 	 */
@@ -5209,10 +5367,43 @@ const CBITableSection = CBITypedSection.extend(/** @lends LuCI.form.TableSection
  *   nodescriptions {boolean}  默认 true（GridSection 默认不显示描述）
  *     与 TableSection 不同，GridSection 默认关闭描述，节省空间。
  *
- * 【option 的 modalonly 属性在 GridSection 中的意义】
- *   null  = 在表格列和展开面板中都显示（双重显示）
- *   false = 只在表格列中显示（不在展开面板中）
- *   true  = 只在展开面板中显示（不在表格列中）
+ * 【GridSection 中 option() 与 taboption() 的本质区别】
+ *
+ *   ┌──────────────────┬────────────────────────┬────────────────────────────┐
+ *   │                  │ option()               │ taboption('tabname', ...)  │
+ *   ├──────────────────┼────────────────────────┼────────────────────────────┤
+ *   │ 显示在表格列中   │ ✓（默认）              │ ✗（不在表格列显示）        │
+ *   │ 显示在展开面板中 │ ✗（不在展开面板）      │ ✓（在指定 tab 面板中）     │
+ *   │ modalonly=null   │ 同时显示（重复）        │ 只在展开面板中显示         │
+ *   │ modalonly=true   │ 只在展开面板显示        │ 只在展开面板显示           │
+ *   │ modalonly=false  │ 只在表格列显示          │ 只在表格列显示             │
+ *   └──────────────────┴────────────────────────┴────────────────────────────┘
+ *
+ *   设计模式：
+ *   - 关键概要字段 → s.option()（在表格中可见，不进展开面板）
+ *   - 详细编辑字段 → s.taboption()（在展开面板的 tab 中显示）
+ *   - 同时在表格和展开面板显示 → s.option() + modalonly=null（默认）
+ *     但这通常不推荐，会造成信息重复
+ *
+ * 【option() 的 editable 属性（在表格格内直接编辑）】
+ *
+ *   var o = s.option(form.Value, 'name', _('名称'));
+ *   o.editable = true;  // 表格格内直接显示输入框，无需展开
+ *   // editable=false（默认）：格内显示只读文本，需展开才能编辑
+ *
+ * 【option() 的 modalonly 属性（控制出现位置）】
+ *
+ *   var o = s.option(form.Value, 'summary', _('摘要'));
+ *   o.modalonly = false;  // 只在表格列中（不在展开面板）
+ *
+ *   o = s.taboption('detail', form.TextValue, 'detail', _('详情'));
+ *   // taboption 自动属于展开面板
+ *
+ * 【option() 的 modalonly 属性（控制出现位置）】
+ *
+ *   o.modalonly = null;   // 两处都显示（默认，常用于 taboption）
+ *   o.modalonly = true;   // 只在展开面板/模态框
+ *   o.modalonly = false;  // 只在表格列
  *
  * ──────────────────────────────────────────────────────────
  * 【示例1：接口列表（表格+展开编辑）】
@@ -8541,6 +8732,169 @@ const CBISectionValue = CBIValue.extend(/** @lends LuCI.form.SectionValue.protot
  *   ├── 文件路径选择？→ form.FileUpload
  *   ├── 目录路径选择？→ form.DirectoryPicker
  *   └── 内嵌子表单？→ form.SectionValue
+ *
+ * ══════════════════════════════════════════════════════════════
+ * 【完整综合示例——一个完整的 LuCI 视图文件骨架】
+ * ══════════════════════════════════════════════════════════════
+ *
+ *   'use strict';
+ *   'require form';
+ *   'require uci';
+ *   'require rpc';
+ *   'require view';
+ *
+ *   // 声明 RPC 调用（若需要从 ubus 获取状态数据）
+ *   var callGetStatus = rpc.declare({
+ *     object: 'myservice',
+ *     method: 'status',
+ *     expect: { '': {} }
+ *   });
+ *
+ *   return view.extend({
+ *     // ① 加载阶段：并行加载 UCI 配置 + RPC 数据
+ *     load() {
+ *       return Promise.all([
+ *         uci.load('myapp'),        // 主配置文件
+ *         uci.load('network'),      // 关联配置（用于获取接口列表）
+ *         callGetStatus()           // RPC 状态数据
+ *       ]).then(([, , status]) => {
+ *         this._status = status;    // 缓存状态数据供 render() 使用
+ *       });
+ *     },
+ *
+ *     // ② 渲染阶段：构建表单树并返回渲染 Promise
+ *     render() {
+ *       var m, s, o;
+ *
+ *       // ─── 创建表单 ───────────────────────────────────────
+ *       m = new form.Map('myapp', _('我的应用'), _('配置说明文字'));
+ *       m.chain('network');   // 关联 network 配置（已在 load() 中加载）
+ *
+ *       // ─── Section 1：基本设置（NamedSection）─────────────
+ *       s = m.section(form.NamedSection, '@myapp[0]', 'myapp', _('基本设置'));
+ *       s.addremove = false;
+ *
+ *       // 使用 Tab 分组
+ *       s.tab('general',  _('常规'));
+ *       s.tab('advanced', _('高级'));
+ *
+ *       o = s.taboption('general', form.Flag, 'enabled', _('启用'));
+ *       o.default = o.enabled = '1';
+ *       o.rmempty = false;
+ *
+ *       o = s.taboption('general', form.Value, 'port', _('监听端口'));
+ *       o.datatype = 'port';
+ *       o.default  = '8080';
+ *       o.depends('enabled', '1');   // 只在启用时显示
+ *
+ *       o = s.taboption('general', form.ListValue, 'interface', _('绑定接口'));
+ *       o.optional = true;
+ *       uci.sections('network', 'interface', (iface) => {
+ *         o.value(iface['.name'], iface['.name'].toUpperCase());
+ *       });
+ *
+ *       o = s.taboption('advanced', form.Value, 'timeout', _('超时（秒）'));
+ *       o.datatype = 'range(1,3600)';
+ *       o.default  = '30';
+ *       o.optional = true;
+ *
+ *       // ─── Section 2：规则列表（TableSection）──────────────
+ *       s = m.section(form.TableSection, 'rule', _('转发规则'));
+ *       s.addremove = true;
+ *       s.anonymous = true;
+ *       s.sortable  = true;
+ *       s.nodescriptions = true;
+ *
+ *       o = s.option(form.Flag, 'enabled', _('启用'));
+ *       o.default = o.enabled = '1';
+ *
+ *       o = s.option(form.Value, 'name', _('名称'));
+ *       o.width = '25%';
+ *       o.rmempty = false;
+ *
+ *       o = s.option(form.Value, 'src_port', _('源端口'));
+ *       o.datatype = 'portrange';
+ *       o.width    = '15%';
+ *
+ *       o = s.option(form.Value, 'dest_ip', _('目标 IP'));
+ *       o.datatype = 'ip4addr';
+ *       o.width    = '20%';
+ *
+ *       o = s.option(form.Value, 'dest_port', _('目标端口'));
+ *       o.datatype = 'port';
+ *       o.width    = '15%';
+ *
+ *       // ─── Section 3：状态展示（只读，DummyValue）───────────
+ *       s = m.section(form.NamedSection, '@myapp[0]', 'myapp', _('运行状态'));
+ *       s.addremove = false;
+ *
+ *       var self = this;
+ *
+ *       o = s.option(form.DummyValue, '_version', _('版本'));
+ *       o.cfgvalue = () => self._status.version || _('未知');
+ *
+ *       o = s.option(form.DummyValue, '_uptime', _('运行时长'));
+ *       o.cfgvalue = () => {
+ *         var sec = self._status.uptime || 0;
+ *         return '%dh %dm %ds'.format(
+ *           Math.floor(sec / 3600),
+ *           Math.floor((sec % 3600) / 60),
+ *           sec % 60
+ *         );
+ *       };
+ *
+ *       // ─── 按钮：操作控制 ───────────────────────────────────
+ *       o = s.option(form.Button, '_restart', _(''));
+ *       o.inputtitle = _('重启服务');
+ *       o.inputstyle = 'apply';
+ *       o.onclick    = function(ev, sid) {
+ *         return callRestartService()
+ *           .then(() => ui.addNotification(null, E('p', _('服务已重启')), 'info'))
+ *           .catch(err => ui.addNotification(null, E('p', err.message), 'danger'));
+ *       };
+ *
+ *       return m.render();
+ *     },
+ *
+ *     // ③（可选）handleSave/handleSaveApply/handleReset 由 view 基类处理，
+ *     //    只要 render() 返回 m，view 框架会自动调用 m.save() / m.reset()。
+ *     //    若需要自定义保存行为，覆盖 handleSave()：
+ *     // handleSave(ev) {
+ *     //   return m.save(function() {
+ *     //     // 在此做额外的 UCI 操作（此时 parse 已完成，可读取 formvalue）
+ *     //   });
+ *     // }
+ *   });
+ *
+ * ══════════════════════════════════════════════════════════════
+ * 【常见陷阱与解决方法】
+ * ══════════════════════════════════════════════════════════════
+ *
+ *   ❌ 问题：depends() 不工作，字段总是显示
+ *   ✓ 原因：依赖字段名拼写错误，或依赖字段不在同一 section
+ *   ✓ 解决：用点分格式引用跨 section 字段：o.depends('config.sid.field', 'val')
+ *           或检查 depends() 中的字段名是否与 option() 中的 option 名一致
+ *
+ *   ❌ 问题：Flag 控件保存后总是被删除（UCI 中消失）
+ *   ✓ 原因：当 formvalue == default 且 rmempty=true 时会删除该选项
+ *   ✓ 解决：设置 o.rmempty = false; 确保总是写入
+ *
+ *   ❌ 问题：TableSection 中 tab() 报错
+ *   ✓ 原因：TableSection 不支持 Tab（继承自 TypedSection 但屏蔽了 tab()）
+ *   ✓ 解决：改用 GridSection（支持 taboption + Tab）
+ *
+ *   ❌ 问题：自定义 cfgvalue() 返回了值，但控件显示的是默认值
+ *   ✓ 原因：cfgvalue() 的返回值须同步，不能返回 Promise
+ *   ✓ 解决：在 load() 中异步获取并缓存，在 cfgvalue() 中读取缓存值
+ *
+ *   ❌ 问题：JSONMap 修改后数据没有持久化
+ *   ✓ 原因：JSONMap.save() 只更新内存对象，不写到磁盘
+ *   ✓ 解决：在 map.save(callback) 的回调中手动调用 RPC 将数据发送给后端
+ *
+ *   ❌ 问题：SectionValue 内嵌的 section 数据没有保存
+ *   ✓ 原因：SectionValue 自身的 write/remove 是空操作，
+ *            内嵌 subsection 的 uciconfig 需要与外部 Map 一致或正确设置
+ *   ✓ 解决：确保 peerContainer.subsection.uciconfig 指向正确的 UCI 配置名
  */
 return baseclass.extend(/** @lends LuCI.form.prototype */ {
 	Map: CBIMap,

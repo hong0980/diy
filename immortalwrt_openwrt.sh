@@ -306,10 +306,10 @@ set_config (){
 			lan_ip "192.168.5.1"
 			export DEVICE_NAME="$D_NAME"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
-			# add_package "luci-app-easymesh luci-app-mesh-node"
+			add_package "wpad-mesh-openssl"
 			# add_busybox "pkill lsof"
-			add_package "luci-app-mesh-node libustream-mbedtls"
-			del_package "wpad-basic-mbedtls wpad-openssl libustream-openssl libustream-wolfssl"
+			# add_package "luci-app-mesh-node libustream-mbedtls"
+			# del_package "wpad-basic-mbedtls wpad-openssl libustream-openssl libustream-wolfssl"
 			;;
 		newifi-d2)
 			cat >>.config<<-EOF
