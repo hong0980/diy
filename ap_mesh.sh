@@ -87,6 +87,7 @@ set wireless.${iface}.bss_transition='1'
 set wireless.${iface}.ft_psk_generate_local='1'
 set wireless.${iface}.mobility_domain='4f57'
 set wireless.${iface}.nasid='${iface_mac}'
+del wireless.${iface}.disabled
 EOF
 
     uci -q delete wireless.${iface}.wnm_sleep_mode_no_keys
@@ -125,6 +126,7 @@ set wireless.${mesh_iface}.encryption='sae'
 set wireless.${mesh_iface}.key='${MESH_PASS}'
 set wireless.${mesh_iface}.mesh_id='${MESH_ID}'
 set wireless.${mesh_iface}.mesh_rssi_threshold='-65'
+del wireless.${iface}.disabled
 EOF
 
 }
