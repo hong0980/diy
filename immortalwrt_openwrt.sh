@@ -307,7 +307,7 @@ set_config (){
 			export DEVICE_NAME="$D_NAME"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
 			# add_busybox "pkill lsof"
-			add_package "luci-app-mesh-node libustream-mbedtls luci-app-mesh11sd"
+			add_package "luci-app-mesh-node libustream-mbedtls"
 			del_package "wpad-basic-mbedtls wpad-openssl libustream-openssl libustream-wolfssl"
 			;;
 		newifi-d2)
@@ -474,6 +474,11 @@ clone_dir vernesong/OpenClash luci-app-openclash
 clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
 clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
 clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview trojan-plus sing-box xray-core
+[ -f 'feeds/packages/net/sing-box/Makefile' ] && \
+	sed -i \
+	    -e 's/PKG_VERSION:=.*/PKG_VERSION:=1.13.3/' \
+	    -e 's/PKG_HASH:=.*/PKG_HASH:=skip/' \
+	    feeds/packages/net/sing-box/Makefile
 # clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb \
 # 		luci-app-advancedplus luci-app-arpbind luci-app-ddns-go luci-app-gecoosac \
 # 		luci-app-istorex luci-app-pushbot luci-app-quickstart luci-app-store \
@@ -490,11 +495,11 @@ profile='package/base-files/files/etc/profile.d/apk-cheatsheet.sh'
 [ -e "$profile" ] && \
 grep -Fq '[ -x /usr/bin/apk ]' "$profile" && sed -i 's|\[ -x /usr/bin/apk \]|false|' "$profile"
 
-[ -f "feeds/routing/mesh11sd/Makefile" ] && \
-	sed -i \
-	    -e 's/PKG_VERSION:=.*/PKG_VERSION:=5.1.3/' \
-	    -e 's/PKG_HASH:=.*/PKG_HASH:=skip/' \
-	    feeds/routing/mesh11sd/Makefile
+# [ -f "feeds/routing/mesh11sd/Makefile" ] && \
+# 	sed -i \
+# 	    -e 's/PKG_VERSION:=.*/PKG_VERSION:=5.1.3/' \
+# 	    -e 's/PKG_HASH:=.*/PKG_HASH:=skip/' \
+# 	    feeds/routing/mesh11sd/Makefile
 sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
 sed -i 's|/bin/login|/bin/login -f root|' feeds/packages/utils/ttyd/files/ttyd.config
 REPLACEMENT=$([[ $REPO == openwrt ]] && echo "" || echo "${REPO}/")
@@ -503,12 +508,10 @@ sed -i "s|^\(OPENWRT_RELEASE.*%C\)\(.*\)|\1 ${REPLACEMENT}$(TZ=UTC-8 date +%m月
 
 settings="
 uci -q set upnpd.config.enabled='1'
-uci -q commit upnpd
 uci -q set system.@system[0].hostname='OpenWrt'
-uci -q commit system
 uci -q set luci.main.lang='zh_cn'
 uci -q set luci.main.mediaurlbase='/luci-static/bootstrap'
-uci -q commit luci
+uci -q commit
 sed -Ei 's/^(root:).*/\1\$5\$920qxtdc.ivTdd2R\$LHAFosdPCdYpPJiNnz3k7i.6VKiPnfFVPvXIj2pQth2:20227:0:99999:7:::/' /etc/shadow
 exit 0
 "
