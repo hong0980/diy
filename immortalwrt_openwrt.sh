@@ -425,7 +425,7 @@ clone_dir coolsnowwolf/packages rust
 
 clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
-		shadow-tls shadowsocks-libev shadowsocksr-libev simple-obfs trojan dns2socks
+		shadow-tls shadowsocksr-libev trojan dns2socks
 clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi mosdns \
 		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
@@ -473,7 +473,7 @@ clone_dir sbwml/openwrt_helloworld shadowsocks-rust
 clone_dir vernesong/OpenClash luci-app-openclash
 clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
 clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
-clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview trojan-plus sing-box xray-core
+clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview trojan-plus sing-box xray-core simple-obfs shadowsocks-libev
 [ -f 'feeds/packages/net/sing-box/Makefile' ] && \
 	sed -i \
 	    -e 's/PKG_VERSION:=.*/PKG_VERSION:=1.13.3/' \
