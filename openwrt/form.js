@@ -1642,6 +1642,55 @@ const CBIJSONMap = CBIMap.extend(/** @lends LuCI.form.JSONMap.prototype */ {
      });
  */
 const CBIAbstractSection = CBIAbstractElement.extend(/** @lends LuCI.form.AbstractSection.prototype */ {
+	/**
+	 * ┌─────────────────────────────────────────────────────────────────┐
+	 * │  constructor / __init__(map, sectionType, ...args)              │
+	 * │  AbstractSection 构造函数                                        │
+	 * └─────────────────────────────────────────────────────────────────┘
+	 *
+	 * 【作用】
+	 *   初始化 AbstractSection 实例，设置与父 Map、UCI 配置、section 类型
+	 *   相关的基础属性。该方法由框架通过 .extend()/.instantiate() 机制调用，
+	 *   不应直接调用（通过 m.section() 创建 section 实例）。
+	 *
+	 * 【参数】
+	 *   @param {LuCI.form.Map}  map          父 Map 实例（表单根节点）
+	 *   @param {string}         sectionType  对应的 UCI section 类型（如 'interface'）
+	 *   @param {...*}            args         透传给父类 AbstractElement 的额外参数
+	 *                                         （通常为 title、description）
+	 *
+	 * 【初始化的属性】
+	 *   this.sectiontype  {string}   UCI section 类型名（对应 config 文件中的 config xxx）
+	 *   this.map          {Map}      父 Map 实例引用
+	 *   this.config       {string}   UCI 配置文件名（继承自 map.config）
+	 *   this.optional     {boolean}  section 是否可选，默认 true
+	 *   this.addremove    {boolean}  是否显示添加/删除按钮，默认 false
+	 *   this.dynamic      {boolean}  是否为动态 section，默认 false
+	 *
+	 * 【使用示例】
+	 *
+	 *   // 标准创建方式（通过 m.section()，框架自动调用构造函数）
+	 *   m = new form.Map('network', _('网络配置'));
+	 *
+	 *   // TypedSection：枚举所有 type='interface' 的 section
+	 *   s = m.section(form.TypedSection, 'interface', _('接口'));
+	 *   s.addremove = true;   // 覆盖默认值，允许增删
+	 *   s.anonymous = true;   // 创建时生成匿名 section 名
+	 *
+	 *   // NamedSection：直接引用名为 'lan' 的 section
+	 *   s = m.section(form.NamedSection, 'lan', 'interface', _('LAN 接口'));
+	 *   s.addremove = false;
+	 *
+	 *   // GridSection：以网格形式展示（支持 Tab）
+	 *   s = m.section(form.GridSection, 'rule', _('防火墙规则'));
+	 *   s.addremove = true;
+	 *   s.sortable  = true;
+	 *
+	 * 【注意】
+	 *   - 不要直接 new CBIAbstractSection()，始终通过 m.section() 创建
+	 *   - sectionType 区分大小写，必须与 UCI 配置文件中的 type 完全一致
+	 *   - map.config 会被继承为 this.config，但可通过设置 s.uciconfig 覆盖
+	 */
 	__init__(map, sectionType, ...args) {
 		this.super('__init__', args);
 
@@ -1678,6 +1727,51 @@ const CBIAbstractSection = CBIAbstractElement.extend(/** @lends LuCI.form.Abstra
 	 * Returns an array of UCI section IDs covered by this form element.
 	 * The sections will be rendered in the same order as the returned array.
 	 */
+	/**
+	 * ┌─────────────────────────────────────────────────────────────────┐
+	 * │  cfgsections()                                                  │
+	 * │  枚举本 section 元素所覆盖的所有 UCI section ID 列表             │
+	 * └─────────────────────────────────────────────────────────────────┘
+	 *
+	 * 【作用】
+	 *   返回一个字符串数组，列出本 section 元素负责渲染的所有 UCI section ID。
+	 *   框架在渲染、load()、parse() 时都以这个数组作为迭代基础：
+	 *   返回几个 ID 就渲染几行（或几个表格行）。
+	 *
+	 * 【子类实现】
+	 *   - TypedSection：查询 UCI 中所有 type == this.sectiontype 的 section
+	 *   - NamedSection：直接返回构造时传入的固定 section 名称数组
+	 *   - 抽象基类（本处）：抛出 InternalError，强制子类覆盖
+	 *
+	 * 【返回值】
+	 *   {string[]}  UCI section ID 数组，渲染顺序与数组顺序一致
+	 *
+	 * 【使用示例】
+	 *
+	 *   // 读取当前 section 枚举的所有 section ID（通常在扩展或调试时使用）
+	 *   const ids = s.cfgsections();
+	 *   console.log('当前 section 数量：', ids.length);
+	 *   // 输出示例：['cfg0192bc', 'cfg0394de', 'cfg05a1f2']
+	 *
+	 *   // 自定义 TypedSection 子类，覆盖 cfgsections 来过滤/排序
+	 *   const MySection = form.TypedSection.extend({
+	 *     cfgsections() {
+	 *       // 调用父类方法获取原始列表，再按名称排序
+	 *       return this.super('cfgsections', [])
+	 *         .sort((a, b) => uci.get('network', a, 'ifname')
+	 *                           ?.localeCompare(uci.get('network', b, 'ifname')));
+	 *     }
+	 *   });
+	 *
+	 *   // 遍历所有 section ID，读取某个 option 的配置值
+	 *   s.cfgsections().forEach(sid => {
+	 *     console.log(sid, '->', uci.get('network', sid, 'proto'));
+	 *   });
+	 *
+	 * 【注意】
+	 *   不应在普通视图代码中直接覆盖 cfgsections()。
+	 *   如需过滤特定 section，应覆盖 filter() 方法（更安全）。
+	 */
 	cfgsections() {
 		L.error('InternalError', 'Not implemented');
 	},
@@ -1701,6 +1795,56 @@ const CBIAbstractSection = CBIAbstractElement.extend(/** @lends LuCI.form.Abstra
 	 * Returns `true` when the given UCI section ID should be handled and
 	 * `false` when it should be ignored.
 	 */
+	/**
+	 * ┌─────────────────────────────────────────────────────────────────┐
+	 * │  filter(section_id)                                             │
+	 * │  过滤要渲染的 UCI section ID（决定哪些行显示、哪些跳过）         │
+	 * └─────────────────────────────────────────────────────────────────┘
+	 *
+	 * 【作用】
+	 *   由 cfgsections() 枚举出的每个 UCI section ID 都会经过 filter() 检验。
+	 *   返回 false 的 section 不会被渲染，也不参与 load/parse 流程。
+	 *
+	 *   默认实现直接返回 true（全部通过），子类可覆盖以实现自定义过滤逻辑。
+	 *
+	 * 【参数】
+	 *   @param {string} section_id  待检查的 UCI section ID
+	 *
+	 * 【返回值】
+	 *   {boolean}  true = 渲染此 section；false = 跳过此 section
+	 *
+	 * 【使用示例】
+	 *
+	 *   // 示例1：只显示 proto == 'static' 的接口
+	 *   s = m.section(form.TypedSection, 'interface', _('静态接口'));
+	 *   s.filter = function(section_id) {
+	 *     return uci.get('network', section_id, 'proto') === 'static';
+	 *   };
+	 *
+	 *   // 示例2：隐藏名称以 'wg' 开头的 section（WireGuard 接口）
+	 *   s.filter = function(section_id) {
+	 *     return !section_id.startsWith('wg');
+	 *   };
+	 *
+	 *   // 示例3：只显示 disabled != '1' 的无线 section
+	 *   s.filter = function(section_id) {
+	 *     return uci.get('wireless', section_id, 'disabled') !== '1';
+	 *   };
+	 *
+	 *   // 示例4：用子类方式覆盖，结合父类逻辑
+	 *   const MySection = form.TypedSection.extend({
+	 *     filter(section_id) {
+	 *       // 先调用父类过滤，再追加自定义条件
+	 *       if (!this.super('filter', section_id)) return false;
+	 *       return uci.get('network', section_id, 'ifname') != null;
+	 *     }
+	 *   });
+	 *
+	 * 【注意】
+	 *   - filter() 是纯同步函数，不能返回 Promise
+	 *   - filter() 在每次渲染前调用，不影响已写入 UCI 的数据
+	 *   - 被过滤掉的 section 不会被 parse()，其修改不会保存到 UCI
+	 */
 	filter(section_id) {
 		return true;
 	},
@@ -1715,6 +1859,50 @@ const CBIAbstractSection = CBIAbstractElement.extend(/** @lends LuCI.form.Abstra
 	 * Returns a promise resolving once the values of all child elements have
 	 * been loaded. The promise may reject with an error if any of the child
 	 * elements' load functions rejected with an error.
+	 */
+	/**
+	 * ┌─────────────────────────────────────────────────────────────────┐
+	 * │  load()                                                         │
+	 * │  加载本 section 覆盖的所有配置值到各 option 子控件              │
+	 * └─────────────────────────────────────────────────────────────────┘
+	 *
+	 * 【作用】
+	 *   递归遍历本 section 的所有子 option 元素，调用每个 option 的
+	 *   load(section_id) 方法，将 UCI 配置值缓存到控件内部（cfgvalue 缓存），
+	 *   为后续渲染和 formvalue 读取做准备。
+	 *
+	 *   通常由 Map.load() 自动调用，不需要手动触发。
+	 *
+	 * 【返回值】
+	 *   {Promise<void>}  所有子 option 加载完成后 resolve；
+	 *                    任意子元素 load 失败则 reject
+	 *
+	 * 【内部流程】
+	 *   1. 调用 cfgsections() 获取所有 section ID 列表
+	 *   2. 对每个 section ID，调用 loadChildren(section_id)
+	 *      → loadChildren 并行调用每个 child option 的 load()
+	 *   3. 将返回的值数组逐一写入 this.children[i].cfgvalue(section_id, value)
+	 *   4. 所有 Promise 通过 Promise.all() 并行等待
+	 *
+	 * 【使用示例】
+	 *
+	 *   // 通常不需要手动调用，由 Map.render() 自动管理
+	 *   // 仅在需要强制重新加载某个 section 时使用：
+	 *   s.load().then(() => {
+	 *     console.log('section 配置已重新加载');
+	 *     // 之后可调用 s.cfgvalue(sid, 'option') 读取最新值
+	 *   });
+	 *
+	 *   // 结合动态配置刷新场景：
+	 *   uci.load('network').then(() => s.load()).then(() => {
+	 *     const proto = s.cfgvalue('lan', 'proto');
+	 *     console.log('LAN 协议：', proto);
+	 *   });
+	 *
+	 * 【注意】
+	 *   - load() 只填充 cfgvalue 缓存，不操作 DOM，不影响表单控件显示值
+	 *   - 渲染后若需要反映最新 UCI 值到界面，需调用 Map.reset() 或
+	 *     重新渲染整个 Map
 	 */
 	load() {
 		const section_ids = this.cfgsections();
@@ -1744,6 +1932,52 @@ const CBIAbstractSection = CBIAbstractElement.extend(/** @lends LuCI.form.Abstra
 	 * Returns a promise resolving once the values of all child elements have
 	 * been parsed. The returned promise is rejected if any parsed values do
 	 * not meet the validation constraints of their respective elements.
+	 */
+	/**
+	 * ┌─────────────────────────────────────────────────────────────────┐
+	 * │  parse()                                                        │
+	 * │  读取并验证本 section 所有 option 的表单输入值，写入 UCI 缓存    │
+	 * └─────────────────────────────────────────────────────────────────┘
+	 *
+	 * 【作用】
+	 *   递归遍历本 section 的所有子 option，调用每个 option 的
+	 *   parse(section_id) 方法，完成以下工作：
+	 *     1. 从 DOM 控件读取用户输入的 formvalue
+	 *     2. 对值进行验证（datatype、validate 回调）
+	 *     3. 若验证通过，将值写入 UCI 内存缓存（uci.set）
+	 *     4. 若 formvalue 与 cfgvalue 相同，则不重复写入
+	 *     5. 依赖不满足（被隐藏）的 option 自动跳过
+	 *
+	 *   通常由 Map.save() 自动调用，不需要手动触发。
+	 *
+	 * 【返回值】
+	 *   {Promise<void>}  所有验证通过且写入成功后 resolve；
+	 *                    任意 option 验证失败则 reject（并在界面标红显示错误）
+	 *
+	 * 【使用示例】
+	 *
+	 *   // 通常不需要手动调用，由 Map.save() 自动管理
+	 *   // 仅在需要自定义保存流程时使用：
+	 *   s.parse().then(() => {
+	 *     // parse 完成后 UCI 缓存已更新，可手动提交
+	 *     return uci.save();
+	 *   }).then(() => {
+	 *     return uci.apply();
+	 *   }).catch(err => {
+	 *     console.error('验证失败或保存出错：', err);
+	 *   });
+	 *
+	 *   // 部分保存场景：只 parse 某个 section 而非整个 Map
+	 *   document.querySelector('#my-save-btn').addEventListener('click', () => {
+	 *     s.parse()
+	 *       .then(() => uci.save())
+	 *       .then(() => ui.addNotification(null, E('p', _('已保存')), 'info'));
+	 *   });
+	 *
+	 * 【注意】
+	 *   - parse() 只操作 UCI 内存缓存，不自动调用 uci.save() 或 uci.apply()
+	 *   - 被 filter() 过滤掉的 section 不参与 parse
+	 *   - 依赖条件不满足（隐藏）的 option 值不会被写入 UCI
 	 */
 	parse() {
 		const section_ids = this.cfgsections();
@@ -1785,6 +2019,54 @@ const CBIAbstractSection = CBIAbstractElement.extend(/** @lends LuCI.form.Abstra
 	 *
 	 * @throws {Error}
 	 * Throws an exception if a tab with the same `name` already exists.
+	 */
+	/**
+	 * ┌─────────────────────────────────────────────────────────────────┐
+	 * │  tab(name, title, description?)                                 │
+	 * │  在 section 中定义一个 Tab 标签分组                              │
+	 * └─────────────────────────────────────────────────────────────────┘
+	 *
+	 * 【作用】
+	 *   将 section 中的 option 分组到多个 Tab 标签页，提升配置界面的可读性。
+	 *   调用 tab() 注册分组后，必须使用 taboption() 而非 option() 添加控件，
+	 *   否则用 option() 添加的控件将不会被渲染。
+	 *
+	 * 【参数】
+	 *   @param {string}  name         Tab 的内部标识符（唯一，用于 taboption 引用）
+	 *   @param {string}  title        Tab 标签栏显示的标题文字
+	 *   @param {string}  [description] Tab 内容区顶部显示的说明段落（可选）
+	 *
+	 * 【异常】
+	 *   - 同名 tab 重复注册时抛出 'Tab already declared'
+	 *
+	 * 【使用示例】
+	 *
+	 *   // 基础用法：2个 Tab
+	 *   s.tab('general',  _('常规设置'));
+	 *   s.tab('advanced', _('高级设置'));
+	 *
+	 *   s.taboption('general',  form.Value,     'hostname', _('主机名'));
+	 *   s.taboption('general',  form.ListValue,  'proto',   _('协议'));
+	 *   s.taboption('advanced', form.Value,      'mtu',     _('MTU'));
+	 *
+	 *   // 带描述文字的 Tab（会在 tab 内容区上方显示一段说明）
+	 *   s.tab('firewall', _('防火墙'), _('以下设置仅在启用防火墙时生效。'));
+	 *   s.taboption('firewall', form.Flag, 'fw_enable', _('启用防火墙'));
+	 *
+	 *   // 3个 Tab 的完整示例
+	 *   s.tab('basic',    _('基本'));
+	 *   s.tab('wireless', _('无线'));
+	 *   s.tab('ipv6',     _('IPv6'), _('IPv6 相关配置，留空则禁用。'));
+	 *
+	 *   s.taboption('basic',    form.Value,    'ssid',     _('SSID'));
+	 *   s.taboption('wireless', form.ListValue,'htmode',   _('HT 模式'));
+	 *   s.taboption('ipv6',     form.Value,    'ip6addr',  _('IPv6 地址'));
+	 *
+	 * 【注意】
+	 *   - tab() 必须在 taboption() 之前调用，否则 taboption 会抛出 ReferenceError
+	 *   - 不支持在 TableSection 上使用 tab()（会抛出异常），
+	 *     需要使用 GridSection 代替
+	 *   - Tab 的显示顺序与 tab() 调用顺序一致
 	 */
 	tab(name, title, description) {
 		if (this.tabs && this.tabs[name])
@@ -1829,6 +2111,63 @@ const CBIAbstractSection = CBIAbstractElement.extend(/** @lends LuCI.form.Abstra
 	 * @returns {LuCI.form.AbstractValue}
 	 * Returns the instantiated option class instance.
 	 */
+	/**
+	 * ┌─────────────────────────────────────────────────────────────────┐
+	 * │  option(cbiClass, optname, title?, description?)                │
+	 * │  向 section 添加一个配置 option 控件（不分 Tab）                 │
+	 * └─────────────────────────────────────────────────────────────────┘
+	 *
+	 * 【作用】
+	 *   实例化指定的 option 控件类，将其注册到本 section 的 children 列表，
+	 *   并返回实例以供链式属性设置。
+	 *
+	 *   若 section 已定义了 Tab（调用过 tab()），应改用 taboption()；
+	 *   此时用 option() 添加的控件不会被渲染。
+	 *
+	 * 【参数】
+	 *   @param {class}   cbiClass     控件类本身（非实例），必须继承自 AbstractValue
+	 *   @param {string}  optname      对应的 UCI option 名称
+	 *   @param {string}  [title]      控件左侧显示的标签文字
+	 *   @param {string}  [description] 控件下方显示的帮助说明文字
+	 *
+	 * 【返回值】
+	 *   {AbstractValue}  返回已注册的 option 实例，可继续设置属性
+	 *
+	 * 【使用示例】
+	 *
+	 *   // 文本输入框
+	 *   o = s.option(form.Value, 'hostname', _('主机名'), _('设备在网络中的名称'));
+	 *   o.datatype = 'hostname';
+	 *   o.placeholder = 'OpenWrt';
+	 *
+	 *   // 下拉选择框
+	 *   o = s.option(form.ListValue, 'proto', _('协议'));
+	 *   o.value('dhcp',   _('DHCP 客户端'));
+	 *   o.value('static', _('静态地址'));
+	 *   o.value('pppoe',  _('PPPoE'));
+	 *
+	 *   // 布尔开关
+	 *   o = s.option(form.Flag, 'disabled', _('禁用接口'));
+	 *   o.default = o.disabled = '0';
+	 *
+	 *   // 只读展示值（DummyValue）
+	 *   o = s.option(form.DummyValue, 'macaddr', _('MAC 地址'));
+	 *   o.rawhtml = true;
+	 *
+	 *   // 带依赖的 option（仅 proto=static 时显示 IP 地址输入框）
+	 *   o = s.option(form.Value, 'ipaddr', _('IP 地址'));
+	 *   o.datatype = 'cidr4';
+	 *   o.depends('proto', 'static');
+	 *
+	 *   // 多行文本域
+	 *   o = s.option(form.TextValue, 'description', _('描述'));
+	 *   o.rows = 5;
+	 *
+	 * 【注意】
+	 *   - 第一个参数传类本身，不能用 new（框架内部会实例化）
+	 *   - section 定义了 tab() 后，此方法添加的控件不会被渲染
+	 *   - 返回的实例在 m.render() 前设置属性，render 后设置无效
+	 */
 	option(cbiClass, ...args) {
 		if (!CBIAbstractValue.isSubclass(cbiClass))
 			throw L.error('TypeError', 'Class must be a descendant of CBIAbstractValue');
@@ -1866,6 +2205,67 @@ const CBIAbstractSection = CBIAbstractElement.extend(/** @lends LuCI.form.Abstra
 	 * @returns {LuCI.form.AbstractValue}
 	 * Returns the instantiated option class instance.
 	 */
+	/**
+	 * ┌─────────────────────────────────────────────────────────────────┐
+	 * │  taboption(tabName, cbiClass, optname, title?, description?)    │
+	 * │  向指定 Tab 中添加一个配置 option 控件                           │
+	 * └─────────────────────────────────────────────────────────────────┘
+	 *
+	 * 【作用】
+	 *   与 option() 功能相同，区别在于会将控件归属到指定的 Tab 分组下。
+	 *   内部调用 option() 创建实例后，设置 obj.tab = tabName 并将实例
+	 *   推入 this.tabs[tabName].children 数组。
+	 *
+	 *   必须先通过 tab() 注册对应的 Tab，否则抛出 ReferenceError。
+	 *
+	 * 【参数】
+	 *   @param {string}  tabName      目标 Tab 的名称（必须已通过 tab() 注册）
+	 *   @param {class}   cbiClass     控件类本身（非实例），继承自 AbstractValue
+	 *   @param {string}  optname      对应的 UCI option 名称
+	 *   @param {string}  [title]      控件标签文字
+	 *   @param {string}  [description] 控件帮助说明文字
+	 *
+	 * 【异常】
+	 *   - tabName 未注册：ReferenceError 'Associated tab not declared'
+	 *   - cbiClass 非 AbstractValue 子类：TypeError
+	 *
+	 * 【返回值】
+	 *   {AbstractValue}  返回已注册的 option 实例
+	 *
+	 * 【使用示例】
+	 *
+	 *   // 标准用法：先定义 Tab，再用 taboption 添加控件
+	 *   s.tab('general',  _('常规'));
+	 *   s.tab('advanced', _('高级'));
+	 *   s.tab('physical', _('物理接口'));
+	 *
+	 *   // 常规 Tab
+	 *   o = s.taboption('general', form.Value, 'ipaddr', _('IP 地址'));
+	 *   o.datatype = 'cidr4';
+	 *   o.depends('proto', 'static');
+	 *
+	 *   o = s.taboption('general', form.ListValue, 'proto', _('协议'));
+	 *   o.value('dhcp',   _('DHCP'));
+	 *   o.value('static', _('静态'));
+	 *
+	 *   // 高级 Tab
+	 *   o = s.taboption('advanced', form.Value, 'mtu', _('MTU'));
+	 *   o.datatype = 'range(576, 9200)';
+	 *   o.placeholder = '1500';
+	 *
+	 *   o = s.taboption('advanced', form.Flag, 'delegate', _('委托前缀'));
+	 *   o.default = '1';
+	 *
+	 *   // 物理接口 Tab（嵌套另一个 section）
+	 *   o = s.taboption('physical', form.SectionValue, '_physdev',
+	 *     form.TypedSection, 'interface', _('绑定接口'));
+	 *
+	 * 【注意】
+	 *   - tabName 必须与 tab() 中定义的名称完全一致（区分大小写）
+	 *   - 一旦使用了 taboption()，该 section 下就不应再使用 option()，
+	 *     否则用 option() 添加的控件不会出现在任何 Tab 中（不被渲染）
+	 *   - Tab 标签只在有多个 Tab 时才会渲染（单 Tab 会退化为无 Tab 显示）
+	 */
 	taboption(tabName, ...args) {
 		if (!this.tabs?.[tabName])
 			throw L.error('ReferenceError', 'Associated tab not declared');
@@ -1897,6 +2297,58 @@ const CBIAbstractSection = CBIAbstractElement.extend(/** @lends LuCI.form.Abstra
 	 * Returns either a dictionary of option names and their corresponding
 	 * configuration values or just a single configuration value, depending
 	 * on the amount of passed arguments.
+	 */
+	/**
+	 * ┌─────────────────────────────────────────────────────────────────┐
+	 * │  cfgvalue(section_id, option?)                                  │
+	 * │  读取 UCI 配置文件中的原始值（非用户界面输入值）                  │
+	 * └─────────────────────────────────────────────────────────────────┘
+	 *
+	 * 【作用】
+	 *   从 UCI 内存缓存中读取指定 section 的配置值。
+	 *   这是配置文件中持久化存储的值，不受用户在界面上的临时修改影响。
+	 *
+	 *   - 传 1 个参数（section_id）：返回该 section 下所有 option 的值字典
+	 *   - 传 2 个参数（section_id + option）：返回指定 option 的单个值
+	 *
+	 * 【参数】
+	 *   @param {string}  section_id  UCI section ID
+	 *   @param {string}  [option]    option 名称（省略则返回全部）
+	 *
+	 * 【返回值】
+	 *   - 2参数模式：string | string[] | null
+	 *     （单值 option 返回字符串，UCI list 返回字符串数组，不存在返回 null）
+	 *   - 1参数模式：{ optName: value, ... } 字典对象
+	 *
+	 * 【与 formvalue 的区别】
+	 *   cfgvalue   → UCI 缓存中的原始值（保存前的持久化值）
+	 *   formvalue  → 用户当前在界面上填写的值（可能尚未保存）
+	 *
+	 * 【使用示例】
+	 *
+	 *   // 读取单个 option 的 UCI 原始值
+	 *   const proto = s.cfgvalue('lan', 'proto');
+	 *   console.log('LAN 协议：', proto);  // 'static' 或 'dhcp'
+	 *
+	 *   // 读取 UCI list 类型的值（返回数组）
+	 *   const zones = s.cfgvalue('rule1', 'src_mac');
+	 *   // ['aa:bb:cc:dd:ee:ff', '11:22:33:44:55:66']
+	 *
+	 *   // 读取整个 section 的所有 option 值（1参数模式）
+	 *   const allValues = s.cfgvalue('lan');
+	 *   console.log(allValues);
+	 *   // { proto: 'static', ipaddr: '192.168.1.1', netmask: '255.255.255.0', ... }
+	 *
+	 *   // 在 save 前比较原始值与用户输入，决定是否需要重启服务
+	 *   const oldProto = s.cfgvalue(sid, 'proto');
+	 *   const newProto = s.formvalue(sid, 'proto');
+	 *   if (oldProto !== newProto) {
+	 *     console.log('协议已更改，需要重新配置接口');
+	 *   }
+	 *
+	 * 【注意】
+	 *   - 依赖 load() 已执行（Map.render() 自动完成）
+	 *   - 不依赖 DOM，渲染前后均可调用
 	 */
 	cfgvalue(section_id, option) {
 		const rv = (arguments.length == 1) ? {} : null;
@@ -1931,6 +2383,62 @@ const CBIAbstractSection = CBIAbstractElement.extend(/** @lends LuCI.form.Abstra
 	 * widget input values or just a single widget input value, depending
 	 * on the amount of passed arguments.
 	 */
+	/**
+	 * ┌─────────────────────────────────────────────────────────────────┐
+	 * │  formvalue(section_id, option?)                                 │
+	 * │  读取用户在界面上当前输入的值（表单控件的实时值）                 │
+	 * └─────────────────────────────────────────────────────────────────┘
+	 *
+	 * 【作用】
+	 *   从页面 DOM 控件中读取用户当前填写的值，反映用户操作后的最新状态，
+	 *   即使用户尚未点击保存也能读取到。
+	 *
+	 *   - 传 1 个参数（section_id）：返回该 section 下所有 option 的表单值字典
+	 *   - 传 2 个参数（section_id + option）：返回指定 option 的当前表单值
+	 *
+	 * 【参数】
+	 *   @param {string}  section_id  UCI section ID
+	 *   @param {string}  [option]    option 名称（省略则返回全部）
+	 *
+	 * 【返回值】
+	 *   与 cfgvalue() 相同的类型结构，但值来自 DOM 而非 UCI 缓存
+	 *
+	 * 【与 cfgvalue 的区别】
+	 *   cfgvalue   → UCI 持久化值（已保存的配置）
+	 *   formvalue  → 用户界面当前值（可能未保存，实时反映控件状态）
+	 *
+	 * 【使用示例】
+	 *
+	 *   // 读取用户当前在 proto 下拉框选择的值
+	 *   const proto = s.formvalue(sid, 'proto');
+	 *   console.log('用户选择的协议：', proto);
+	 *
+	 *   // 在 onchange 回调中读取相关 option 的当前值
+	 *   o = s.option(form.ListValue, 'proto', _('协议'));
+	 *   o.onchange = function(ev, sid, value) {
+	 *     // 同时读取另一个 option 的当前值
+	 *     const currentIp = s.formvalue(sid, 'ipaddr');
+	 *     console.log('当前 IP：', currentIp, '新协议：', value);
+	 *   };
+	 *
+	 *   // 读取整个 section 的所有当前表单值
+	 *   const current = s.formvalue('lan');
+	 *   // { proto: 'static', ipaddr: '192.168.1.100', ... }
+	 *
+	 *   // 在自定义 validate 中读取其他字段的当前值
+	 *   o = s.option(form.Value, 'gateway', _('网关'));
+	 *   o.validate = function(sid, value) {
+	 *     const proto = s.formvalue(sid, 'proto');
+	 *     if (proto === 'static' && !value)
+	 *       return _('静态 IP 模式下网关不能为空');
+	 *     return true;
+	 *   };
+	 *
+	 * 【注意】
+	 *   - 必须在表单渲染（m.render()）完成后才能调用
+	 *   - 若 Map 尚未 render，则退化为读取 cfgvalue（Map.root 为空时）
+	 *   - 被依赖条件隐藏的控件其 formvalue 可能与 cfgvalue 相同
+	 */
 	formvalue(section_id, option) {
 		const rv = (arguments.length == 1) ? {} : null;
 
@@ -1964,15 +2472,70 @@ const CBIAbstractSection = CBIAbstractElement.extend(/** @lends LuCI.form.Abstra
 	 *
 	 * @returns {null|LuCI.ui.AbstractElement|Object<string, null|LuCI.ui.AbstractElement>}
 	 * Returns either a dictionary of option names and their corresponding
-	 * widget input values or just a single widget input value, depending
-	 * on the amount of passed arguments.
+	 * widget instances or just a single widget instance, depending on the
+	 * amount of passed arguments.
+	 */
+	/**
+	 * ┌─────────────────────────────────────────────────────────────────┐
+	 * │  getUIElement(section_id, option?)                              │
+	 * │  获取底层 LuCI.ui 控件实例（用于高级 DOM 操作）                  │
+	 * └─────────────────────────────────────────────────────────────────┘
 	 *
-	   【说明】返回底层 LuCI.ui 控件实例（ui.Textfield/ui.Select/ui.Checkbox 等）。
-	 *   1参数：返回全部 option 的 UI 控件实例字典 { optName: uiElement, ... }
-	 *   2参数：返回指定 option 的单个控件实例（不存在时返回 null）
-	 * 适合需要直接操作控件状态的高级场景，如 onchange 中动态更新候选项：
-	 *   var uiEl = s.getUIElement(sid, 'server');
-	 *   if (uiEl) uiEl.setChoices({ '8.8.8.8': 'Google', '1.1.1.1': 'Cloudflare' });
+	 * 【作用】
+	 *   返回底层 LuCI.ui 框架的控件实例（如 ui.Textfield、ui.Select、
+	 *   ui.Checkbox、ui.Dropdown 等），可直接调用控件的 setValue()、
+	 *   setChoices()、getValue() 等底层方法，适合需要精细控制 UI 状态的场景。
+	 *
+	 *   - 传 1 个参数：返回所有 option 的 UI 控件实例字典
+	 *   - 传 2 个参数：返回指定 option 的单个 UI 控件实例（不存在返回 null）
+	 *
+	 * 【参数】
+	 *   @param {string}  section_id  UCI section ID
+	 *   @param {string}  [option]    option 名称（省略则返回全部）
+	 *
+	 * 【返回值】
+	 *   - 2参数模式：LuCI.ui.AbstractElement | null
+	 *   - 1参数模式：{ optName: LuCI.ui.AbstractElement, ... }
+	 *
+	 * 【三种查询方法对比】
+	 *   cfgvalue(sid, opt)      → UCI 原始值（字符串/数组）
+	 *   formvalue(sid, opt)     → 控件当前输入值（字符串/数组）
+	 *   getUIElement(sid, opt)  → 控件实例对象（可调用其方法）
+	 *
+	 * 【使用示例】
+	 *
+	 *   // 动态更新下拉框的候选选项（适合异步加载数据后刷新）
+	 *   fetch('/api/servers').then(r => r.json()).then(list => {
+	 *     const uiEl = s.getUIElement(sid, 'server');
+	 *     if (uiEl) {
+	 *       const choices = {};
+	 *       list.forEach(item => { choices[item.id] = item.name; });
+	 *       uiEl.setChoices(choices);
+	 *     }
+	 *   });
+	 *
+	 *   // 在 onchange 中动态修改另一个控件的值
+	 *   o = s.option(form.ListValue, 'type', _('类型'));
+	 *   o.onchange = function(ev, sid, value) {
+	 *     const nameEl = s.getUIElement(sid, 'name');
+	 *     if (nameEl) nameEl.setValue(value === 'auto' ? 'auto-generated' : '');
+	 *   };
+	 *
+	 *   // 强制触发控件校验
+	 *   const ipEl = s.getUIElement(sid, 'ipaddr');
+	 *   if (ipEl) ipEl.triggerValidation();
+	 *
+	 *   // 批量获取所有控件实例（1参数模式）
+	 *   const allWidgets = s.getUIElement(sid);
+	 *   Object.entries(allWidgets).forEach(([name, widget]) => {
+	 *     if (widget) console.log(name, '->', widget.getValue());
+	 *   });
+	 *
+	 * 【注意】
+	 *   - 必须在表单渲染（m.render()）完成后调用，否则返回 null
+	 *   - 返回的是 LuCI.ui 层的控件，不是 form.AbstractValue 实例
+	 *     （form 层实例请用 getOption()）
+	 *   - 控件实例与特定 section_id 绑定，多 section 时需传对应的 sid
 	 */
 	getUIElement(section_id, option) {
 		const rv = (arguments.length == 1) ? {} : null;
@@ -2003,15 +2566,63 @@ const CBIAbstractSection = CBIAbstractElement.extend(/** @lends LuCI.form.Abstra
 	 * Returns either a dictionary of option names and their corresponding
 	 * option instance objects or just a single object instance value,
 	 * depending on the amount of passed arguments.
+	 */
+	/**
+	 * ┌─────────────────────────────────────────────────────────────────┐
+	 * │  getOption(option?)                                             │
+	 * │  获取 form.AbstractValue option 实例对象（form 层对象，非 UI）   │
+	 * └─────────────────────────────────────────────────────────────────┘
 	 *
-	   【说明】返回 option 控件实例对象（AbstractValue 的子类实例）。
-	 *   0参数：返回全部 option 的实例字典 { optName: optInstance, ... }
-	 *   1参数：返回指定 option 的实例（不存在时返回 null）
-	 * 适合在渲染后动态修改 option 属性或依赖关系：
-	 *   var protoOpt = s.getOption('proto');
-	 *   if (protoOpt) protoOpt.depends('enabled', '1');  // 动态添加依赖
-	 *   var allOpts = s.getOption();
-	 *   Object.keys(allOpts).forEach(name => console.log(name, allOpts[name].datatype));
+	 * 【作用】
+	 *   返回通过 option()/taboption() 注册的 AbstractValue 子类实例。
+	 *   可用于在渲染前或渲染后动态修改 option 的属性、依赖关系、验证规则等。
+	 *
+	 *   - 传 0 个参数：返回本 section 下所有 option 的实例字典
+	 *   - 传 1 个参数（option 名）：返回对应的单个 option 实例
+	 *
+	 * 【参数】
+	 *   @param {string}  [option]  option 名称（省略则返回全部）
+	 *
+	 * 【返回值】
+	 *   - 1参数模式：LuCI.form.AbstractValue | null
+	 *   - 0参数模式：{ optName: AbstractValue, ... }
+	 *
+	 * 【getOption vs getUIElement 区别】
+	 *   getOption(opt)      → form 层实例（AbstractValue），可修改 depends/datatype 等属性
+	 *   getUIElement(sid, opt) → ui 层实例（ui.AbstractElement），可调用 setValue/setChoices 等方法
+	 *
+	 * 【使用示例】
+	 *
+	 *   // 渲染前动态添加依赖条件
+	 *   const ipOpt = s.getOption('ipaddr');
+	 *   if (ipOpt) {
+	 *     ipOpt.depends('proto', 'static');
+	 *     ipOpt.depends('proto', 'relay');
+	 *   }
+	 *
+	 *   // 动态修改 datatype 验证规则
+	 *   const portOpt = s.getOption('port');
+	 *   if (portOpt) portOpt.datatype = 'range(1, 65535)';
+	 *
+	 *   // 获取所有 option，检查哪些是必填的
+	 *   const allOpts = s.getOption();
+	 *   Object.entries(allOpts).forEach(([name, opt]) => {
+	 *     if (!opt.optional && opt.rmempty === false)
+	 *       console.log('必填字段：', name);
+	 *   });
+	 *
+	 *   // 在封装函数中通用操作：对某个 option 追加额外的 value 选项
+	 *   function addValue(section, optName, val, label) {
+	 *     const opt = section.getOption(optName);
+	 *     if (opt && typeof opt.value === 'function')
+	 *       opt.value(val, label);
+	 *   }
+	 *   addValue(s, 'proto', 'wireguard', _('WireGuard'));
+	 *
+	 * 【注意】
+	 *   - 渲染前后均可调用（不依赖 DOM）
+	 *   - 修改属性需在 m.render() 之前生效；render 后修改依赖不会自动刷新 UI
+	 *   - 返回的是 form 框架层对象，若需操作控件 DOM 请用 getUIElement()
 	 */
 	getOption(option) {
 		const rv = (arguments.length == 0) ? {} : null;
@@ -2026,13 +2637,46 @@ const CBIAbstractSection = CBIAbstractElement.extend(/** @lends LuCI.form.Abstra
 	},
 
 	/**
-	   【私有】渲染单个 UCI section 实例的内容（含 Tab 支持）。
+	 * ┌─────────────────────────────────────────────────────────────────┐
+	 * │  renderUCISection(section_id)          【框架内部方法，非公开】  │
+	 * │  渲染单个 UCI section 实例的全部内容（含 Tab 分组支持）           │
+	 * └─────────────────────────────────────────────────────────────────┘
 	 *
-	 * 若 section 定义了 Tab，则并行渲染各 Tab 的内容再组合；
-	 * 否则直接调用 renderOptions(null, section_id)。
+	 * 【作用】
+	 *   根据是否定义了 Tab，选择不同的渲染路径：
+	 *   - 无 Tab：直接调用 renderOptions(null, section_id) 渲染全部 option
+	 *   - 有 Tab：并行调用每个 tab 的 renderOptions(tabName, section_id)，
+	 *             再通过 renderTabContainers() 将结果组合为带 data-tab 属性的容器
 	 *
-	 * @param {string} section_id - 要渲染的 UCI section ID
-	 * @returns {Promise<Node>} 渲染完成的 section 内容节点
+	 * 【调用时机】
+	 *   由子类（TypedSection、NamedSection 等）的 render() 方法在遍历
+	 *   cfgsections() 时对每个 section ID 调用。
+	 *
+	 * 【参数】
+	 *   @param {string}  section_id  要渲染的 UCI section ID
+	 *
+	 * 【返回值】
+	 *   {Promise<Node>}  渲染完成的 section 内容节点（DocumentFragment）
+	 *
+	 * 【使用示例】
+	 *
+	 *   // 通常不直接调用，由框架自动管理
+	 *   // 若需在子类中自定义渲染行为，可覆盖此方法：
+	 *   const MySection = form.TypedSection.extend({
+	 *     renderUCISection(section_id) {
+	 *       // 在标准渲染结果前插入自定义标题
+	 *       return this.super('renderUCISection', section_id).then(node => {
+	 *         const wrapper = E('div', { 'class': 'my-section' });
+	 *         wrapper.appendChild(E('h4', {}, uci.get('network', section_id, 'ifname')));
+	 *         wrapper.appendChild(node);
+	 *         return wrapper;
+	 *       });
+	 *     }
+	 *   });
+	 *
+	 * 【注意】
+	 *   - 这是框架内部方法，普通开发者无需直接调用
+	 *   - Tab 并行渲染：各 Tab 的 renderOptions() 以 Promise.all() 并行执行
 	 */
 	renderUCISection(section_id) {
 		const renderTasks = [];
@@ -2048,14 +2692,49 @@ const CBIAbstractSection = CBIAbstractElement.extend(/** @lends LuCI.form.Abstra
 	},
 
 	/**
-	   【私有】将各 Tab 内容节点包装为带 data-tab 属性的容器元素。
+	 * ┌─────────────────────────────────────────────────────────────────┐
+	 * │  renderTabContainers(section_id, nodes)  【框架内部方法，非公开】│
+	 * │  将各 Tab 内容节点包装为带 data-tab 属性的 div 容器              │
+	 * └─────────────────────────────────────────────────────────────────┘
 	 *
-	 * 每个 Tab 生成一个 div，设置 data-tab、data-tab-title 等属性，
-	 * ui.tabs.initTabGroup() 会识别这些属性并激活 Tab 切换功能。
+	 * 【作用】
+	 *   接收 renderUCISection 并行渲染出的各 Tab 内容节点数组（nodes），
+	 *   为每个 Tab 生成一个 <div> 容器，设置以下属性：
+	 *     - id:                "container.{config}.{section_id}.{tab_name}"
+	 *     - data-tab:          Tab 名称（供 ui.tabs.initTabGroup 识别）
+	 *     - data-tab-title:    Tab 标题文字
+	 *     - data-tab-active:   是否为当前激活 Tab（布尔字符串）
 	 *
-	 * @param {string}       section_id - UCI section ID
-	 * @param {Array<Node>}  nodes      - 各 Tab 渲染结果（与 tab_names 顺序对应）
-	 * @returns {DocumentFragment} 包含所有 Tab 容器的 DocumentFragment
+	 *   若 Tab 定义了 description，还会在内容前插入说明段落 <div class="cbi-tab-descr">。
+	 *   最终返回包含所有 Tab 容器的 DocumentFragment，由框架的
+	 *   ui.tabs.initTabGroup() 解析并激活 Tab 切换交互。
+	 *
+	 * 【参数】
+	 *   @param {string}      section_id  UCI section ID
+	 *   @param {Array<Node>} nodes       各 Tab 的渲染内容节点（顺序与 tab_names 一致）
+	 *
+	 * 【返回值】
+	 *   {DocumentFragment}  包含所有 Tab 容器 <div> 的文档片段
+	 *
+	 * 【使用示例】
+	 *
+	 *   // 这是框架内部方法，通常不直接调用
+	 *   // 若需自定义 Tab 容器的渲染（如添加徽标或图标），可在子类覆盖：
+	 *   const MySection = form.TypedSection.extend({
+	 *     renderTabContainers(section_id, nodes) {
+	 *       // 调用父类生成标准容器
+	 *       const fragment = this.super('renderTabContainers', section_id, nodes);
+	 *       // 对第一个 Tab 容器追加自定义内容
+	 *       const firstTab = fragment.firstElementChild;
+	 *       if (firstTab) firstTab.classList.add('my-custom-tab');
+	 *       return fragment;
+	 *     }
+	 *   });
+	 *
+	 * 【注意】
+	 *   - nodes 数组长度必须与 this.tab_names 长度一致
+	 *   - 生成的容器 id 格式固定，ui.tabs 依赖此格式识别 Tab 分组
+	 *   - selected_tab 属性可在渲染前设置，以控制默认激活的 Tab
 	 */
 	renderTabContainers(section_id, nodes) {
 		const config_name = this.uciconfig ?? this.map.config;
@@ -2083,14 +2762,54 @@ const CBIAbstractSection = CBIAbstractElement.extend(/** @lends LuCI.form.Abstra
 	},
 
 	/**
-	   【私有】渲染指定 Tab（或无 Tab）下的所有 option 控件。
+	 * ┌─────────────────────────────────────────────────────────────────┐
+	 * │  renderOptions(tab_name, section_id)    【框架内部方法，非公开】 │
+	 * │  渲染指定 Tab（或无 Tab 模式）下的所有 option 控件节点           │
+	 * └─────────────────────────────────────────────────────────────────┘
 	 *
-	 * 调用 renderChildren(tab_name, section_id, in_table)，
-	 * 将返回的节点数组收集到一个 DocumentFragment 中返回。
+	 * 【作用】
+	 *   调用 renderChildren(tab_name, section_id, in_table) 并行渲染
+	 *   属于指定 Tab 的所有 option 子元素，将结果节点数组收集到
+	 *   一个 DocumentFragment 中返回。
 	 *
-	 * @param {string|null} tab_name  - Tab 名称，null 表示无 Tab 模式
-	 * @param {string}      section_id - UCI section ID
-	 * @returns {Promise<Node>} 包含所有 option 节点的 DocumentFragment
+	 *   in_table 参数由是否为 TableSection 实例决定，影响各 option
+	 *   渲染为 <td> 格（表格模式）还是 <div> 行（表单模式）。
+	 *
+	 * 【参数】
+	 *   @param {string|null} tab_name   Tab 名称；null 表示无 Tab 模式（渲染全部）
+	 *   @param {string}      section_id UCI section ID
+	 *
+	 * 【返回值】
+	 *   {Promise<DocumentFragment>}  包含所有 option 渲染节点的文档片段
+	 *
+	 * 【调用链关系】
+	 *   renderUCISection(sid)
+	 *     └─ renderOptions(tabName, sid)          ← 本方法
+	 *          └─ renderChildren(tabName, sid, inTable)
+	 *               └─ option.render(sid)         每个子控件渲染自身
+	 *
+	 * 【使用示例】
+	 *
+	 *   // 框架内部方法，普通开发者无需直接调用
+	 *   // 若需在某个 Tab 内容前后插入自定义内容，可在子类覆盖：
+	 *   const MySection = form.TypedSection.extend({
+	 *     renderOptions(tab_name, section_id) {
+	 *       return this.super('renderOptions', tab_name, section_id).then(fragment => {
+	 *         if (tab_name === 'advanced') {
+	 *           // 在高级 Tab 的 option 列表顶部插入一条警告
+	 *           fragment.insertBefore(
+	 *             E('div', { 'class': 'alert-message warning' }, _('修改高级选项可能导致连接中断')),
+	 *             fragment.firstChild
+	 *           );
+	 *         }
+	 *         return fragment;
+	 *       });
+	 *     }
+	 *   });
+	 *
+	 * 【注意】
+	 *   - 属于其他 Tab 的 option（tab 属性不匹配）会被 renderChildren 自动跳过
+	 *   - TableSection 中此方法生成 <td> 单元格，其他 section 生成 <div> 行
 	 */
 	renderOptions(tab_name, section_id) {
 		const in_table = (this instanceof CBITableSection);
@@ -2103,16 +2822,59 @@ const CBIAbstractSection = CBIAbstractElement.extend(/** @lends LuCI.form.Abstra
 	},
 
 	/**
-	   【私有】检查并更新本 section 中所有 option 的依赖显示状态。
+	 * ┌─────────────────────────────────────────────────────────────────┐
+	 * │  checkDepends(ev, n)                    【框架内部方法，非公开】 │
+	 * │  检查并更新本 section 中所有 option 的依赖显示状态               │
+	 * └─────────────────────────────────────────────────────────────────┘
 	 *
-	 * 遍历所有 section 实例的所有 option 子元素：
-	 *   - 调用 option.checkDepends(sid) 判断依赖是否满足
-	 *   - 若状态改变（isActive != isSatisfied），调用 setActive 切换显示/隐藏
-	 *   - 对可见且激活的 option 触发 triggerValidation
+	 * 【作用】
+	 *   遍历所有 section ID 及其每个 option 子元素，重新计算依赖是否满足：
+	 *     1. 调用 option.checkDepends(sid) 判断当前依赖条件是否满足
+	 *     2. 若激活状态（isActive）与依赖结果（isSatisfied）不一致，
+	 *        调用 option.setActive(sid, true/false) 切换显示/隐藏
+	 *     3. 对仍处于激活状态的 option 调用 triggerValidation(sid)
+	 *        重新触发验证（避免隐藏后残留的验证错误影响提交）
 	 *
-	 * @param {Event}  [ev] - 触发事件（可为 undefined）
-	 * @param {number} [n]  - 递归深度
-	 * @returns {boolean} 有任何状态改变时返回 true
+	 *   由 Map 层在每次 option 值变化时自动调用（绑定在 cbi-input-change 事件上），
+	 *   实现 option 的动态显示/隐藏联动。
+	 *
+	 * 【参数】
+	 *   @param {Event}   [ev]  触发此次检查的 DOM 事件（可为 undefined，程序触发时）
+	 *   @param {number}  [n]   递归调用深度标志（非 0 时跳过 triggerValidation）
+	 *
+	 * 【返回值】
+	 *   {boolean}  任意 option 的显示状态发生改变时返回 true，否则返回 false
+	 *
+	 * 【触发时机】
+	 *   - 用户修改任意表单控件值后（cbi-input-change 事件）
+	 *   - 表单首次渲染完成后（初始化依赖状态）
+	 *   - 手动调用 Map.checkDepends() 时级联触发
+	 *
+	 * 【使用示例】
+	 *
+	 *   // 框架自动管理，普通开发者通常无需手动调用
+	 *   // 若在 JS 中以编程方式修改了某个 option 的值，
+	 *   // 需要手动触发依赖更新：
+	 *   const uiEl = s.getUIElement(sid, 'proto');
+	 *   if (uiEl) {
+	 *     uiEl.setValue('static');
+	 *     // 手动触发依赖刷新，使依赖 proto=static 的字段显示出来
+	 *     s.checkDepends();
+	 *   }
+	 *
+	 *   // 监听依赖变化（如需在状态改变后执行额外逻辑）
+	 *   const origCheck = s.checkDepends.bind(s);
+	 *   s.checkDepends = function(ev, n) {
+	 *     const changed = origCheck(ev, n);
+	 *     if (changed) console.log('依赖状态已更新，有字段显示/隐藏发生变化');
+	 *     return changed;
+	 *   };
+	 *
+	 * 【注意】
+	 *   - 这是框架内部方法，一般不需要覆盖
+	 *   - depends() 使用的是 isEqual/isContained 比较，
+	 *     值类型敏感（注意 UCI 值都是字符串，比较时使用字符串 '0'/'1' 而非布尔值）
+	 *   - n 非 0 时不触发 triggerValidation，避免级联递归中重复校验
 	 */
 	checkDepends(ev, n) {
 		let changed = false;
@@ -2619,6 +3381,78 @@ const CBIAbstractValue = CBIAbstractElement.extend(/** @lends LuCI.form.Abstract
 	 * @type function
 	 * @default null
 	 */
+	/**
+	 * ┌─────────────────────────────────────────────────────────────────┐
+	 * │  onchange  {function}  属性                                     │
+	 * │  值变化时的回调函数（用于实现字段间联动）                         │
+	 * └─────────────────────────────────────────────────────────────────┘
+	 *
+	 * 【作用】
+	 *   当用户修改表单控件的值时触发（input/change 事件），
+	 *   可用于实现字段联动、动态更新其他控件、触发异步加载等。
+	 *
+	 * 【回调函数签名】
+	 *   function(ev, section_id, value) {}
+	 *     @param {Event}  ev          触发变化的 DOM 事件对象
+	 *     @param {string} section_id  当前 UCI section ID
+	 *     @param {*}      value       控件变化后的新值
+	 *
+	 * 【使用示例】
+	 *
+	 *   // 示例1：根据协议切换显示不同字段
+	 *   o = s.option(form.ListValue, 'proto', _('协议'));
+	 *   o.value('static', _('静态 IP'));
+	 *   o.value('dhcp',   _('DHCP'));
+	 *   o.value('pppoe',  _('PPPoE'));
+	 *   o.onchange = function(ev, sid, value) {
+	 *     // 切换协议时强制刷新依赖状态（可选，框架通常自动处理）
+	 *     this.section.checkDepends();
+	 *   };
+	 *
+	 *   // 示例2：动态更新另一个下拉框的选项（异步加载）
+	 *   o = s.option(form.ListValue, 'device', _('设备'));
+	 *   o.onchange = function(ev, sid, value) {
+	 *     // 根据选中的设备，动态加载可用端口列表
+	 *     fs.exec('/usr/bin/get_ports', [value]).then(result => {
+	 *       const portEl = this.section.getUIElement(sid, 'port');
+	 *       if (portEl) {
+	 *         const choices = {};
+	 *         result.trim().split('\n').forEach(p => { choices[p] = p; });
+	 *         portEl.setChoices(choices);
+	 *       }
+	 *     });
+	 *   };
+	 *
+	 *   // 示例3：实时计算并展示派生值
+	 *   o = s.option(form.Value, 'ipaddr', _('IP 地址'));
+	 *   o.onchange = function(ev, sid, value) {
+	 *     const dummy = this.section.getUIElement(sid, 'network_display');
+	 *     if (dummy && value) {
+	 *       // 实时显示所属网段
+	 *       const net = value.split('.').slice(0, 3).join('.') + '.0/24';
+	 *       dummy.setValue(net);
+	 *     }
+	 *   };
+	 *
+	 *   // 示例4：联动控制另一个字段的 readonly 状态
+	 *   o = s.option(form.Flag, 'custom_mtu', _('自定义 MTU'));
+	 *   o.onchange = function(ev, sid, value) {
+	 *     const mtuEl = this.section.getUIElement(sid, 'mtu');
+	 *     if (mtuEl) {
+	 *       // 勾选时解除只读，取消勾选时恢复只读
+	 *       mtuEl.node.querySelector('input')
+	 *            .toggleAttribute('disabled', value !== '1');
+	 *     }
+	 *   };
+	 *
+	 * 【注意】
+	 *   - 回调中 this 指向 option 实例，可访问 this.section、this.map
+	 *   - onchange 在 DOM 事件层面触发，不是在 parse/save 时触发
+	 *   - 依赖切换（shows/hides）由框架自动处理，通常不需要在 onchange 里
+	 *     手动操作依赖状态；需要时调用 this.section.checkDepends()
+	 *   - 若需要在程序里模拟值变化，使用 uiElement.setValue() 不会触发
+	 *     onchange，需要手动调用 this.section.checkDepends()
+	 */
 
 	/**
 	 * Add a dependency constraint to the option.
@@ -2710,6 +3544,71 @@ const CBIAbstractValue = CBIAbstractElement.extend(/** @lends LuCI.form.Abstract
 	 * When invoked with a plain option name as the first argument, this parameter
 	 * specifies the expected value. In case an object is passed as the first
 	 * argument, this parameter is ignored.
+	 */
+	/**
+	 * ┌─────────────────────────────────────────────────────────────────┐
+	 * │  depends(field, value?)                                         │
+	 * │  为 option 添加依赖约束（控制显示/隐藏联动）                     │
+	 * └─────────────────────────────────────────────────────────────────┘
+	 *
+	 * 【作用】
+	 *   当指定字段不满足条件时，本 option 自动隐藏且其值不写入 UCI。
+	 *   多次调用 depends() 之间是 OR 关系（任一满足即显示）。
+	 *   同一次调用中传入对象则字段之间是 AND 关系（全部满足才显示）。
+	 *
+	 * 【参数】
+	 *   @param {string|Object} field  依赖字段名，或包含多字段条件的对象
+	 *   @param {string|RegExp} [value] 期望值（field 为字符串时使用）
+	 *
+	 * 【字段名格式】
+	 *   - 'proto'                    → 同 section 内的 option
+	 *   - 'network.lan.proto'        → 跨 section 引用（config.section.option）
+	 *
+	 * 【特殊修饰符（对象 key）】
+	 *   '!reverse'   true  → 反转条件（值不等于期望值时显示）
+	 *   '!contains'  true  → 包含匹配（值包含子串/数组含元素时满足）
+	 *   '!default'   true  → 无条件满足（始终显示）
+	 *   '!val:XXX'   true  → 以 XXX 作为该字段的期望值（高级用法）
+	 *
+	 * 【使用示例】
+	 *
+	 *   // 1. 简单等值匹配：proto='static' 时显示
+	 *   o.depends('proto', 'static');
+	 *
+	 *   // 2. 等效对象写法
+	 *   o.depends({ proto: 'static' });
+	 *
+	 *   // 3. 正则匹配：proto 以 'ppp' 开头时显示
+	 *   o.depends({ proto: /^ppp/ });
+	 *
+	 *   // 4. AND 条件：proto='pppoe' 且 auth='pap' 时显示
+	 *   o.depends({ proto: 'pppoe', auth: 'pap' });
+	 *
+	 *   // 5. OR 条件：proto='pppoe' 或 proto='pptp' 时显示
+	 *   o.depends('proto', 'pppoe');
+	 *   o.depends('proto', 'pptp');
+	 *
+	 *   // 6. 反向依赖：proto 不是 'none' 时显示
+	 *   o.depends({ proto: 'none', '!reverse': true });
+	 *
+	 *   // 7. 包含匹配：UCI list 'zones' 包含 'wan' 时显示
+	 *   o.depends({ zones: 'wan', '!contains': true });
+	 *
+	 *   // 8. 跨 section 引用：network.lan 的 proto='static' 时显示
+	 *   o.depends('network.lan.proto', 'static');
+	 *
+	 *   // 9. 无条件显示（覆盖其他 depends，用于条件性地强制显示）
+	 *   if (alwaysShow) o.depends({ '!default': true });
+	 *
+	 *   // 10. 复合：(proto='pppoe' AND mtu 不空) OR (proto='static')
+	 *   o.depends({ proto: 'pppoe', mtu: /\d+/ });
+	 *   o.depends({ proto: 'static' });
+	 *
+	 * 【注意】
+	 *   - UCI 中所有值都是字符串，注意用 '0'/'1' 而非 false/true
+	 *   - 隐藏时 option 的值默认从 UCI 中删除（除非设置 retain=true）
+	 *   - depends() 在 render() 之前调用；render() 后动态修改需手动
+	 *     调用 section.checkDepends() 刷新显示状态
 	 */
 	depends(field, value) {
 		let deps;
@@ -3050,6 +3949,86 @@ const CBIAbstractValue = CBIAbstractElement.extend(/** @lends LuCI.form.Abstract
 	 * return value is treated as a failure, converted to a string and displayed
 	 * as an error message to the user.
 	 */
+	/**
+	 * ┌─────────────────────────────────────────────────────────────────┐
+	 * │  validate(section_id, value)                                    │
+	 * │  自定义验证逻辑（在 datatype 校验之后执行的业务规则校验）         │
+	 * └─────────────────────────────────────────────────────────────────┘
+	 *
+	 * 【作用】
+	 *   当用户输入值发生变化时（blur/keyup）触发，用于实现 datatype 无法
+	 *   覆盖的业务逻辑验证。默认实现直接返回 true（总是通过）。
+	 *
+	 *   有两种使用方式：
+	 *   1. 将函数赋值给 o.validate 属性（推荐，更简洁）
+	 *   2. 在自定义控件子类中覆盖 validate 方法
+	 *
+	 * 【参数】
+	 *   @param {string} section_id  当前 UCI section ID
+	 *   @param {*}      value       待验证的当前输入值
+	 *
+	 * 【返回值】
+	 *   true          → 验证通过
+	 *   string/Error  → 验证失败，字符串内容作为错误提示显示给用户
+	 *
+	 * 【方式1：属性赋值（单个验证器）】
+	 *
+	 *   o = s.option(form.Value, 'password', _('密码'));
+	 *   o.validate = function(sid, val) {
+	 *     if (val.length < 8)
+	 *       return _('密码至少需要 8 位');
+	 *     if (!/[A-Z]/.test(val))
+	 *       return _('密码需包含至少一个大写字母');
+	 *     return true;
+	 *   };
+	 *
+	 * 【方式1：属性赋值（多个验证器数组，串行执行）】
+	 *
+	 *   o.validate = [
+	 *     function(sid, val) {
+	 *       return val.length >= 8 || _('密码至少 8 位');
+	 *     },
+	 *     function(sid, val) {
+	 *       return /[0-9]/.test(val) || _('密码需包含数字');
+	 *     }
+	 *   ];
+	 *
+	 * 【方式1：使用 section 上下文（读取其他字段的值）】
+	 *
+	 *   o = s.option(form.Value, 'confirm_pwd', _('确认密码'));
+	 *   o.validate = function(sid, val) {
+	 *     // 读取同一 section 内 password 字段的当前输入值
+	 *     const pwd = this.section.formvalue(sid, 'password');
+	 *     if (val !== pwd) return _('两次输入的密码不一致');
+	 *     return true;
+	 *   };
+	 *
+	 * 【方式2：子类覆盖方法】
+	 *
+	 *   const UrlValue = form.Value.extend({
+	 *     validate(sid, val) {
+	 *       try { new URL(val); return true; }
+	 *       catch(e) { return _('请输入有效的 URL'); }
+	 *     }
+	 *   });
+	 *   o = s.option(UrlValue, 'endpoint', _('接口地址'));
+	 *
+	 * 【与 datatype 的区别】
+	 *   datatype  → 格式验证（ip、port、range 等内置规则，实时验证）
+	 *   validate  → 业务逻辑验证（跨字段、异步检查、自定义规则）
+	 *
+	 *   两者可同时使用，datatype 先执行，validate 后执行：
+	 *   o.datatype = 'port';               // 先验证是否为合法端口号
+	 *   o.validate = function(sid, val) {  // 再验证是否与其他端口冲突
+	 *     const otherPort = this.section.formvalue(sid, 'other_port');
+	 *     return val !== otherPort || _('端口不能与其他端口相同');
+	 *   };
+	 *
+	 * 【注意】
+	 *   - 函数内 this 指向 option 实例本身
+	 *   - 验证器在用户每次输入时触发，应避免复杂/同步阻塞操作
+	 *   - 不支持返回 Promise（异步验证需通过其他机制实现）
+	 */
 	validate(section_id, value) {
 		return true;
 	},
@@ -3249,8 +4228,67 @@ const CBIAbstractValue = CBIAbstractElement.extend(/** @lends LuCI.form.Abstract
 	 * @param {string} section_id
 	 * The configuration section ID
 	 *
-	 * @param {string|string[]}	formvalue
+	 * @param {string|string[]} formvalue
 	 * The input value to write.
+	 */
+	/**
+	 * ┌─────────────────────────────────────────────────────────────────┐
+	 * │  write(section_id, formvalue)                                   │
+	 * │  将表单输入值写入 UCI 配置缓存（可覆盖以自定义保存逻辑）          │
+	 * └─────────────────────────────────────────────────────────────────┘
+	 *
+	 * 【作用】
+	 *   在 parse() 确认值有效且发生变化后调用，将用户输入的 formvalue
+	 *   写入 UCI 内存缓存（uci.set）。
+	 *
+	 *   默认实现调用 map.data.set()，可以覆盖以实现：
+	 *   - 写入前对值进行变换（格式化、追加后缀等）
+	 *   - 同时写入多个 UCI option
+	 *   - 写入到不同的 config/section/option
+	 *
+	 * 【参数】
+	 *   @param {string}          section_id  UCI section ID
+	 *   @param {string|string[]} formvalue   用户输入的当前值（已通过验证）
+	 *
+	 * 【使用示例】
+	 *
+	 *   // 示例1：写入前自动追加 CIDR 前缀长度
+	 *   o = s.option(form.Value, 'ipaddr', _('IP 地址'));
+	 *   o.datatype = 'ip4addr';
+	 *   o.write = function(sid, val) {
+	 *     // 若用户只输入了 IP，自动追加 /24
+	 *     uci.set('network', sid, 'ipaddr',
+	 *       val.indexOf('/') === -1 ? val + '/24' : val);
+	 *   };
+	 *
+	 *   // 示例2：同时写入两个相关 UCI option
+	 *   o = s.option(form.Value, 'cidr', _('IP/前缀'));
+	 *   o.write = function(sid, val) {
+	 *     const parts = val.split('/');
+	 *     uci.set('network', sid, 'ipaddr',  parts[0]);
+	 *     uci.set('network', sid, 'netmask',
+	 *       parts[1] ? prefixToMask(parts[1]) : '255.255.255.0');
+	 *   };
+	 *
+	 *   // 示例3：写入不同的 section（跨 section 保存）
+	 *   o = s.option(form.Value, 'ntp_server', _('NTP 服务器'));
+	 *   o.write = function(sid, val) {
+	 *     uci.set('system', 'ntp', 'server', val.split('\n'));
+	 *   };
+	 *
+	 *   // 示例4：写入时进行类型转换（字符串转数组）
+	 *   o = s.option(form.Value, 'dns', _('DNS 服务器'));
+	 *   o.write = function(sid, val) {
+	 *     // 将空格/逗号分隔的字符串转为 UCI list
+	 *     uci.set('network', sid, 'dns',
+	 *       val.split(/[\s,]+/).filter(Boolean));
+	 *   };
+	 *
+	 * 【注意】
+	 *   - write() 只操作 UCI 内存缓存，不会立即写磁盘（需 uci.save() + uci.apply()）
+	 *   - 只有当 formvalue != cfgvalue 时才调用（值未改变时跳过）
+	 *   - 若设置了 forcewrite=true，即使值相同也会调用 write()
+	 *   - 覆盖 write() 时通常不需要调用 super，除非需要默认写入行为
 	 */
 	write(section_id, formvalue) {
 		return this.map.data.set(
@@ -3274,6 +4312,56 @@ const CBIAbstractValue = CBIAbstractElement.extend(/** @lends LuCI.form.Abstract
 	 *
 	 * @param {string} section_id
 	 * The configuration section ID
+	 */
+	/**
+	 * ┌─────────────────────────────────────────────────────────────────┐
+	 * │  remove(section_id)                                             │
+	 * │  从 UCI 配置缓存中删除本 option 的值（可覆盖以自定义删除逻辑）   │
+	 * └─────────────────────────────────────────────────────────────────┘
+	 *
+	 * 【作用】
+	 *   在以下两种情况下由 parse() 自动调用：
+	 *   1. option 因依赖不满足被隐藏（且 retain=false 时）
+	 *   2. 用户清空了输入值且 option 是可选的（rmempty=true 或 optional=true）
+	 *
+	 *   默认实现调用 map.data.unset() 删除对应 UCI 选项。
+	 *   若存在其他 option 共享同一 UCI 路径（ucioption 别名），则跳过删除，
+	 *   防止误删其他仍处于激活状态的 option 的值。
+	 *
+	 * 【参数】
+	 *   @param {string} section_id  UCI section ID
+	 *
+	 * 【使用示例】
+	 *
+	 *   // 示例1：阻止删除（保留 UCI 中的原始值）
+	 *   // 等效于设置 o.retain = true，但更灵活
+	 *   o = s.option(form.Value, 'metric', _('路由跃点数'));
+	 *   o.remove = function(sid) {
+	 *     // 什么都不做：即使依赖不满足，也不删除 UCI 中的值
+	 *   };
+	 *
+	 *   // 示例2：删除时同时清理关联的多个 UCI option
+	 *   o = s.option(form.Value, 'ipaddr', _('IP 地址'));
+	 *   o.remove = function(sid) {
+	 *     uci.unset('network', sid, 'ipaddr');
+	 *     uci.unset('network', sid, 'netmask');  // 同时删除掩码
+	 *     uci.unset('network', sid, 'gateway');  // 同时删除网关
+	 *   };
+	 *
+	 *   // 示例3：删除时重置为特定默认值（而非完全删除）
+	 *   o = s.option(form.ListValue, 'proto', _('协议'));
+	 *   o.remove = function(sid) {
+	 *     uci.set('network', sid, 'proto', 'none');  // 重置为 none 而非删除
+	 *   };
+	 *
+	 * 【与 retain 属性的区别】
+	 *   retain=true   → 框架层面完全跳过 remove() 调用（更简洁）
+	 *   覆盖 remove() → 可以在"删除"时执行自定义逻辑（更灵活）
+	 *
+	 * 【注意】
+	 *   - remove() 只操作 UCI 内存缓存，不立即写磁盘
+	 *   - 若多个 option 共享同一 UCI 路径（ucioption 相同），
+	 *     只要有任一处于激活状态，就不会删除（框架自动处理）
 	 */
 	remove(section_id) {
 		const this_cfg = this.uciconfig ?? this.section.uciconfig ?? this.map.config;
@@ -6260,6 +7348,66 @@ const CBIValue = CBIAbstractValue.extend(/** @lends LuCI.form.Value.prototype */
 	 * The caption for the choice value. May be a DOM node, a document fragment
 	 * or a plain text string. If omitted, the `key` value is used as a caption.
 	 */
+	/**
+	 * ┌─────────────────────────────────────────────────────────────────┐
+	 * │  value(key, val?)               [Value / ListValue 通用]        │
+	 * │  添加预定义候选选项                                               │
+	 * └─────────────────────────────────────────────────────────────────┘
+	 *
+	 * 【作用】
+	 *   - Value（文本输入框）：调用后变为 Combobox（下拉 + 自由输入），
+	 *     用户可选择预设值，也可手动输入自定义值。
+	 *   - ListValue（下拉选择框）：添加固定选项，用户只能从中选择。
+	 *   - DynamicList（动态列表）：添加候选建议项。
+	 *
+	 * 【参数】
+	 *   @param {string}      key  保存到 UCI 的实际值（option 的 value）
+	 *   @param {string|Node} [val] 显示给用户的标签文字或 DOM 节点；
+	 *                             省略时使用 key 作为显示文字
+	 *
+	 * 【使用示例】
+	 *
+	 *   // 基础：ListValue 下拉选择框
+	 *   o = s.option(form.ListValue, 'proto', _('协议'));
+	 *   o.value('dhcp',   _('DHCP 客户端'));
+	 *   o.value('static', _('静态地址'));
+	 *   o.value('pppoe',  _('PPPoE 拨号'));
+	 *   o.value('none',   _('不配置'));
+	 *   o.default = 'dhcp';
+	 *
+	 *   // Value Combobox（可输入 + 预设建议）
+	 *   o = s.option(form.Value, 'dns', _('DNS 服务器'));
+	 *   o.value('8.8.8.8',   _('Google Public DNS'));
+	 *   o.value('1.1.1.1',   _('Cloudflare DNS'));
+	 *   o.value('114.114.114.114', _('国内 114 DNS'));
+	 *   // 用户也可以手动输入任意 IP
+	 *   o.datatype = 'ipaddr';
+	 *
+	 *   // key 与显示标签不同（UCI 存 '0'/'1'，显示中文）
+	 *   o = s.option(form.ListValue, 'band', _('无线频段'));
+	 *   o.value('2g', _('2.4 GHz'));
+	 *   o.value('5g', _('5 GHz'));
+	 *   o.value('6g', _('6 GHz（Wi-Fi 6E）'));
+	 *
+	 *   // 用变量循环添加（适合从数据动态生成选项）
+	 *   o = s.option(form.ListValue, 'interface', _('绑定接口'));
+	 *   uci.sections('network', 'interface').forEach(function(iface) {
+	 *     if (iface['.name'] !== 'loopback')
+	 *       o.value(iface['.name'], iface['.name'].toUpperCase());
+	 *   });
+	 *
+	 *   // val 使用 DOM 节点（富文本标签）
+	 *   o = s.option(form.ListValue, 'level', _('日志级别'));
+	 *   o.value('0', E('span', { style: 'color:red' },   _('错误')));
+	 *   o.value('1', E('span', { style: 'color:orange' }, _('警告')));
+	 *   o.value('2', E('span', { style: 'color:green' },  _('信息')));
+	 *
+	 * 【注意】
+	 *   - key 始终被转为字符串存储，确保与 UCI 值类型一致
+	 *   - 调用顺序决定下拉列表的显示顺序
+	 *   - ListValue 未设置 optional=true 时，必须通过 value() 提供至少一个选项
+	 *     或设置 o.default，否则初始值为空会导致验证失败
+	 */
 	value(key, val) {
 		this.keylist ??= [];
 		this.keylist.push(String(key));
@@ -6932,7 +8080,47 @@ const CBIRichListValue = CBIListValue.extend(/** @lends LuCI.form.ListValue.prot
 	 * The description text of the choice value. May be a DOM node, a document
 	 * fragment or a plain text string. If omitted, the value element is
 	 * implemented as a simple ListValue entry.
+	 */
+	/**
+	 * ┌─────────────────────────────────────────────────────────────────┐
+	 * │  value(key, title?, description?)       [RichListValue 专用]    │
+	 * │  添加带描述文字的富选项（比普通 ListValue 的 value() 多一个说明） │
+	 * └─────────────────────────────────────────────────────────────────┘
 	 *
+	 * 【作用】
+	 *   与 ListValue.value() 相同，但支持为每个选项附加一段描述文字，
+	 *   展开下拉时用户可以看到每个选项的详细说明（闭合时仍只显示标题）。
+	 *   若省略 description，退化为普通 ListValue 条目。
+	 *
+	 * 【参数】
+	 *   @param {string}      key          保存到 UCI 的实际值
+	 *   @param {string|Node} [title]      选项标题（列表中显示的文字）
+	 *   @param {string|Node} [description] 选项详细说明（展开时显示）
+	 *
+	 * 【使用示例】
+	 *
+	 *   o = s.option(form.RichListValue, 'routing_algo', _('路由算法'));
+	 *
+	 *   o.value('batman-iv',
+	 *     _('BATMAN IV'),
+	 *     _('基于链路质量（TQ）的路由，与所有设备兼容。网格中所有节点必须使用相同算法。')
+	 *   );
+	 *   o.value('batman-v',
+	 *     _('BATMAN V'),
+	 *     _('基于吞吐量（ELP）的路由，性能更好，但需要所有节点升级。')
+	 *   );
+	 *   o.value('none',
+	 *     _('无路由'),
+	 *     _('禁用路由功能，仅桥接模式。')
+	 *   );
+	 *
+	 *   // 省略 description 时等同于普通 ListValue.value()
+	 *   o.value('auto', _('自动检测'));
+	 *
+	 * 【注意】
+	 *   - RichListValue 继承自 ListValue，其他属性（depends/default 等）完全相同
+	 *   - 只有 RichListValue 类型的 option 才支持三参数 value()，
+	 *     在 ListValue 上调用三参数形式不会显示 description
 	 */
 	value(value, title, description) {
 		if (description) {
