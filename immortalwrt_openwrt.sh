@@ -444,11 +444,11 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 	else
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 	fi
-	# [[ $REPO_BRANCH =~ master|24|25 ]] && {
-	# 	[[ $REPO_BRANCH =~ 24 ]] && {
-	# 		sed -i 's#"\$(PYTHON3_PKG_BUILD_DIR)"/openwrt-build/\$(PYTHON3_PKG_WHEEL_NAME)-\$(PYTHON3_PKG_WHEEL_VERSION)-\*.whl#$(PYTHON3_PKG_BUILD_DIR)/openwrt-build/*\$(PYTHON3_PKG_WHEEL_VERSION)*.whl#' feeds/packages/lang/python/python3-package.mk
-	# 	}
-	# }
+	[[ $REPO_BRANCH =~ master|24|25 ]] && {
+		[[ $REPO_BRANCH =~ 24 ]] && {
+			sed -i 's#"\$(PYTHON3_PKG_BUILD_DIR)"/openwrt-build/\$(PYTHON3_PKG_WHEEL_NAME)-\$(PYTHON3_PKG_WHEEL_VERSION)-\*.whl#$(PYTHON3_PKG_BUILD_DIR)/openwrt-build/*\$(PYTHON3_PKG_WHEEL_VERSION)*.whl#' feeds/packages/lang/python/python3-package.mk
+		}
+	}
 	# [[ -f feeds/packages/libs/libutp/Makefile ]] && [[ $REPO_BRANCH =~ 25 ]] && \
 	# 	sed -i 's/-DLIBUTP_ENABLE_WERROR:BOOL=YES/-DLIBUTP_ENABLE_WERROR:BOOL=NO/' feeds/packages/libs/libutp/Makefile
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy"
