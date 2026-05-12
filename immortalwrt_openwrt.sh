@@ -426,7 +426,7 @@ clone_dir coolsnowwolf/packages rust
 clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
 		shadow-tls shadowsocksr-libev trojan dns2socks
-clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi mosdns \
+clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi mosdns libtorrent-rasterbar \
 		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
 		luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
@@ -544,7 +544,6 @@ sed -Ei '{
 
 [[ "$TARGET_DEVICE" =~ armvirt ]] && sed -i '/qbittorrent/d' .config
 # [[ $REPO_BRANCH =~ master|25 ]] && sed -i '/deluge/d' .config
-grep -q 'deluge' .config && add_package 'boost-python3'
 
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
