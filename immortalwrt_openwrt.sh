@@ -423,8 +423,8 @@ set_config
 grep -qv "PKG_VERSION:=1.93.0" feeds/packages/lang/rust/Makefile && \
 clone_dir coolsnowwolf/packages rust
 
-clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
-# clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
+# clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
+clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 
 clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
 		shadow-tls shadowsocksr-libev trojan dns2socks
