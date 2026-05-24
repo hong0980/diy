@@ -366,7 +366,7 @@ set_config (){
 		luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-nikki \
 		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter luci-app-ddns-go \
 		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2 \
-		luci-app-miaplus luci-app-watchdog
+		luci-app-miaplus luci-app-watchdog luci-app-fchomo
 
 	add_package autocore opkg luci-app-arpbind luci-app-ssr-plus luci-app-passwall \
 				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard luci-app-tinynote-js \
@@ -424,6 +424,7 @@ grep -qv "PKG_VERSION:=1.93.0" feeds/packages/lang/rust/Makefile && \
 clone_dir coolsnowwolf/packages rust
 
 clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
+clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo
 clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
 		shadow-tls shadowsocksr-libev trojan dns2socks
 clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi mosdns libtorrent-rasterbar \
@@ -479,6 +480,9 @@ clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview trojan-
 # 		luci-app-advancedplus luci-app-arpbind luci-app-ddns-go luci-app-gecoosac \
 # 		luci-app-istorex luci-app-pushbot luci-app-quickstart luci-app-store \
 # 		luci-app-syncdial luci-lib-taskd luci-lib-xterm taskd
+
+[ -d package/A/luci-app-fchomo ] && \
+	sed -i 's/+mihomo/+mihomo-meta/' package/A/luci-app-fchomo/Makefile
 
 ! grep -q "GO_VERSION.*1.26.*" feeds/packages/lang/golang/golang/Makefile 2>/dev/null && \
 rm -rf feeds/packages/lang/golang && \
