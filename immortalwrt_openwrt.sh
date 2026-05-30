@@ -442,6 +442,7 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 		create_directory "package/emortal"
 		git clone -q https://github.com/immortalwrt/homeproxy package/A/luci-app-homeproxy
 		[[ $REPO_BRANCH =~ master|24|25 ]] || ucode=ucode
+		clone_dir immortalwrt/packages transmission-web-control
 		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal r8152 $ucode
 	else
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
