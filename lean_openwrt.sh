@@ -483,7 +483,10 @@ echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
 make defconfig 1>/dev/null 2>&1
 status
-
+for f in package/A/luci-app-openclash/root/etc/init.d/openclash \
+    feeds/luci/applications/luci-app-openclash/root/etc/init.d/openclash; do
+    [ -f "$f" ] && sed -i "/procd_open_instance \"openclash\"/i\\   command -v yq &>/dev/null && yq -i '.' \"\$CONFIG_FILE\"" "$f"
+done
 LINUX_VERSION=$(sed -nr 's/CONFIG_LINUX_(.*)=y/\1/p' .config | tr '_' '.')
 sed -i "/IMG_PREFIX:/ {s/=/=$SOURCE_NAME-${REPO_BRANCH#*-}-$LINUX_VERSION-\$(shell TZ=UTC-8 date +%m%d-%H%M)-/}" include/image.mk
 # sed -i -E 's/# (CONFIG_.*_COMPRESS_UPX) is not set/\1=y/' .config && make defconfig 1>/dev/null 2>&1

@@ -493,7 +493,10 @@ sed -i "/ONLY/ s/^/#/g" feeds/packages/lang/python/python-mako/Makefile
 profile='package/base-files/files/etc/profile.d/apk-cheatsheet.sh'
 [ -e "$profile" ] && \
 grep -Fq '[ -x /usr/bin/apk ]' "$profile" && sed -i 's|\[ -x /usr/bin/apk \]|false|' "$profile"
-
+for f in package/A/luci-app-openclash/root/etc/init.d/openclash \
+    feeds/luci/applications/luci-app-openclash/root/etc/init.d/openclash; do
+    [ -f "$f" ] && sed -i "/procd_open_instance \"openclash\"/i\\   command -v yq &>/dev/null && yq -i '.' \"\$CONFIG_FILE\"" "$f"
+done
 # [ -f "feeds/routing/mesh11sd/Makefile" ] && \
 # 	sed -i \
 # 	    -e 's/PKG_VERSION:=.*/PKG_VERSION:=5.1.3/' \
