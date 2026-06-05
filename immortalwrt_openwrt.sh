@@ -307,7 +307,7 @@ set_config (){
 			export DEVICE_NAME="$D_NAME"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
 			# add_busybox "pkill lsof"
-			add_package "luci-app-mesh-node libustream-mbedtls"
+			add_package "luci-app-mesh-node libustream-mbedtls luci-app-nikki"
 			del_package "wpad-basic-mbedtls wpad-openssl libustream-openssl libustream-wolfssl"
 			;;
 		newifi-d2)
@@ -473,7 +473,7 @@ fi
 # [[ $REPO_BRANCH =~ master|25 ]] || clone_dir openwrt/packages docker dockerd containerd docker-compose runc #nlbwmon
 del_package "luci-app-filetransfer luci-app-turboacc"
 clone_dir sbwml/openwrt_helloworld shadowsocks-rust
-clone_dir dev vernesong/OpenClash luci-app-openclash
+clone_dir vernesong/OpenClash luci-app-openclash
 clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
 clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
 clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview trojan-plus sing-box xray-core simple-obfs shadowsocks-libev
@@ -497,6 +497,12 @@ for f in package/A/luci-app-openclash/root/etc/init.d/openclash \
     feeds/luci/applications/luci-app-openclash/root/etc/init.d/openclash; do
     [ -f "$f" ] && sed -i "/procd_open_instance \"openclash\"/i\\   command -v yq &>/dev/null && yq -i '.' \"\$CONFIG_FILE\"" "$f"
 done
+[ -f package/A/nikki/files/nikki.init ] && \
+    sed -Ei '{
+    		# s|config_get subscription_prefer "$subscription_section" "prefer" "remote"|config_get subscription_prefer "$subscription_section" "prefer" "local"|;
+            /\tcp -f "\$profile_file" "\$RUN_PROFILE_PATH"/a\\tgrep -q "<<:" "\$profile_file" \&\& yq -M '"'"'explode(.) | .rule-providers |= with_entries(.value.path = "./rule_provider/" + .key)'"'"' "\$profile_file" > "\$RUN_PROFILE_PATH"
+        }' package/A/nikki/files/nikki.init
+
 # [ -f "feeds/routing/mesh11sd/Makefile" ] && \
 # 	sed -i \
 # 	    -e 's/PKG_VERSION:=.*/PKG_VERSION:=5.1.3/' \
