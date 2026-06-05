@@ -497,11 +497,6 @@ for f in package/A/luci-app-openclash/root/etc/init.d/openclash \
     feeds/luci/applications/luci-app-openclash/root/etc/init.d/openclash; do
     [ -f "$f" ] && sed -i "/procd_open_instance \"openclash\"/i\\   command -v yq &>/dev/null && yq -i '.' \"\$CONFIG_FILE\"" "$f"
 done
-[ -f package/A/nikki/files/nikki.init ] && \
-    sed -Ei '{
-    		# s|config_get subscription_prefer "$subscription_section" "prefer" "remote"|config_get subscription_prefer "$subscription_section" "prefer" "local"|;
-            /\tcp -f "\$profile_file" "\$RUN_PROFILE_PATH"/a\\tgrep -q "<<:" "\$profile_file" \&\& yq -M '"'"'explode(.) | .rule-providers |= with_entries(.value.path = "./rule_provider/" + .key)'"'"' "\$profile_file" > "\$RUN_PROFILE_PATH"
-        }' package/A/nikki/files/nikki.init
 
 # [ -f "feeds/routing/mesh11sd/Makefile" ] && \
 # 	sed -i \
