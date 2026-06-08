@@ -391,10 +391,17 @@ deploy_cache() {
 		if ls ../*"$CACHE_NAME"* >/dev/null 2>&1; then
 			echo -e "$(color cy '部署tz-cache')\c"
 			begin_time=$(date '+%H:%M:%S')
-			(tar -I unzstd -xf ../*.tzst || tar -xf ../*.tzst) && sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
+
+			ACTUAL_CACHE_FILE=$(ls ../*"$CACHE_NAME"*.*zst | head -n 1)
+			tar -I unzstd -xf "$ACTUAL_CACHE_FILE" || tar --zstd -xf "$ACTUAL_CACHE_FILE" || tar -xf "$ACTUAL_CACHE_FILE"
+
+			mkdir -p staging_dir/host/stamp staging_dir/toolchain/stamp 2>/dev/null || true
+			touch staging_dir/host/stamp/.compile_installed 2>/dev/null || true
+			touch staging_dir/toolchain/stamp/.compile_installed 2>/dev/null || true
+
 			[ -d staging_dir ]; status
 			[[ $CACHE_URL =~ OpenWrt-Cache ]] && {
-				cp ../*.tzst ../output/
+				cp ../*.tzst ../output/ 2>/dev/null || true
 				echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
 			}
 		fi
