@@ -157,7 +157,7 @@ clone_dir() {
 		# [[ $repo_url =~ coolsnowwolf/packages ]] && set -- "$@" "bash" \
 		# 		"btrfs-progs" "gawk" "jq" "nginx-util" "pciutils" "curl"
 	}
-	[[ $repo_url =~ sbwml && $REPO =~ openwrt ]] && set -- "$@" \
+	[[ $repo_url =~ sbwml && $REPO =~ openwrt ]] && set -- "$@" "dns2tcp" \
 		"ipt2socks" "microsocks" "naiveproxy" "pdnsd" "redsocks2" "tcping" "tuic-client" \
 		"v2ray-core" "v2ray-geodata" "v2ray-plugin" "xray-plugin" "hysteria"
 
@@ -420,15 +420,15 @@ begin_time=$(date '+%H:%M:%S')
 status
 create_directory "package/A"
 set_config
-# grep -qv "PKG_VERSION:=1.93.0" feeds/packages/lang/rust/Makefile && \
-# clone_dir coolsnowwolf/packages rust
+grep -qv "PKG_VERSION:=1.93.0" feeds/packages/lang/rust/Makefile && \
+clone_dir coolsnowwolf/packages rust
 
 clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
 clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 clone_dir hong0980/OpenWrt-nikki nikki luci-app-nikki
 
 clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
-		shadow-tls shadowsocksr-libev trojan dns2socks dns2tcp
+		shadow-tls shadowsocksr-libev trojan dns2socks
 clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi mosdns libtorrent-rasterbar \
 		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
