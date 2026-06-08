@@ -157,7 +157,7 @@ clone_dir() {
 		# [[ $repo_url =~ coolsnowwolf/packages ]] && set -- "$@" "bash" \
 		# 		"btrfs-progs" "gawk" "jq" "nginx-util" "pciutils" "curl"
 	}
-	[[ $repo_url =~ sbwml && $REPO =~ openwrt ]] && set -- "$@" "dns2tcp" \
+	[[ $repo_url =~ sbwml && $REPO =~ openwrt ]] && set -- "$@" \
 		"ipt2socks" "microsocks" "naiveproxy" "pdnsd" "redsocks2" "tcping" "tuic-client" \
 		"v2ray-core" "v2ray-geodata" "v2ray-plugin" "xray-plugin" "hysteria"
 
