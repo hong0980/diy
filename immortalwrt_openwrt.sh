@@ -476,7 +476,7 @@ clone_dir sbwml/openwrt_helloworld shadowsocks-rust
 clone_dir vernesong/OpenClash luci-app-openclash
 clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
 clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
-clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview trojan-plus sing-box xray-core simple-obfs shadowsocks-libev
+clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview trojan-plus xray-core simple-obfs shadowsocks-libev
 
 # clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb \
 # 		luci-app-advancedplus luci-app-arpbind luci-app-ddns-go luci-app-gecoosac \
