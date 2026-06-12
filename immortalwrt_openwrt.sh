@@ -428,6 +428,7 @@ set_config
 
 clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
 clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
+clone_dir hong0980/OpenWrt-nikki nikki luci-app-nikki
 
 clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
 		shadow-tls shadowsocksr-libev trojan dns2socks dns2tcp
@@ -438,7 +439,7 @@ clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi mosdns libtorrent-raste
 		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
 		python-pyasn1 python-pyxdg python-rencode python-setproctitle python-twisted luci-app-mesh11sd \
 		sunpanel transmission qBittorrent-static luci-app-diskman-js luci-app-tinynote-js \
-		luci-app-mesh-node luci-app-nikki
+		luci-app-mesh-node
 
 if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
