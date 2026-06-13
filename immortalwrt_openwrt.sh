@@ -147,10 +147,16 @@ clone_dir() {
 	fi
 	[[ $repo_url =~ ^https?:// ]] || repo_url="https://github.com/$repo_url"
 
-	git clone -q $branch --depth 1 "$repo_url" $temp_dir 2>/dev/null || {
-		_printf "$(color cr 拉取) $repo_url [ $(color cr ✕) ]"
-		return 1
+	local depth_arg="--depth 1"
+	[[ $repo_url =~ nikkinikki-org ]] && depth_arg=""
+
+	git clone -q $branch $depth_arg "$repo_url" $temp_dir 2>/dev/null || {
+	    _printf "$(color cr 拉取) $repo_url [ $(color cr ✕) ]"
+	    return 1
 	}
+
+	[[ $repo_url =~ nikkinikki-org ]] && \
+	    (cd "$temp_dir" && git reset --hard cd3a9ec)
 
 	[[ $REPO_BRANCH =~ master|23|24|25 ]] || {
 		[[ $repo_url =~ hong0980/diy ]] && set -- "$@" luci-app-wizard
@@ -439,7 +445,7 @@ clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi mosdns libtorrent-raste
 		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
 		python-pyasn1 python-pyxdg python-rencode python-setproctitle python-twisted luci-app-mesh11sd \
 		sunpanel transmission qBittorrent-static luci-app-diskman-js luci-app-tinynote-js \
-		luci-app-mesh-node luci-app-nikki
+		luci-app-mesh-node #luci-app-nikki
 
 if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
