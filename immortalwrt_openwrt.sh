@@ -155,8 +155,7 @@ clone_dir() {
 	    return 1
 	}
 
-	[[ $repo_url =~ nikkinikki-org ]] && \
-	    (cd "$temp_dir" && git reset --hard cd3a9ec)
+	[[ $repo_url =~ nikkinikki-org ]] && (cd "$temp_dir" && git reset --hard cd3a9ec)
 
 	[[ $REPO_BRANCH =~ master|23|24|25 ]] || {
 		[[ $repo_url =~ hong0980/diy ]] && set -- "$@" luci-app-wizard
@@ -445,7 +444,7 @@ clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi mosdns libtorrent-raste
 		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
 		python-pyasn1 python-pyxdg python-rencode python-setproctitle python-twisted luci-app-mesh11sd \
 		sunpanel transmission qBittorrent-static luci-app-diskman-js luci-app-tinynote-js \
-		luci-app-mesh-node #luci-app-nikki
+		luci-app-mesh-node luci-app-nikki
 
 if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
