@@ -432,11 +432,10 @@ set_config
 # clone_dir coolsnowwolf/packages rust
 
 clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
-clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
-# clone_dir hong0980/OpenWrt-nikki nikki luci-app-nikki
+# clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 
-clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
-		shadow-tls shadowsocksr-libev trojan dns2socks dns2tcp
+# clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
+# 		shadow-tls shadowsocksr-libev trojan dns2socks dns2tcp
 clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi libtorrent-rasterbar \
 		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
@@ -482,8 +481,10 @@ fi
 
 # [[ $REPO_BRANCH =~ master|25 ]] || clone_dir openwrt/packages docker dockerd containerd docker-compose runc #nlbwmon
 del_package "luci-app-filetransfer luci-app-turboacc"
-clone_dir vernesong/OpenClash luci-app-openclash
-clone_dir sbwml/openwrt_helloworld shadowsocks-rust luci-app-momo luci-app-daed daed luci-app-passwall luci-app-passwall2 chinadns-ng geoview trojan-plus xray-core simple-obfs shadowsocks-libev
+# clone_dir vernesong/OpenClash luci-app-openclash
+clone_dir sbwml/openwrt_helloworld luci-app-passwall luci-app-passwall2 luci-app-ssr-plus luci-app-openclash \
+		  chinadns-ng geoview trojan-plus xray-core simple-obfs shadowsocks-libev shadowsocks-rust dns2socks-rust \
+		  lua-neturl shadow-tls shadowsocksr-libev trojan dns2socks dns2tcp luci-app-daed daed
 # clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
 # clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
 # clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview trojan-plus xray-core simple-obfs shadowsocks-libev
