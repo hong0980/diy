@@ -437,13 +437,13 @@ clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-
 
 clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
 		shadow-tls shadowsocksr-libev trojan dns2socks dns2tcp
-clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi mosdns libtorrent-rasterbar \
+clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi libtorrent-rasterbar \
 		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
 		luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
 		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
 		python-pyasn1 python-pyxdg python-rencode python-setproctitle python-twisted luci-app-mesh11sd \
-		sunpanel transmission qBittorrent-static luci-app-diskman-js luci-app-tinynote-js \
+		transmission qBittorrent-static luci-app-diskman-js luci-app-tinynote-js \
 		luci-app-mesh-node luci-app-nikki
 
 if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
@@ -482,11 +482,11 @@ fi
 
 # [[ $REPO_BRANCH =~ master|25 ]] || clone_dir openwrt/packages docker dockerd containerd docker-compose runc #nlbwmon
 del_package "luci-app-filetransfer luci-app-turboacc"
-clone_dir sbwml/openwrt_helloworld shadowsocks-rust
 clone_dir vernesong/OpenClash luci-app-openclash
-clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
-clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
-clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview trojan-plus xray-core simple-obfs shadowsocks-libev
+clone_dir sbwml/openwrt_helloworld shadowsocks-rust luci-app-momo luci-app-daed daed luci-app-passwall luci-app-passwall2 chinadns-ng geoview trojan-plus xray-core simple-obfs shadowsocks-libev
+# clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
+# clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
+# clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview trojan-plus xray-core simple-obfs shadowsocks-libev
 
 # clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb \
 # 		luci-app-advancedplus luci-app-arpbind luci-app-ddns-go luci-app-gecoosac \
