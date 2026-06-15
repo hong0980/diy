@@ -508,11 +508,11 @@ for f in package/A/luci-app-openclash/root/etc/init.d/openclash \
 	feeds/luci/applications/luci-app-openclash/root/etc/init.d/openclash; do
 	[ -f "$f" ] && sed -i "/procd_open_instance \"openclash\"/i\\   command -v yq &>/dev/null && yq -i '.' \"\$CONFIG_FILE\"" "$f"
 done
-for f in package/A/luci-app-ssr-plus/Makefile \
-		feeds/helloworld/luci-app-ssr-plus/Makefile \
-		feeds/luci/applications/luci-app-ssr-plus/Makefile; do
-	[ -f "$f" ] && sed -i "/kcptun-client/d" "$f"
-done
+# for f in package/A/luci-app-ssr-plus/Makefile \
+# 		feeds/helloworld/luci-app-ssr-plus/Makefile \
+# 		feeds/luci/applications/luci-app-ssr-plus/Makefile; do
+# 	[ -f "$f" ] && sed -i "/kcptun-client/d" "$f"
+# done
 
 # [ -f "feeds/routing/mesh11sd/Makefile" ] && \
 # 	sed -i \
