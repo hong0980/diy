@@ -481,7 +481,7 @@ fi
 del_package "luci-app-filetransfer luci-app-turboacc"
 # clone_dir vernesong/OpenClash luci-app-openclash
 clone_dir sbwml/openwrt_helloworld luci-app-passwall luci-app-passwall2 luci-app-openclash \
-		  chinadns-ng geoview xray-core simple-obfs luci-app-daed daed
+		  chinadns-ng geoview xray-core simple-obfs luci-app-daed daed Kcptun
 
 clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
 		shadow-tls shadowsocksr-libev trojan dns2socks dns2tcp shadowsocks-rust mosdns
