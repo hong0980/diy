@@ -484,7 +484,7 @@ clone_dir sbwml/openwrt_helloworld luci-app-passwall luci-app-passwall2 luci-app
 		  chinadns-ng geoview xray-core simple-obfs luci-app-daed daed
 
 clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
-		shadow-tls shadowsocksr-libev trojan dns2socks dns2tcp
+		shadow-tls shadowsocksr-libev trojan dns2socks dns2tcp shadowsocks-rust mosdns
 # clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
 # clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
 # clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview trojan-plus xray-core simple-obfs shadowsocks-libev
