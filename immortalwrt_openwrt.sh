@@ -371,7 +371,7 @@ set_config (){
 		luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-nikki \
 		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter luci-app-ddns-go \
 		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2 \
-		luci-app-miaplus luci-app-watchdog luci-app-fchomo
+		luci-app-miaplus luci-app-watchdog luci-app-fchomo luci-app-daed
 
 	add_package autocore opkg luci-app-arpbind luci-app-ssr-plus luci-app-passwall \
 				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard luci-app-tinynote-js \
@@ -508,11 +508,6 @@ for f in package/A/luci-app-openclash/root/etc/init.d/openclash \
 	feeds/luci/applications/luci-app-openclash/root/etc/init.d/openclash; do
 	[ -f "$f" ] && sed -i "/procd_open_instance \"openclash\"/i\\   command -v yq &>/dev/null && yq -i '.' \"\$CONFIG_FILE\"" "$f"
 done
-# for f in package/A/luci-app-ssr-plus/Makefile \
-# 		feeds/helloworld/luci-app-ssr-plus/Makefile \
-# 		feeds/luci/applications/luci-app-ssr-plus/Makefile; do
-# 	[ -f "$f" ] && sed -i "/kcptun-client/d" "$f"
-# done
 
 # [ -f "feeds/routing/mesh11sd/Makefile" ] && \
 # 	sed -i \
