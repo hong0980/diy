@@ -371,9 +371,9 @@ set_config (){
 		luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-nikki \
 		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter luci-app-ddns-go \
 		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2 \
-		luci-app-miaplus luci-app-watchdog luci-app-fchomo
+		luci-app-miaplus luci-app-watchdog luci-app-fchomo luci-app-clashoo
 
-	add_package autocore opkg luci-app-arpbind luci-app-ssr-plus luci-app-passwall \
+	add_package autocore luci-app-arpbind luci-app-ssr-plus luci-app-passwall \
 				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard luci-app-tinynote-js \
 				default-settings-chn luci-app-package-manager luci-app-filebrowser #luci-app-ddnsto
 }
@@ -432,6 +432,7 @@ set_config
 # clone_dir coolsnowwolf/packages rust
 
 clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
+clone_dir kenzok8/openwrt-clashoo luci-app-clashoo clashoo
 # clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 
 clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi libtorrent-rasterbar \
