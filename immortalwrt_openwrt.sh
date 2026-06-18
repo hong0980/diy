@@ -38,7 +38,11 @@ status() {
 }
 
 find_first_dir() {
-	find $1 -maxdepth 5 -type d -name "$2" -print -quit 2>/dev/null
+	find $1 -maxdepth 5 -type d -name "$2" 2>/dev/null \
+		| awk -F/ '{print NF, $0}' \
+		| sort -n \
+		| head -1 \
+		| cut -d' ' -f2-
 }
 
 create_directory() {
@@ -432,7 +436,7 @@ set_config
 # clone_dir coolsnowwolf/packages rust
 
 clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
-clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
+clone_dir kenzok8/openwrt-clashoo luci-app-clashoo clashoo
 # clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 
 clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi libtorrent-rasterbar \
