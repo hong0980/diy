@@ -432,7 +432,7 @@ set_config
 # clone_dir coolsnowwolf/packages rust
 
 clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo
-clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
+# clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
 # clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 
 clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi libtorrent-rasterbar \
