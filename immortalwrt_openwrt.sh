@@ -431,7 +431,7 @@ set_config
 # grep -qv "PKG_VERSION:=1.93.0" feeds/packages/lang/rust/Makefile && \
 # clone_dir coolsnowwolf/packages rust
 
-clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
+clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo
 clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
 # clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 
@@ -482,9 +482,9 @@ fi
 del_package "luci-app-filetransfer luci-app-turboacc"
 # clone_dir vernesong/OpenClash luci-app-openclash
 clone_dir sbwml/openwrt_helloworld luci-app-passwall luci-app-passwall2 luci-app-openclash \
-		  chinadns-ng geoview xray-core simple-obfs luci-app-daed daed kcptun
+		  chinadns-ng geoview xray-core simple-obfs kcptun
 
-clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
+clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus mihomo \
 		shadow-tls shadowsocksr-libev trojan dns2socks dns2tcp shadowsocks-rust mosdns
 # clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
 # clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
@@ -505,9 +505,11 @@ sed -i "/ONLY/ s/^/#/g" feeds/packages/lang/python/python-mako/Makefile
 profile='package/base-files/files/etc/profile.d/apk-cheatsheet.sh'
 [ -e "$profile" ] && \
 grep -Fq '[ -x /usr/bin/apk ]' "$profile" && sed -i 's|\[ -x /usr/bin/apk \]|false|' "$profile"
-for f in package/A/luci-app-openclash/root/etc/init.d/openclash \
-	feeds/luci/applications/luci-app-openclash/root/etc/init.d/openclash; do
-	[ -f "$f" ] && sed -i "/procd_open_instance \"openclash\"/i\\   command -v yq &>/dev/null && yq -i '.' \"\$CONFIG_FILE\"" "$f"
+
+for d in package/A/luci-app-openclash  feeds/luci/applications/luci-app-openclash; do
+	[ -d "$d" ] || continue
+	[ -f "$d/root/etc/init.d/openclash" ] && sed -i "/procd_open_instance \"openclash\"/i\\   command -v yq &>/dev/null && yq -i '.' \"\$CONFIG_FILE\"" "$d/root/etc/init.d/openclash"
+	[ -f "$d/root/etc/uci-defaults/luci-openclash" ] && sed -Ei "/exit 0/i [ -x /usr/bin/mihomo ] && ln -sf /usr/bin/mihomo /etc/openclash/core/clash_meta" "$d/root/etc/uci-defaults/luci-openclash"
 done
 
 # [ -f "feeds/routing/mesh11sd/Makefile" ] && \
