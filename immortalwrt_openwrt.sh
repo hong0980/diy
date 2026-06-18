@@ -515,6 +515,9 @@ done
 # 	    -e 's/PKG_VERSION:=.*/PKG_VERSION:=5.1.3/' \
 # 	    -e 's/PKG_HASH:=.*/PKG_HASH:=skip/' \
 # 	    feeds/routing/mesh11sd/Makefile
+
+[ -f "package/A/clashoo/Makefile" ] && sed -i "s/\$(GO_ARCH_DEPENDS) //" package/A/clashoo/Makefile
+
 sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
 sed -i 's|/bin/login|/bin/login -f root|' feeds/packages/utils/ttyd/files/ttyd.config
 REPLACEMENT=$([[ $REPO == openwrt ]] && echo "" || echo "${REPO}/")
