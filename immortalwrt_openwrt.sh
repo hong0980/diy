@@ -518,7 +518,18 @@ done
 # 	    -e 's/PKG_HASH:=.*/PKG_HASH:=skip/' \
 # 	    feeds/routing/mesh11sd/Makefile
 
-[ -f "package/A/clashoo/Makefile" ] && sed -i "s/\$(GO_ARCH_DEPENDS) //" package/A/clashoo/Makefile
+[ -f "package/A/clashoo/Makefile" ] && \
+	sed -i \
+	  -e '/^GO_PKG.*/d' \
+	  -e '/^PKG_SOURCE.*/d' \
+	  -e '/^PKG_HASH:=/d' \
+	  -e '/^PKG_BUILD_.*/d' \
+	  -e 's/\$(GO_ARCH_DEPENDS) //' \
+	  -e '\#include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk#d' \
+	  -e '/GoPackage\/Package\/Install\/Bin/d' \
+	  -e '/PROVIDES:=mihomo clash-meta/d' \
+	  -e '/eval $(call GoBinPackage,clashoo)/d' \
+	  package/A/clashoo/Makefile
 
 sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
 sed -i 's|/bin/login|/bin/login -f root|' feeds/packages/utils/ttyd/files/ttyd.config
