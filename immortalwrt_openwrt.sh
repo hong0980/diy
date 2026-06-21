@@ -513,7 +513,18 @@ for d in package/A/luci-app-openclash  feeds/luci/applications/luci-app-openclas
 done
 
 [ -f "package/A/clashoo/Makefile" ] && \
-sed -ri '/(PROVIDES|GO_PKG|PKG_SOURCE|PKG_HASH|PKG_BUILD_|GoPackage|GoBinPackage|golang)/d s/\$\(GO_ARCH_DEPENDS\) //' package/A/clashoo/Makefile
+sed -i \
+-e '/golang/d' \
+-e '/PROVIDES/d' \
+-e '/logic_test/d' \
+-e '/GO_PKG/d' \
+-e '/GoPackage/d' \
+-e '/PKG_HASH/d' \
+-e '/GoBinPackage/d' \
+-e '/PKG_SOURCE/d' \
+-e '/PKG_BUILD_/d' \
+-e 's/\$(GO_ARCH_DEPENDS) //' \
+package/A/clashoo/Makefile
 # [ -f "feeds/routing/mesh11sd/Makefile" ] && \
 # 	sed -i \
 # 	    -e 's/PKG_VERSION:=.*/PKG_VERSION:=5.1.3/' \
