@@ -371,7 +371,7 @@ set_config (){
 		luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-nikki \
 		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter luci-app-ddns-go \
 		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2 \
-		luci-app-miaplus luci-app-watchdog luci-app-fchomo #luci-app-clashoo
+		luci-app-miaplus luci-app-watchdog luci-app-fchomo luci-app-clashoo
 
 	add_package autocore luci-app-arpbind luci-app-ssr-plus luci-app-passwall \
 				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard luci-app-tinynote-js \
@@ -511,6 +511,21 @@ for d in package/A/luci-app-openclash  feeds/luci/applications/luci-app-openclas
 	[ -f "$d/root/etc/init.d/openclash" ] && sed -i "/procd_open_instance \"openclash\"/i\\   command -v yq &>/dev/null && yq -i '.' \"\$CONFIG_FILE\"" "$d/root/etc/init.d/openclash"
 	[ -f "$d/root/etc/uci-defaults/luci-openclash" ] && sed -Ei "/exit 0/i [ -x /usr/bin/mihomo ] && ln -sf /usr/bin/mihomo /etc/openclash/core/clash_meta" "$d/root/etc/uci-defaults/luci-openclash"
 done
+
+[ -f "package/A/clashoo/Makefile" ] && \
+sed -i \
+-e '/\/usr\/bin/d' \
+-e '/logic_test/d' \
+-e '/^GO_PKG.*/d' \
+-e '/^PKG_SOURCE.*/d' \
+-e '/^PKG_HASH:=/d' \
+-e '/^PKG_BUILD_.*/d' \
+-e 's/\$(GO_ARCH_DEPENDS) //' \
+-e '\#include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk#d' \
+-e '/GoPackage\/Package\/Install\/Bin/d' \
+-e '/PROVIDES:=mihomo clash-meta/d' \
+-e '/eval $(call GoBinPackage,clashoo)/d' \
+package/A/clashoo/Makefile
 
 # [ -f "feeds/routing/mesh11sd/Makefile" ] && \
 # 	sed -i \
