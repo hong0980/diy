@@ -513,18 +513,17 @@ for d in package/A/luci-app-openclash  feeds/luci/applications/luci-app-openclas
 done
 
 [ -f "package/A/clashoo/Makefile" ] && \
-sed -i \
--e '/\/usr\/bin/d' \
+sed \
+-e '/mihomo/d' \
 -e '/logic_test/d' \
 -e '/^GO_PKG.*/d' \
 -e '/^PKG_SOURCE.*/d' \
 -e '/^PKG_HASH:=/d' \
 -e '/^PKG_BUILD_.*/d' \
 -e 's/\$(GO_ARCH_DEPENDS) //' \
--e '\#include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk#d' \
 -e '/GoPackage\/Package\/Install\/Bin/d' \
--e '/PROVIDES:=mihomo clash-meta/d' \
 -e '/eval $(call GoBinPackage,clashoo)/d' \
+-e '\#include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk#d' \
 package/A/clashoo/Makefile
 
 # [ -f "feeds/routing/mesh11sd/Makefile" ] && \
