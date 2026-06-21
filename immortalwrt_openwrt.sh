@@ -513,7 +513,23 @@ for d in package/A/luci-app-openclash  feeds/luci/applications/luci-app-openclas
 done
 
 [ -f "package/A/clashoo/Makefile" ] && \
-sed -ri '/(PROVIDES|GO_PKG|PKG_SOURCE|PKG_HASH|PKG_BUILD_|GoPackage|GoBinPackage|golang)/d; s/\$\(GO_ARCH_DEPENDS\) //' package/A/clashoo/Makefile
+sed -i \
+-e '/PROVIDES/d' \
+-e '/logic_test/d' \
+-e '/^GO_PKG.*/d' \
+-e '/^PKG_SOURCE.*/d' \
+-e '/^PKG_HASH:=/d' \
+-e '/^PKG_BUILD_.*/d' \
+-e 's/\$(GO_ARCH_DEPENDS) //' \
+-e '/GoPackage\/Package\/Install\/Bin/d' \
+-e '/eval $(call GoBinPackage,clashoo)/d' \
+-e '\#include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk#d' \
+-e '/^define Build\/Prepare/,/^endef/{/^endef/a\
+\
+define Build/Compile\
+endef
+}' \
+package/A/clashoo/Makefile
 # [ -f "feeds/routing/mesh11sd/Makefile" ] && \
 # 	sed -i \
 # 	    -e 's/PKG_VERSION:=.*/PKG_VERSION:=5.1.3/' \
@@ -586,7 +602,7 @@ echo "UPLOAD_BIN_DIR=false" >> $GITHUB_ENV
 echo "UPLOAD_COWTRANSFER=false" >> $GITHUB_ENV
 echo "UPLOAD_WETRANSFER=false" >> $GITHUB_ENV
 echo "LINUX_VERSION_ARCH=$LINUX_VERSION-$ARCH" >> $GITHUB_ENV
-echo "PRIORITY_PKG_PATH=package/A/luci-app-clashoo" >> $GITHUB_ENV
+# echo "PRIORITY_PKG_PATH=package/A/luci-app-clashoo" >> $GITHUB_ENV
 # echo "UPLOAD_PACKAGES=false" >> $GITHUB_ENV
 # echo "UPLOAD_SYSUPGRADE=false" >> $GITHUB_ENV
 
