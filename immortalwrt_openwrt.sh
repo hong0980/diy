@@ -513,7 +513,7 @@ for d in package/A/luci-app-openclash  feeds/luci/applications/luci-app-openclas
 done
 
 [ -f "package/A/clashoo/Makefile" ] && \
-sed \
+sed -i \
 -e '/mihomo/d' \
 -e '/logic_test/d' \
 -e '/^GO_PKG.*/d' \
@@ -524,6 +524,11 @@ sed \
 -e '/GoPackage\/Package\/Install\/Bin/d' \
 -e '/eval $(call GoBinPackage,clashoo)/d' \
 -e '\#include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk#d' \
+-e '/^define Build\/Prepare/,/^endef/{/^endef/a\
+\
+define Build/Compile\
+endef
+}' \
 package/A/clashoo/Makefile
 
 # [ -f "feeds/routing/mesh11sd/Makefile" ] && \
