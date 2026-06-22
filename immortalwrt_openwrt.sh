@@ -509,7 +509,7 @@ grep -Fq '[ -x /usr/bin/apk ]' "$profile" && sed -i 's|\[ -x /usr/bin/apk \]|fal
 for d in package/A/luci-app-openclash  feeds/luci/applications/luci-app-openclash; do
 	[ -d "$d" ] || continue
 	[ -f "$d/root/etc/init.d/openclash" ] && sed -i "/procd_open_instance \"openclash\"/i\\   command -v yq &>/dev/null && yq -i '.' \"\$CONFIG_FILE\"" "$d/root/etc/init.d/openclash"
-	[ -f "$d/root/etc/uci-defaults/luci-openclash" ] && sed -Ei "/exit 0/i [ -x /usr/bin/mihomo ] && ln -sf /usr/bin/mihomo /etc/openclash/core/clash_meta" "$d/root/etc/uci-defaults/luci-openclash"
+	[ -f "$d/root/etc/uci-defaults/luci-openclash" ] && sed -Ei "/exit 0/i [ -x /usr/bin/mihomo ] && ln -sf /usr/bin/mihomo /etc/openclash/core/clash_meta\n[ -x /usr/bin/sing-box ] && [ ! -x /usr/bin/sing-box-stable ] && ln -sf /usr/bin/sing-box /usr/bin/sing-box-stable" "$d/root/etc/uci-defaults/luci-openclash"
 done
 
 [ -f "package/A/clashoo/Makefile" ] && \
