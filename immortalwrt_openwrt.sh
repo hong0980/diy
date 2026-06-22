@@ -312,7 +312,7 @@ set_config (){
 			export DEVICE_NAME="$D_NAME"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
 			# add_busybox "pkill lsof"
-			add_package "luci-app-mesh-node libustream-mbedtls luci-app-nikki luci-app-fchomo"
+			add_package "luci-app-mesh-node libustream-mbedtls luci-app-nikki luci-app-fchomo luci-app-clashoo"
 			del_package "wpad-basic-mbedtls wpad-openssl libustream-openssl libustream-wolfssl"
 			;;
 		newifi-d2)
@@ -512,24 +512,13 @@ for d in package/A/luci-app-openclash  feeds/luci/applications/luci-app-openclas
 	[ -f "$d/root/etc/uci-defaults/luci-openclash" ] && sed -Ei "/exit 0/i [ -x /usr/bin/mihomo ] && ln -sf /usr/bin/mihomo /etc/openclash/core/clash_meta\n[ -x /usr/bin/sing-box ] && [ ! -x /usr/bin/sing-box-stable ] && ln -sf /usr/bin/sing-box /usr/bin/sing-box-stable" "$d/root/etc/uci-defaults/luci-openclash"
 done
 
-[ -f "package/A/clashoo/Makefile" ] && \
-sed -i \
--e '/PROVIDES/d' \
--e '/logic_test/d' \
--e '/^GO_PKG.*/d' \
--e '/^PKG_SOURCE.*/d' \
--e '/^PKG_HASH:=/d' \
--e '/^PKG_BUILD_.*/d' \
--e 's/\$(GO_ARCH_DEPENDS) //' \
--e '/GoPackage\/Package\/Install\/Bin/d' \
--e '/eval $(call GoBinPackage,clashoo)/d' \
--e '\#include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk#d' \
--e '/^define Build\/Prepare/,/^endef/{/^endef/a\
-\
-define Build/Compile\
-endef
-}' \
-package/A/clashoo/Makefile
+[ -f "package/A/clashoo/Makefile" ] && {
+	sed -r -i '/(golang|PROVIDES|logic_test|GO_PKG|PKG_SOURCE|PKG_HASH|PKG_BUILD_|GoPackage|GoBinPackage)/d' \
+	package/A/clashoo/Makefile
+	sed -i -e 's/\$(GO_ARCH_DEPENDS) //' \
+	       -e '/BuildPackage/i\define Build/Compile\nendef' \
+	package/A/clashoo/Makefile
+}
 # [ -f "feeds/routing/mesh11sd/Makefile" ] && \
 # 	sed -i \
 # 	    -e 's/PKG_VERSION:=.*/PKG_VERSION:=5.1.3/' \
