@@ -403,7 +403,7 @@ deploy_cache() {
 			[ -d staging_dir ]; status
 			[[ $CACHE_URL =~ OpenWrt-Cache ]] && {
 				cp ../*.tzst ../output/ 2>/dev/null || true
-				echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
+				# echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
 			}
 		fi
 	else
@@ -512,13 +512,9 @@ for d in package/A/luci-app-openclash  feeds/luci/applications/luci-app-openclas
 	[ -f "$d/root/etc/uci-defaults/luci-openclash" ] && sed -Ei "/exit 0/i [ -x /usr/bin/mihomo ] && ln -sf /usr/bin/mihomo /etc/openclash/core/clash_meta\n[ -x /usr/bin/sing-box ] && [ ! -x /usr/bin/sing-box-stable ] && ln -sf /usr/bin/sing-box /usr/bin/sing-box-stable" "$d/root/etc/uci-defaults/luci-openclash"
 done
 
-[ -f "package/A/clashoo/Makefile" ] && {
-	sed -r -i '/(golang|PROVIDES|logic_test|GO_PKG|PKG_SOURCE|PKG_HASH|PKG_BUILD_|GoPackage|GoBinPackage)/d' \
-	package/A/clashoo/Makefile
-	sed -i -e 's/\$(GO_ARCH_DEPENDS) //' \
-	       -e '/BuildPackage/i\define Build/Compile\nendef' \
-	package/A/clashoo/Makefile
-}
+[ -f "package/A/clashoo/Makefile" ] && \
+sed -r -i '/(golang|PROVIDES|logic_test|GO_PKG|PKG_SOURCE|PKG_HASH|PKG_BUILD_|GoPackage|GoBinPackage|DEPENDS)/d' package/A/clashoo/Makefile
+
 # [ -f "feeds/routing/mesh11sd/Makefile" ] && \
 # 	sed -i \
 # 	    -e 's/PKG_VERSION:=.*/PKG_VERSION:=5.1.3/' \
