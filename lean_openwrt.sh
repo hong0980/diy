@@ -63,7 +63,7 @@ add_busybox() {
 	done
 }
 
-delpackage() {
+del_package() {
 	for z in $@; do
 		[[ $z =~ ^# ]] || echo "# CONFIG_PACKAGE_$z is not set" >> .config
 	done
@@ -292,7 +292,7 @@ set_config (){
 			lan_ip "192.168.5.1"
 			export DEVICE_NAME="$D_NAME"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
-			add_package "luci-app-mesh-node libustream-mbedtls"
+			add_package "luci-app-mesh-node libustream-mbedtls luci-app-nikki luci-app-fchomo luci-app-clashoo"
 			del_package "wpad-basic-mbedtls wpad-openssl libustream-openssl libustream-wolfssl"
 			;;
 		newifi-d2)
@@ -356,12 +356,12 @@ set_config (){
 		add_package automount autosamba luci-app-diskman luci-app-poweroff \
 			luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote \
 			luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils \
-			patch luci-app-qbittorrent luci-app-nikki luci-app-homeproxy luci-app-deluge \
-			luci-app-transmission luci-app-aria2
+			patch luci-app-qbittorrent luci-app-nikki luci-app-homeproxy \
+			luci-app-transmission luci-app-aria2 luci-app-fchomo luci-app-clashoo
 	add_package luci-app-filebrowser luci-app-passwall luci-app-ttyd luci-app-wizard luci-app-taskplan \
 			luci-app-ksmbd luci-app-miaplus luci-app-watchdog luci-theme-bootstrap luci-app-diskman-js \
 			luci-app-tinynote-js
-	delpackage luci-app-ddns luci-app-autoreboot luci-app-wol luci-app-vlmcsd luci-app-filetransfer
+	del_package luci-app-ddns luci-app-autoreboot luci-app-wol luci-app-vlmcsd luci-app-filetransfer
 }
 
 deploy_cache() {
@@ -380,10 +380,10 @@ deploy_cache() {
 			begin_time=$(date '+%H:%M:%S')
 			(tar -I unzstd -xf ../*.tzst || tar -xf ../*.tzst) && sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
 			[ -d staging_dir ]; status
-			[[ $CACHE_URL == *"hong0980/OpenWrt-Cache"* ]] && {
-				cp ../*.tzst ../output/
-				echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
-			}
+			# [[ $CACHE_URL == *"hong0980/OpenWrt-Cache"* ]] && {
+			# 	cp ../*.tzst ../output/
+			# 	echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
+			# }
 		fi
 	else
 		echo "CACHE_ACTIONS=true" >> $GITHUB_ENV
@@ -402,7 +402,7 @@ git_clone() {
 	echo -e "$(color cy '更新软件....')\c"
 	begin_time=$(date '+%H:%M:%S')
 	export repo_branch=$(sed -En 's/^src-git luci.*;(.*)/\1/p' feeds.conf.default)
-	sed -i 's/openwrt-23.05/openwrt-24.10/' feeds.conf.default
+	# sed -i 's/openwrt-23.05/openwrt-24.10/' feeds.conf.default
 	sed -i '/#.*helloworld/ s/^#//' feeds.conf.default
 	./scripts/feeds update -a 1>/dev/null 2>&1
 	./scripts/feeds install -a 1>/dev/null 2>&1
@@ -421,24 +421,31 @@ git_clone
 rm -rf feeds/packages/lang/golang && \
 git clone -q https://github.com/sbwml/packages_lang_golang -b 26.x feeds/packages/lang/golang
 # git diff ./ >> ../output/t.patch || true
-clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
-clone_dir immortalwrt/packages libdeflate libdht libutp libb64
-clone_dir vernesong/OpenClash luci-app-openclash
+
+# clone_dir immortalwrt/packages libdeflate libdht libutp libb64
+clone_dir dev vernesong/OpenClash luci-app-openclash
 clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
 clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
-clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview trojan-plus
-# clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb \
-# 		luci-app-advancedplus luci-app-arpbind luci-app-ddns-go luci-app-gecoosac \
-# 		luci-app-istorex luci-app-pushbot luci-app-quickstart luci-app-store \
-# 		luci-app-syncdial luci-lib-taskd luci-lib-xterm taskd
+# clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview trojan-plus
+clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo
+clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
+
 clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
 		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
 		luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
 		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
-		python-pyasn1 python-pyxdg python-rencode python-setproctitle python-twisted \
-		sunpanel transmission qBittorrent-static luci-app-diskman-js luci-app-tinynote-js \
-		luci-app-mesh-node
+		python-pyxdg python-rencode python-setproctitle python-twisted \
+		sunpanel qBittorrent-static luci-app-diskman-js luci-app-tinynote-js \
+		luci-app-mesh-node luci-app-nikki
+
+[ -f "package/A/clashoo/Makefile" ] && {
+	sed -r -i '/(golang|PROVIDES|logic_test|GO_PKG|PKG_SOURCE|PKG_HASH|PKG_BUILD_|GoPackage|GoBinPackage)/d' \
+	package/A/clashoo/Makefile
+	sed -i -e 's/\$(GO_ARCH_DEPENDS) //' \
+	       -e '/BuildPackage/i\define Build/Compile\nendef' \
+	package/A/clashoo/Makefile
+}
 
 REPO_BRANCH=$(sed -En 's/^src-git luci.*;(.*)/\1/p' feeds.conf.default)
 REPO_BRANCH=${REPO_BRANCH:-18.06}
