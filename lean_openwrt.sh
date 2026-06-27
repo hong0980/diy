@@ -292,7 +292,7 @@ set_config (){
 			lan_ip "192.168.5.1"
 			export DEVICE_NAME="$D_NAME"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
-			add_package "luci-app-mesh-node libustream-mbedtls luci-app-nikki luci-app-fchomo luci-app-clashoo"
+			add_package "luci-app-mesh-node libustream-mbedtls luci-app-nikki luci-app-clashoo"
 			del_package "wpad-basic-mbedtls wpad-openssl libustream-openssl libustream-wolfssl"
 			;;
 		newifi-d2)
