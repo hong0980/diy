@@ -357,7 +357,7 @@ set_config (){
 			luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote \
 			luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils \
 			patch luci-app-qbittorrent luci-app-nikki luci-app-homeproxy \
-			luci-app-transmission luci-app-aria2 luci-app-fchomo luci-app-clashoo
+			luci-app-transmission luci-app-aria2 luci-app-clashoo
 	add_package luci-app-filebrowser luci-app-passwall luci-app-ttyd luci-app-wizard luci-app-taskplan \
 			luci-app-ksmbd luci-app-miaplus luci-app-watchdog luci-theme-bootstrap luci-app-diskman-js \
 			luci-app-tinynote-js
