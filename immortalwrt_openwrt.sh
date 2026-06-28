@@ -516,6 +516,7 @@ done
 	sed -r -i '/(golang|PROVIDES|logic_test|GO_PKG|PKG_SOURCE|PKG_HASH|PKG_BUILD_|GoPackage|GoBinPackage)/d' \
 	package/A/clashoo/Makefile
 	sed -i -e 's/\$(GO_ARCH_DEPENDS) //' \
+	       -e '/BuildPackage/i\define Build/Compile\nendef' \
 	package/A/clashoo/Makefile
 }
 
