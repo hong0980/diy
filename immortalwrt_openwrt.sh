@@ -480,9 +480,9 @@ fi
 
 # [[ $REPO_BRANCH =~ master|25 ]] || clone_dir openwrt/packages docker dockerd containerd docker-compose runc #nlbwmon
 del_package "luci-app-filetransfer luci-app-turboacc"
-# clone_dir vernesong/OpenClash luci-app-openclash
 clone_dir sbwml/openwrt_helloworld luci-app-passwall luci-app-passwall2 luci-app-openclash \
 		  chinadns-ng geoview xray-core simple-obfs kcptun
+clone_dir dev vernesong/OpenClash luci-app-openclash
 
 clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus mihomo \
 		shadow-tls shadowsocksr-libev trojan dns2socks dns2tcp shadowsocks-rust mosdns
@@ -516,7 +516,6 @@ done
 	sed -r -i '/(golang|PROVIDES|logic_test|GO_PKG|PKG_SOURCE|PKG_HASH|PKG_BUILD_|GoPackage|GoBinPackage)/d' \
 	package/A/clashoo/Makefile
 	sed -i -e 's/\$(GO_ARCH_DEPENDS) //' \
-	       -e '/BuildPackage/i\define Build/Compile\nendef' \
 	package/A/clashoo/Makefile
 }
 
