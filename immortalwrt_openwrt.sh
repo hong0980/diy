@@ -431,7 +431,7 @@ set_config
 # grep -qv "PKG_VERSION:=1.93.0" feeds/packages/lang/rust/Makefile && \
 # clone_dir coolsnowwolf/packages rust
 
-clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo
+clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
 clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
 # clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 
@@ -481,7 +481,7 @@ fi
 # [[ $REPO_BRANCH =~ master|25 ]] || clone_dir openwrt/packages docker dockerd containerd docker-compose runc #nlbwmon
 del_package "luci-app-filetransfer luci-app-turboacc"
 clone_dir sbwml/openwrt_helloworld luci-app-passwall luci-app-passwall2 luci-app-openclash \
-		  chinadns-ng geoview xray-core simple-obfs kcptun shadowsocks-rust mihomo
+		  chinadns-ng geoview xray-core simple-obfs kcptun shadowsocks-rust
 clone_dir dev vernesong/OpenClash luci-app-openclash
 
 clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
