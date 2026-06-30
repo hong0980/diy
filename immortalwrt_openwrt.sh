@@ -481,11 +481,11 @@ fi
 # [[ $REPO_BRANCH =~ master|25 ]] || clone_dir openwrt/packages docker dockerd containerd docker-compose runc #nlbwmon
 del_package "luci-app-filetransfer luci-app-turboacc"
 clone_dir sbwml/openwrt_helloworld luci-app-passwall luci-app-passwall2 luci-app-openclash \
-		  chinadns-ng geoview xray-core simple-obfs kcptun
+		  chinadns-ng geoview xray-core simple-obfs kcptun shadowsocks-rust mihomo
 clone_dir dev vernesong/OpenClash luci-app-openclash
 
-clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus mihomo \
-		shadow-tls shadowsocksr-libev trojan dns2socks dns2tcp shadowsocks-rust mosdns
+clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
+		shadow-tls shadowsocksr-libev trojan dns2socks dns2tcp mosdns
 # clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
 # clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
 # clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview trojan-plus xray-core simple-obfs shadowsocks-libev
@@ -513,10 +513,9 @@ for d in package/A/luci-app-openclash  feeds/luci/applications/luci-app-openclas
 done
 
 [ -f "package/A/clashoo/Makefile" ] && {
-	sed -r -i '/(golang|PROVIDES|logic_test|GO_PKG|PKG_SOURCE|PKG_HASH|PKG_BUILD_|GoPackage|GoBinPackage)/d' \
+	sed -r -i '/(golang|PROVIDES|logic_test|GO_PKG|PKG_SOURCE|PKG_HASH|PKG_BUILD_|GoPackage|GoBinPackage|DEPENDS)/d' \
 	package/A/clashoo/Makefile
-	sed -i -e 's/\$(GO_ARCH_DEPENDS) //' \
-	       -e '/BuildPackage/i\define Build/Compile\nendef' \
+	sed -i '/BuildPackage/i\define Build/Compile\nendef' \
 	package/A/clashoo/Makefile
 }
 
