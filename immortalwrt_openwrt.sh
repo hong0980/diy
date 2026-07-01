@@ -433,7 +433,6 @@ set_config
 
 clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
 clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
-clone_dir zxlhhyccc/helloworld2 luci-app-ssr-plus2
 # clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 
 clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi libtorrent-rasterbar \
@@ -487,6 +486,8 @@ clone_dir dev vernesong/OpenClash luci-app-openclash
 
 clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
 		shadow-tls shadowsocksr-libev trojan dns2socks dns2tcp mosdns
+
+clone_dir zxlhhyccc/helloworld2 luci-app-ssr-plus2 trojan hysteria2 shadowsocks-libev
 # clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
 # clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
 # clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview trojan-plus xray-core simple-obfs shadowsocks-libev
