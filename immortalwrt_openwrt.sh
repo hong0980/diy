@@ -375,7 +375,7 @@ set_config (){
 
 	add_package autocore luci-app-arpbind luci-app-ssr-plus luci-app-passwall \
 				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard luci-app-tinynote-js \
-				default-settings-chn luci-app-package-manager luci-app-filebrowser #luci-app-ddnsto
+				default-settings-chn luci-app-package-manager luci-app-filebrowser luci-app-ssr-plus2 #luci-app-ddnsto
 }
 
 deploy_cache() {
@@ -433,6 +433,7 @@ set_config
 
 clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
 clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
+clone_dir zxlhhyccc/helloworld2 luci-app-ssr-plus2
 # clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 
 clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi libtorrent-rasterbar \
@@ -515,8 +516,7 @@ done
 [ -f "package/A/clashoo/Makefile" ] && {
 	sed -r -i '/(golang|PROVIDES|logic_test|GO_PKG|PKG_SOURCE|PKG_HASH|PKG_BUILD_|GoPackage|GoBinPackage|DEPENDS)/d' \
 	package/A/clashoo/Makefile
-	sed -i '/BuildPackage/i\define Build/Compile\nendef' \
-	package/A/clashoo/Makefile
+	sed -i '/BuildPackage/i\define Build/Compile\nendef' package/A/clashoo/Makefile
 }
 
 # [ -f "feeds/routing/mesh11sd/Makefile" ] && \
