@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 rm -rf openwrt
 qb_version=$(curl -sL https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K(.*?)(?=/)' | sort -Vr | uniq | awk 'NR==1')
-# for page in 1 2 3 4; do
-# 	curl -sL "$GITHUB_API_URL/repos/hong0980/Actions-OpenWrt/releases?page=$page"
-# done | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' > xa
-op_cache=$(curl -sL https://api.github.com/repos/hong0980/OpenWrt-Cache/releases | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*')
+
+op_cache=$(
+    for page in 1 2 3 4; do
+        curl -sL "$GITHUB_API_URL/repos/hong0980/Actions-OpenWrt/releases?page=$page"
+    done | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*'
+
+    curl -sL https://api.github.com/repos/hong0980/OpenWrt-Cache/releases \
+        | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*'
+)
 
 color() {
 	case $1 in
