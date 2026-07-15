@@ -365,12 +365,14 @@ set_config (){
 
 deploy_cache() {
 	TOOLS_HASH=$(git log --pretty=tformat:"%h" -n1 tools toolchain)
+	time=$(TZ=UTC-8 date +%m-%d)
+	echo "CACHE_NAME=$SOURCE_NAME-$repo_branch-$ARCH-$time-$TOOLS_HASH" >> $GITHUB_ENV
 
-	local CACHE_URL; CACHE_URL=$(grep "$SOURCE_NAME" <<< "$op_cache" | grep "$ARCH" | grep "$TOOLS_HASH")
+	local CACHE_URL; CACHE_URL=$(grep -P "^(?=.*$REPO)(?=.*$ARCH)(?=.*$TOOLS_HASH)" <<< "$op_cache")
 	if [ -n "$CACHE_URL" ]; then
 		echo -e "$(color cy '下载tz-cache')\c"
 		begin_time=$(date '+%H:%M:%S')
-		wget -qc -t=3 -P ../ "$CACHE_URL"
+		wget -qc -t 3 -P ../ "$CACHE_URL"
 		status
 
 		if ls ../*"$TOOLS_HASH"* >/dev/null 2>&1; then
@@ -378,14 +380,8 @@ deploy_cache() {
 			begin_time=$(date '+%H:%M:%S')
 			(tar -I unzstd -xf ../*"$TOOLS_HASH"* || tar -xf ../*"$TOOLS_HASH"*) && sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
 			[ -d staging_dir ]; status
-			# [[ $CACHE_URL == *"hong0980/OpenWrt-Cache"* ]] && {
-			# 	cp ../*.tzst ../output/
-			# 	echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
-			# }
 		fi
 	else
-		time=$(TZ=UTC-8 date +%m-%d)
-		echo "CACHE_NAME=$SOURCE_NAME-$repo_branch-$ARCH-$time-$TOOLS_HASH" >> $GITHUB_ENV
 		echo "CACHE_ACTIONS=true" >> $GITHUB_ENV
 	fi
 }
