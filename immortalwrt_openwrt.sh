@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
+# irm https://x.ai/cli/install.ps1 | iex
 rm -rf openwrt
 qb_version=$(curl -sL https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K(.*?)(?=/)' | sort -Vr | uniq | awk 'NR==1')
-for page in 1 2 3 4; do
-	curl -sL "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases?page=$page"
-done | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' > xa
-curl -sL https://api.github.com/repos/hong0980/OpenWrt-Cache/releases | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' >>xa
+# for page in 1 2 3 4; do
+# 	curl -sL "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/releases?page=$page"
+# done | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' > xa
+op_cache=$(curl -sL https://api.github.com/repos/hong0980/OpenWrt-Cache/releases | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*')
 # curl -s https://api.github.com/repos/kiddin9/kwrt-packages/contents/ | jq -r '.[] | select(.type == "dir" and (.name | startswith(".") | not)) | .name' > kiddin9_packages
 
 color() {
@@ -147,17 +148,22 @@ clone_dir() {
 	fi
 	[[ $repo_url =~ ^https?:// ]] || repo_url="https://github.com/$repo_url"
 
-	git clone -q $branch --depth 1 "$repo_url" $temp_dir 2>/dev/null || {
-		_printf "$(color cr 拉取) $repo_url [ $(color cr ✕) ]"
-		return 1
+	local depth_arg="--depth 1"
+	[[ $repo_url =~ nikkinikki-org ]] && depth_arg=""
+
+	git clone -q $branch $depth_arg "$repo_url" $temp_dir 2>/dev/null || {
+	    _printf "$(color cr 拉取) $repo_url [ $(color cr ✕) ]"
+	    return 1
 	}
+
+	[[ $repo_url =~ nikkinikki-org ]] && (cd "$temp_dir" && git reset --hard cd3a9ec)
 
 	[[ $REPO_BRANCH =~ master|23|24|25 ]] || {
 		[[ $repo_url =~ hong0980/diy ]] && set -- "$@" luci-app-wizard
 		# [[ $repo_url =~ coolsnowwolf/packages ]] && set -- "$@" "bash" \
 		# 		"btrfs-progs" "gawk" "jq" "nginx-util" "pciutils" "curl"
 	}
-	[[ $repo_url =~ sbwml && $REPO =~ openwrt ]] && set -- "$@" "dns2tcp" \
+	[[ $repo_url =~ sbwml && $REPO =~ openwrt ]] && set -- "$@" \
 		"ipt2socks" "microsocks" "naiveproxy" "pdnsd" "redsocks2" "tcping" "tuic-client" \
 		"v2ray-core" "v2ray-geodata" "v2ray-plugin" "xray-plugin" "hysteria"
 
@@ -307,7 +313,7 @@ set_config (){
 			export DEVICE_NAME="$D_NAME"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
 			# add_busybox "pkill lsof"
-			add_package "luci-app-mesh-node libustream-mbedtls"
+			add_package "luci-app-mesh-node libustream-mbedtls luci-app-nikki luci-app-fchomo luci-app-clashoo luci-app-mesh11sd"
 			del_package "wpad-basic-mbedtls wpad-openssl libustream-openssl libustream-wolfssl"
 			;;
 		newifi-d2)
@@ -366,9 +372,9 @@ set_config (){
 		luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-nikki \
 		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter luci-app-ddns-go \
 		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2 \
-		luci-app-miaplus luci-app-watchdog luci-app-fchomo
+		luci-app-miaplus luci-app-watchdog luci-app-fchomo luci-app-clashoo
 
-	add_package autocore opkg luci-app-arpbind luci-app-ssr-plus luci-app-passwall \
+	add_package autocore luci-app-arpbind luci-app-ssr-plus luci-app-passwall \
 				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard luci-app-tinynote-js \
 				default-settings-chn luci-app-package-manager luci-app-filebrowser #luci-app-ddnsto
 }
@@ -379,26 +385,29 @@ deploy_cache() {
 	# 	openwrt-master) TOOLS_HASH=3969335815 ;;
 	# 	immortalwrt-master) TOOLS_HASH=35bceb3d00 ;;
 	# esac
-	CACHE_NAME="$REPO-${REPO_BRANCH#*-}-$TOOLS_HASH-$ARCH"
-	echo "CACHE_NAME=$CACHE_NAME" >> $GITHUB_ENV
-	if grep -q "$CACHE_NAME" ../xa 2>/dev/null; then
+
+	local CACHE_URL; CACHE_URL=$(grep "$REPO" <<< "$op_cache" | grep "$ARCH" | grep "$TOOLS_HASH")
+	if [ -n "$CACHE_URL" ]; then
 		echo -e "$(color cy '下载tz-cache')\c"
 		begin_time=$(date '+%H:%M:%S')
-		CACHE_URL=$(grep -m1 "$CACHE_NAME" ../xa | sed -n '/\S/p')
 		wget -qc -t=3 -P ../ "$CACHE_URL"
 		status
 
-		if ls ../*"$CACHE_NAME"* >/dev/null 2>&1; then
+		if ls ../*"$TOOLS_HASH"* >/dev/null 2>&1; then
 			echo -e "$(color cy '部署tz-cache')\c"
 			begin_time=$(date '+%H:%M:%S')
-			(tar -I unzstd -xf ../*.tzst || tar -xf ../*.tzst) && sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
+
+			tar -I unzstd -xf ../*"$TOOLS_HASH"* || tar --zstd -xf ../*"$TOOLS_HASH"* || tar -xf ../*"$TOOLS_HASH"*
+			sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
 			[ -d staging_dir ]; status
-			[[ $CACHE_URL =~ OpenWrt-Cache ]] && {
-				cp ../*.tzst ../output/
-				echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
-			}
+			# [[ $CACHE_URL =~ OpenWrt-Cache ]] && {
+			# 	cp ../*.tzst ../output/ 2>/dev/null || true
+			# 	echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
+			# }
 		fi
 	else
+		time=$(TZ=UTC-8 date +%m-%d)
+		echo "CACHE_NAME=$REPO-${REPO_BRANCH#*-}-$ARCH-$time-$TOOLS_HASH" >> $GITHUB_ENV
 		echo "CACHE_ACTIONS=true" >> $GITHUB_ENV
 	fi
 }
@@ -420,21 +429,21 @@ begin_time=$(date '+%H:%M:%S')
 status
 create_directory "package/A"
 set_config
-grep -qv "PKG_VERSION:=1.93.0" feeds/packages/lang/rust/Makefile && \
-clone_dir coolsnowwolf/packages rust
+# grep -qv "PKG_VERSION:=1.93.0" feeds/packages/lang/rust/Makefile && \
+# clone_dir coolsnowwolf/packages rust
 
-# clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
-clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
+clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
+clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
+# clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 
-clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
-		shadow-tls shadowsocksr-libev trojan dns2socks
-clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi mosdns libtorrent-rasterbar \
+clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi libtorrent-rasterbar \
 		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
 		luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
 		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
 		python-pyasn1 python-pyxdg python-rencode python-setproctitle python-twisted luci-app-mesh11sd \
-		sunpanel transmission qBittorrent-static luci-app-diskman-js luci-app-tinynote-js luci-app-mesh-node
+		transmission qBittorrent-static luci-app-diskman-js luci-app-tinynote-js \
+		luci-app-mesh-node luci-app-nikki
 
 if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
@@ -442,6 +451,7 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 		create_directory "package/emortal"
 		git clone -q https://github.com/immortalwrt/homeproxy package/A/luci-app-homeproxy
 		[[ $REPO_BRANCH =~ master|24|25 ]] || ucode=ucode
+		clone_dir immortalwrt/packages transmission-web-control
 		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal r8152 $ucode
 	else
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
@@ -471,12 +481,16 @@ fi
 
 # [[ $REPO_BRANCH =~ master|25 ]] || clone_dir openwrt/packages docker dockerd containerd docker-compose runc #nlbwmon
 del_package "luci-app-filetransfer luci-app-turboacc"
-clone_dir sbwml/openwrt_helloworld shadowsocks-rust
+clone_dir sbwml/openwrt_helloworld luci-app-passwall luci-app-passwall2 luci-app-openclash \
+		  chinadns-ng geoview xray-core simple-obfs kcptun shadowsocks-rust
 clone_dir dev vernesong/OpenClash luci-app-openclash
-clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
-clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
-clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview trojan-plus sing-box xray-core simple-obfs shadowsocks-libev
 
+clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
+		shadow-tls shadowsocksr-libev trojan dns2socks dns2tcp mosdns
+
+# clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
+# clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
+clone_dir Openwrt-Passwall/openwrt-passwall-packages geoview
 # clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb \
 # 		luci-app-advancedplus luci-app-arpbind luci-app-ddns-go luci-app-gecoosac \
 # 		luci-app-istorex luci-app-pushbot luci-app-quickstart luci-app-store \
@@ -493,11 +507,25 @@ profile='package/base-files/files/etc/profile.d/apk-cheatsheet.sh'
 [ -e "$profile" ] && \
 grep -Fq '[ -x /usr/bin/apk ]' "$profile" && sed -i 's|\[ -x /usr/bin/apk \]|false|' "$profile"
 
+for d in package/A/luci-app-openclash  feeds/luci/applications/luci-app-openclash; do
+	[ -d "$d" ] || continue
+	[ -f "$d/root/etc/init.d/openclash" ] && sed -i "/procd_open_instance \"openclash\"/i\\   command -v yq &>/dev/null && yq -i '.' \"\$CONFIG_FILE\"" "$d/root/etc/init.d/openclash"
+	[ -f "$d/root/etc/uci-defaults/luci-openclash" ] && sed -Ei "/exit 0/i [ -x /usr/bin/mihomo ] && ln -sf /usr/bin/mihomo /etc/openclash/core/clash_meta\n[ -x /usr/bin/sing-box ] && [ ! -x /usr/bin/sing-box-stable ] && ln -sf /usr/bin/sing-box /usr/bin/sing-box-stable" "$d/root/etc/uci-defaults/luci-openclash"
+done
+
+[ -f "package/A/clashoo/Makefile" ] && {
+	sed -r -i '/(golang|PROVIDES|logic_test|GO_PKG|PKG_SOURCE|PKG_HASH|PKG_BUILD_|GoPackage|GoBinPackage|DEPENDS)/d' \
+	package/A/clashoo/Makefile
+	sed -i '/BuildPackage/i\define Build/Compile\nendef' package/A/clashoo/Makefile
+}
+
 # [ -f "feeds/routing/mesh11sd/Makefile" ] && \
 # 	sed -i \
 # 	    -e 's/PKG_VERSION:=.*/PKG_VERSION:=5.1.3/' \
 # 	    -e 's/PKG_HASH:=.*/PKG_HASH:=skip/' \
 # 	    feeds/routing/mesh11sd/Makefile
+# /etc/init.d/rpcd restart
+
 sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
 sed -i 's|/bin/login|/bin/login -f root|' feeds/packages/utils/ttyd/files/ttyd.config
 REPLACEMENT=$([[ $REPO == openwrt ]] && echo "" || echo "${REPO}/")
@@ -563,6 +591,7 @@ echo "UPLOAD_BIN_DIR=false" >> $GITHUB_ENV
 echo "UPLOAD_COWTRANSFER=false" >> $GITHUB_ENV
 echo "UPLOAD_WETRANSFER=false" >> $GITHUB_ENV
 echo "LINUX_VERSION_ARCH=$LINUX_VERSION-$ARCH" >> $GITHUB_ENV
+# echo "PRIORITY_PKG_PATH=package/A/luci-app-clashoo" >> $GITHUB_ENV
 # echo "UPLOAD_PACKAGES=false" >> $GITHUB_ENV
 # echo "UPLOAD_SYSUPGRADE=false" >> $GITHUB_ENV
 

@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 rm -rf openwrt
 qb_version=$(curl -sL https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K(.*?)(?=/)' | sort -Vr | uniq | awk 'NR==1')
-for page in 1 2 3 4; do
-	curl -sL "$GITHUB_API_URL/repos/hong0980/Actions-OpenWrt/releases?page=$page"
-done | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' > xa
-curl -sL https://api.github.com/repos/hong0980/OpenWrt-Cache/releases | \
-	grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' >> xa
+# for page in 1 2 3 4; do
+# 	curl -sL "$GITHUB_API_URL/repos/hong0980/Actions-OpenWrt/releases?page=$page"
+# done | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*' > xa
+op_cache=$(curl -sL https://api.github.com/repos/hong0980/OpenWrt-Cache/releases | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*')
 
 color() {
 	case $1 in
@@ -63,7 +62,7 @@ add_busybox() {
 	done
 }
 
-delpackage() {
+del_package() {
 	for z in $@; do
 		[[ $z =~ ^# ]] || echo "# CONFIG_PACKAGE_$z is not set" >> .config
 	done
@@ -292,7 +291,8 @@ set_config (){
 			lan_ip "192.168.5.1"
 			export DEVICE_NAME="$D_NAME"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
-			add_package "luci-app-easymesh"
+			add_package "luci-app-mesh-node libustream-mbedtls luci-app-nikki luci-app-clashoo"
+			del_package "wpad-basic-mbedtls wpad-openssl libustream-openssl libustream-wolfssl"
 			;;
 		newifi-d2)
 			cat >>.config<<-EOF
@@ -355,35 +355,37 @@ set_config (){
 		add_package automount autosamba luci-app-diskman luci-app-poweroff \
 			luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote \
 			luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils \
-			patch luci-app-qbittorrent luci-app-nikki luci-app-homeproxy luci-app-deluge luci-app-transmission luci-app-aria2
+			patch luci-app-qbittorrent luci-app-nikki luci-app-homeproxy \
+			luci-app-transmission luci-app-aria2 luci-app-clashoo
 	add_package luci-app-filebrowser luci-app-passwall luci-app-ttyd luci-app-wizard luci-app-taskplan \
 			luci-app-ksmbd luci-app-miaplus luci-app-watchdog luci-theme-bootstrap luci-app-diskman-js \
 			luci-app-tinynote-js
-	delpackage luci-app-ddns luci-app-autoreboot luci-app-wol luci-app-vlmcsd luci-app-filetransfer
+	del_package luci-app-ddns luci-app-autoreboot luci-app-wol luci-app-vlmcsd luci-app-filetransfer
 }
 
 deploy_cache() {
 	TOOLS_HASH=$(git log --pretty=tformat:"%h" -n1 tools toolchain)
-	export CACHE_NAME="$SOURCE_NAME-$repo_branch-$TOOLS_HASH-$ARCH"
-	echo "CACHE_NAME=$CACHE_NAME" >> $GITHUB_ENV
-	if grep -q "$CACHE_NAME" ../xa 2>/dev/null; then
+
+	local CACHE_URL; CACHE_URL=$(grep "$SOURCE_NAME" <<< "$op_cache" | grep "$ARCH" | grep "$TOOLS_HASH")
+	if [ -n "$CACHE_URL" ]; then
 		echo -e "$(color cy '下载tz-cache')\c"
 		begin_time=$(date '+%H:%M:%S')
-		CACHE_URL=$(grep -m1 "$CACHE_NAME" ../xa | sed -n '/\S/p')
 		wget -qc -t=3 -P ../ "$CACHE_URL"
 		status
 
-		if ls ../*"$CACHE_NAME"* >/dev/null 2>&1; then
+		if ls ../*"$TOOLS_HASH"* >/dev/null 2>&1; then
 			echo -e "$(color cy '部署tz-cache')\c"
 			begin_time=$(date '+%H:%M:%S')
-			(tar -I unzstd -xf ../*.tzst || tar -xf ../*.tzst) && sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
+			(tar -I unzstd -xf ../*"$TOOLS_HASH"* || tar -xf ../*"$TOOLS_HASH"*) && sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
 			[ -d staging_dir ]; status
-			[[ $CACHE_URL == *"hong0980/OpenWrt-Cache"* ]] && {
-				cp ../*.tzst ../output/
-				echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
-			}
+			# [[ $CACHE_URL == *"hong0980/OpenWrt-Cache"* ]] && {
+			# 	cp ../*.tzst ../output/
+			# 	echo "OUTPUT_RELEASE=true" >> $GITHUB_ENV
+			# }
 		fi
 	else
+		time=$(TZ=UTC-8 date +%m-%d)
+		echo "CACHE_NAME=$SOURCE_NAME-$repo_branch-$ARCH-$time-$TOOLS_HASH" >> $GITHUB_ENV
 		echo "CACHE_ACTIONS=true" >> $GITHUB_ENV
 	fi
 }
@@ -400,7 +402,7 @@ git_clone() {
 	echo -e "$(color cy '更新软件....')\c"
 	begin_time=$(date '+%H:%M:%S')
 	export repo_branch=$(sed -En 's/^src-git luci.*;(.*)/\1/p' feeds.conf.default)
-	sed -i 's/openwrt-23.05/openwrt-24.10/' feeds.conf.default
+	# sed -i 's/openwrt-23.05/openwrt-24.10/' feeds.conf.default
 	sed -i '/#.*helloworld/ s/^#//' feeds.conf.default
 	./scripts/feeds update -a 1>/dev/null 2>&1
 	./scripts/feeds install -a 1>/dev/null 2>&1
@@ -419,23 +421,31 @@ git_clone
 rm -rf feeds/packages/lang/golang && \
 git clone -q https://github.com/sbwml/packages_lang_golang -b 26.x feeds/packages/lang/golang
 # git diff ./ >> ../output/t.patch || true
-clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki
-clone_dir immortalwrt/packages libdeflate libdht libutp libb64
-clone_dir vernesong/OpenClash luci-app-openclash
+
+# clone_dir immortalwrt/packages libdeflate libdht libutp libb64
+clone_dir dev vernesong/OpenClash luci-app-openclash
 clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
 clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
-clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview trojan-plus
-# clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb \
-# 		luci-app-advancedplus luci-app-arpbind luci-app-ddns-go luci-app-gecoosac \
-# 		luci-app-istorex luci-app-pushbot luci-app-quickstart luci-app-store \
-# 		luci-app-syncdial luci-lib-taskd luci-lib-xterm taskd
+# clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview trojan-plus
+clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo
+clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
+
 clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
 		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
 		luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
 		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
-		python-pyasn1 python-pyxdg python-rencode python-setproctitle python-twisted \
-		sunpanel transmission qBittorrent-static luci-app-diskman-js luci-app-tinynote-js
+		python-pyxdg python-rencode python-setproctitle python-twisted \
+		sunpanel qBittorrent-static luci-app-diskman-js luci-app-tinynote-js \
+		luci-app-mesh-node luci-app-nikki
+
+[ -f "package/A/clashoo/Makefile" ] && {
+	sed -r -i '/(golang|PROVIDES|logic_test|GO_PKG|PKG_SOURCE|PKG_HASH|PKG_BUILD_|GoPackage|GoBinPackage)/d' \
+	package/A/clashoo/Makefile
+	sed -i -e 's/\$(GO_ARCH_DEPENDS) //' \
+	       -e '/BuildPackage/i\define Build/Compile\nendef' \
+	package/A/clashoo/Makefile
+}
 
 REPO_BRANCH=$(sed -En 's/^src-git luci.*;(.*)/\1/p' feeds.conf.default)
 REPO_BRANCH=${REPO_BRANCH:-18.06}
@@ -480,7 +490,10 @@ echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
 make defconfig 1>/dev/null 2>&1
 status
-
+for f in package/A/luci-app-openclash/root/etc/init.d/openclash \
+    feeds/luci/applications/luci-app-openclash/root/etc/init.d/openclash; do
+    [ -f "$f" ] && sed -i "/procd_open_instance \"openclash\"/i\\   command -v yq &>/dev/null && yq -i '.' \"\$CONFIG_FILE\"" "$f"
+done
 LINUX_VERSION=$(sed -nr 's/CONFIG_LINUX_(.*)=y/\1/p' .config | tr '_' '.')
 sed -i "/IMG_PREFIX:/ {s/=/=$SOURCE_NAME-${REPO_BRANCH#*-}-$LINUX_VERSION-\$(shell TZ=UTC-8 date +%m%d-%H%M)-/}" include/image.mk
 # sed -i -E 's/# (CONFIG_.*_COMPRESS_UPX) is not set/\1=y/' .config && make defconfig 1>/dev/null 2>&1
