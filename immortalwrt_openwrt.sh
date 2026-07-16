@@ -374,7 +374,7 @@ set_config (){
 			;;
 	esac
 	[[ $TARGET_DEVICE =~ k2p|d2|360|nx30|ax3000t ]] || add_package \
-		automount autosamba diffutils patch luci-app-diskman luci-app-poweroff luci-app-diskman-js \
+		axel automount autosamba diffutils patch luci-app-diskman luci-app-poweroff luci-app-diskman-js \
 		luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-nikki \
 		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter luci-app-ddns-go \
 		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2 \
@@ -390,7 +390,7 @@ deploy_cache() {
 	time=$(TZ=UTC-8 date +%m-%d)
 	echo "CACHE_NAME=$REPO-${REPO_BRANCH#*-}-$ARCH-$time-$TOOLS_HASH" >> $GITHUB_ENV
 
-	local CACHE_URL; CACHE_URL=$(grep -P "^(?=.*$REPO)(?=.*$ARCH)(?=.*$TOOLS_HASH)" <<< "$op_cache")
+	local CACHE_URL; CACHE_URL=$(grep "$REPO.*$ARCH.*$TOOLS_HASH" <<< "$op_cache")
 	if [ -n "$CACHE_URL" ]; then
 		echo -e "$(color cy '下载tz-cache')\c"
 		begin_time=$(date '+%H:%M:%S')
@@ -564,7 +564,7 @@ sed -Ei '{
 }' package/A/*/Makefile 2>/dev/null
 
 [ -f feeds/packages/net/ariang/Makefile ] && \
-	sed -Ei 's/(PKG_HASH:=).*/\1skip/; s/(PKG_VERSION:=).*/\11.3.11/' feeds/packages/net/ariang/Makefile
+	sed -Ei 's/(PKG_HASH:=).*/\1skip/; s/(PKG_VERSION:=).*/\11.3.14/' feeds/packages/net/ariang/Makefile
 
 [ -f feeds/luci/applications/luci-app-transmission/Makefile ] && \
 	sed -i 's/transmission-daemon/transmission-daemon +transmission-web-control/' feeds/luci/applications/luci-app-transmission/Makefile
