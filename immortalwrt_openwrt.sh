@@ -390,7 +390,7 @@ deploy_cache() {
 	time=$(TZ=UTC-8 date +%m-%d)
 	echo "CACHE_NAME=$REPO-${REPO_BRANCH#*-}-$ARCH-$time-$TOOLS_HASH" >> $GITHUB_ENV
 
-	local CACHE_URL; CACHE_URL=$(grep "$REPO.*$ARCH.*$TOOLS_HASH" <<< "$op_cache")
+	local CACHE_URL; CACHE_URL=$(grep -m 1 "$REPO.*$ARCH.*$TOOLS_HASH" <<< "$op_cache")
 	if [ -n "$CACHE_URL" ]; then
 		echo -e "$(color cy '下载tz-cache')\c"
 		begin_time=$(date '+%H:%M:%S')
