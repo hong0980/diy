@@ -1,21 +1,22 @@
 #!/usr/bin/env bash
 # irm https://x.ai/cli/install.ps1 | iex
 rm -rf openwrt
-qb_version=$(curl -sL -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K(.*?)(?=/)' | sort -Vr | uniq | awk 'NR==1')
+TOKEN=()
+[[ -n $GH_TOKEN ]] && TOKEN=(-H "Authorization: token $GH_TOKEN")
+qb_version=$(curl -sL "${TOKEN[@]}" https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K(.*?)(?=/)' | sort -Vr | uniq | awk 'NR==1')
 
 op_cache=$(
 	page=1
 	while (( page <= 20 )); do
-	    body=$(curl -sL -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/hong0980/Actions-OpenWrt/releases?page=$page&per_page=15")
+	    body=$(curl -sL "${TOKEN[@]}" "https://api.github.com/repos/hong0980/Actions-OpenWrt/releases?page=$page&per_page=15")
 	    [[ $body != \[* ]] && break
 	    grep -oP '"browser_download_url": "\K[^"]*-cache[^"]*' <<< "$body"
 	    ((page++))
 	done
-
-    curl -sL -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/hong0980/OpenWrt-Cache/releases \
+    curl -sL "${TOKEN[@]}" https://api.github.com/repos/hong0980/OpenWrt-Cache/releases \
         | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*'
 )
-echo "GITHUB_TOKEN${{ secrets.GITHUB_TOKEN }} PERSONAL_TOKEN${{ secrets.PERSONAL_TOKEN }}"
+
 # curl -s https://api.github.com/repos/kiddin9/kwrt-packages/contents/ | jq -r '.[] | select(.type == "dir" and (.name | startswith(".") | not)) | .name' > kiddin9_packages
 
 color() {
