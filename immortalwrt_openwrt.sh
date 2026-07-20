@@ -4,15 +4,12 @@ rm -rf openwrt
 qb_version=$(curl -sL https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K(.*?)(?=/)' | sort -Vr | uniq | awk 'NR==1')
 
 op_cache=$(
-    curl -sL "https://api.github.com/repos/hong0980/OpenWrt-Cache/releases" | grep -oP '"browser_download_url": "\K[^"]*-cache[^"]*'
+    for page in 1 2 3 4; do
+        curl -sL "$GITHUB_API_URL/repos/hong0980/Actions-OpenWrt/releases?page=$page"
+    done | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*'
 
-    page=1
-    while :; do
-        body=$(curl -sL "https://api.github.com/repos/hong0980/Actions-OpenWrt/releases?page=$page&per_page=15")
-        [[ $body == "[]" ]] && break
-        grep -oP '"browser_download_url": "\K[^"]*-cache[^"]*' <<< "$body"
-        ((page++))
-    done
+    curl -sL https://api.github.com/repos/hong0980/OpenWrt-Cache/releases \
+        | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*'
 )
 
 # curl -s https://api.github.com/repos/kiddin9/kwrt-packages/contents/ | jq -r '.[] | select(.type == "dir" and (.name | startswith(".") | not)) | .name' > kiddin9_packages
