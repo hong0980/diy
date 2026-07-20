@@ -396,11 +396,11 @@ deploy_cache() {
 	echo "CACHE_NAME=$REPO-${REPO_BRANCH#*-}-$ARCH-$time-$TOOLS_HASH" >> $GITHUB_ENV
 	local CACHE_URL; CACHE_URL=$(grep -m 1 "$REPO.*$ARCH.*$TOOLS_HASH" <<< "$op_cache")
 	if [ -n "$CACHE_URL" ]; then
-		echo -e "$(color cy '下载 缓存')\c"
+		echo -e "$(color cy '下载缓存')\c"
 		begin_time=$(date '+%H:%M:%S')
 		if wget -qc -t 3 -P ../ "$CACHE_URL"; then
 			status
-			echo -e "$(color cy '部署 缓存')\c"
+			echo -e "$(color cy '部署缓存')\c"
 			begin_time=$(date '+%H:%M:%S')
 			( tar -I unzstd -xf ../*"$TOOLS_HASH"* || tar --zstd -xf ../*"$TOOLS_HASH"* ) && \
 			sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
@@ -455,9 +455,9 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 	fi
 
-	[[ $REPO_BRANCH =~ 24 ]] && {
-		sed -i 's#"\$(PYTHON3_PKG_BUILD_DIR)"/openwrt-build/\$(PYTHON3_PKG_WHEEL_NAME)-\$(PYTHON3_PKG_WHEEL_VERSION)-\*.whl#$(PYTHON3_PKG_BUILD_DIR)/openwrt-build/*\$(PYTHON3_PKG_WHEEL_VERSION)*.whl#' feeds/packages/lang/python/python3-package.mk
-	}
+	# [[ $REPO_BRANCH =~ 24 ]] && {
+	# 	sed -i 's#"\$(PYTHON3_PKG_BUILD_DIR)"/openwrt-build/\$(PYTHON3_PKG_WHEEL_NAME)-\$(PYTHON3_PKG_WHEEL_VERSION)-\*.whl#$(PYTHON3_PKG_BUILD_DIR)/openwrt-build/*\$(PYTHON3_PKG_WHEEL_VERSION)*.whl#' feeds/packages/lang/python/python3-package.mk
+	# }
 
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy"
 	#add_package "axel luci-app-gecoosac" luci-app-istorex luci-app-partexp
