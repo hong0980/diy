@@ -4,12 +4,15 @@ rm -rf openwrt
 qb_version=$(curl -sL https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K(.*?)(?=/)' | sort -Vr | uniq | awk 'NR==1')
 
 op_cache=$(
-    for page in 1 2 3 4; do
-        curl -sL "$GITHUB_API_URL/repos/hong0980/Actions-OpenWrt/releases?page=$page"
-    done | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*'
+    curl -sL "https://api.github.com/repos/hong0980/OpenWrt-Cache/releases" | grep -oP '"browser_download_url": "\K[^"]*-cache[^"]*'
 
-    curl -sL https://api.github.com/repos/hong0980/OpenWrt-Cache/releases \
-        | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*'
+    page=1
+    while :; do
+        body=$(curl -sL "https://api.github.com/repos/hong0980/Actions-OpenWrt/releases?page=$page&per_page=15")
+        [[ $body == "[]" ]] && break
+        grep -oP '"browser_download_url": "\K[^"]*-cache[^"]*' <<< "$body"
+        ((page++))
+    done
 )
 
 # curl -s https://api.github.com/repos/kiddin9/kwrt-packages/contents/ | jq -r '.[] | select(.type == "dir" and (.name | startswith(".") | not)) | .name' > kiddin9_packages
@@ -389,20 +392,19 @@ deploy_cache() {
 	TOOLS_HASH=$(git log --pretty=tformat:"%h" -n1 tools toolchain)
 	time=$(TZ=UTC-8 date +%m-%d)
 	echo "CACHE_NAME=$REPO-${REPO_BRANCH#*-}-$ARCH-$time-$TOOLS_HASH" >> $GITHUB_ENV
-
 	local CACHE_URL; CACHE_URL=$(grep -m 1 "$REPO.*$ARCH.*$TOOLS_HASH" <<< "$op_cache")
 	if [ -n "$CACHE_URL" ]; then
-		echo -e "$(color cy '下载tz-cache')\c"
+		echo -e "$(color cy '下载 缓存')\c"
 		begin_time=$(date '+%H:%M:%S')
-		wget -qc -t 3 -P ../ "$CACHE_URL"
-		status
-
-		if ls ../*"$TOOLS_HASH"* >/dev/null 2>&1; then
-			echo -e "$(color cy '部署tz-cache')\c"
+		if wget -qc -t 3 -P ../ "$CACHE_URL"; then
+			status
+			echo -e "$(color cy '部署 缓存')\c"
 			begin_time=$(date '+%H:%M:%S')
 			tar -I unzstd -xf ../*"$TOOLS_HASH"* || tar --zstd -xf ../*"$TOOLS_HASH"* || tar -xf ../*"$TOOLS_HASH"*
 			sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
 			[ -d staging_dir ]; status
+		else
+			echo "CACHE_ACTIONS=true" >> $GITHUB_ENV
 		fi
 	else
 		echo "CACHE_ACTIONS=true" >> $GITHUB_ENV
@@ -426,8 +428,6 @@ begin_time=$(date '+%H:%M:%S')
 status
 create_directory "package/A"
 set_config
-# grep -qv "PKG_VERSION:=1.93.0" feeds/packages/lang/rust/Makefile && \
-# clone_dir coolsnowwolf/packages rust
 
 clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
 clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
@@ -447,19 +447,16 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 		del_package "dnsmasq"
 		create_directory "package/emortal"
 		git clone -q https://github.com/immortalwrt/homeproxy package/A/luci-app-homeproxy
-		[[ $REPO_BRANCH =~ master|24|25 ]] || ucode=ucode
 		clone_dir immortalwrt/packages transmission-web-control
-		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal r8152 $ucode
+		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal r8152
 	else
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 	fi
-	[[ $REPO_BRANCH =~ master|24|25 ]] && {
-		[[ $REPO_BRANCH =~ 24 ]] && {
-			sed -i 's#"\$(PYTHON3_PKG_BUILD_DIR)"/openwrt-build/\$(PYTHON3_PKG_WHEEL_NAME)-\$(PYTHON3_PKG_WHEEL_VERSION)-\*.whl#$(PYTHON3_PKG_BUILD_DIR)/openwrt-build/*\$(PYTHON3_PKG_WHEEL_VERSION)*.whl#' feeds/packages/lang/python/python3-package.mk
-		}
+
+	[[ $REPO_BRANCH =~ 24 ]] && {
+		sed -i 's#"\$(PYTHON3_PKG_BUILD_DIR)"/openwrt-build/\$(PYTHON3_PKG_WHEEL_NAME)-\$(PYTHON3_PKG_WHEEL_VERSION)-\*.whl#$(PYTHON3_PKG_BUILD_DIR)/openwrt-build/*\$(PYTHON3_PKG_WHEEL_VERSION)*.whl#' feeds/packages/lang/python/python3-package.mk
 	}
-	# [[ -f feeds/packages/libs/libutp/Makefile ]] && [[ $REPO_BRANCH =~ 25 ]] && \
-	# 	sed -i 's/-DLIBUTP_ENABLE_WERROR:BOOL=YES/-DLIBUTP_ENABLE_WERROR:BOOL=NO/' feeds/packages/libs/libutp/Makefile
+
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy"
 	#add_package "axel luci-app-gecoosac" luci-app-istorex luci-app-partexp
 	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
@@ -476,7 +473,6 @@ else
 		https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/include/openssl-module.mk
 fi
 
-# [[ $REPO_BRANCH =~ master|25 ]] || clone_dir openwrt/packages docker dockerd containerd docker-compose runc #nlbwmon
 del_package "luci-app-filetransfer luci-app-turboacc"
 clone_dir sbwml/openwrt_helloworld luci-app-passwall luci-app-passwall2 luci-app-openclash \
 		  chinadns-ng geoview xray-core simple-obfs kcptun shadowsocks-rust
@@ -515,13 +511,6 @@ done
 	package/A/clashoo/Makefile
 	sed -i '/BuildPackage/i\define Build/Compile\nendef' package/A/clashoo/Makefile
 }
-
-# [ -f "feeds/routing/mesh11sd/Makefile" ] && \
-# 	sed -i \
-# 	    -e 's/PKG_VERSION:=.*/PKG_VERSION:=5.1.3/' \
-# 	    -e 's/PKG_HASH:=.*/PKG_HASH:=skip/' \
-# 	    feeds/routing/mesh11sd/Makefile
-# /etc/init.d/rpcd restart
 
 sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
 sed -i 's|/bin/login|/bin/login -f root|' feeds/packages/utils/ttyd/files/ttyd.config
