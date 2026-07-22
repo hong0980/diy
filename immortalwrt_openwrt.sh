@@ -495,7 +495,8 @@ git clone -q https://github.com/sbwml/packages_lang_golang -b 26.x feeds/package
 color cy "自定义设置.... "
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
 
-sed -i '/python3-host-build.mk/a\PYTHON3_HOST_WHEEL_NAME := Mako' \
+sed -i "/BUILDONLY/ s/^/#/g" feeds/packages/lang/python/python-mako/Makefile
+sed -i '/include.*python3-package.mk/a\PYTHON3_PKG_WHEEL_NAME:=mako' \
     feeds/packages/lang/python/python-mako/Makefile
 
 profile='package/base-files/files/etc/profile.d/apk-cheatsheet.sh'
