@@ -440,7 +440,7 @@ clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
 		luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
 		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
-		python-pyasn1 python-pyxdg python-rencode python-setproctitle python-twisted luci-app-mesh11sd \
+		python-pyasn1 python-pyxdg python-rencode python-setproctitle luci-app-mesh11sd \
 		transmission qBittorrent-static luci-app-diskman-js luci-app-tinynote-js \
 		luci-app-mesh-node luci-app-nikki
 
@@ -494,7 +494,10 @@ git clone -q https://github.com/sbwml/packages_lang_golang -b 26.x feeds/package
 
 color cy "自定义设置.... "
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
-sed -i "/ONLY/ s/^/#/g" feeds/packages/lang/python/python-mako/Makefile
+
+sed -i '/python3-host-build.mk/a\PYTHON3_HOST_WHEEL_NAME := Mako' \
+    feeds/packages/lang/python/python-mako/Makefile
+
 profile='package/base-files/files/etc/profile.d/apk-cheatsheet.sh'
 [ -e "$profile" ] && \
 grep -Fq '[ -x /usr/bin/apk ]' "$profile" && sed -i 's|\[ -x /usr/bin/apk \]|false|' "$profile"
@@ -558,7 +561,7 @@ sed -Ei '{
 	sed -i 's/transmission-daemon/transmission-daemon +transmission-web-control/' feeds/luci/applications/luci-app-transmission/Makefile
 
 [[ "$TARGET_DEVICE" =~ armvirt ]] && sed -i '/qbittorrent/d' .config
-[[ $REPO_BRANCH =~ master|25|24 ]] && sed -i '/deluge/d' .config
+[[ $REPO_BRANCH =~ master ]] && sed -i '/deluge/d' .config
 # grep -q 'deluge' .config && {
 # 	add_package "boost-python3 python3-libtorrent"
 # }
