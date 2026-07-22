@@ -559,9 +559,9 @@ sed -Ei '{
 
 [[ "$TARGET_DEVICE" =~ armvirt ]] && sed -i '/qbittorrent/d' .config
 [[ $REPO_BRANCH =~ master ]] && sed -i '/deluge/d' .config
-grep -q 'deluge' .config && {
-	add_package "boost-python3 python3-libtorrent"
-}
+# grep -q 'deluge' .config && {
+# 	add_package "boost-python3 python3-libtorrent"
+# }
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
 make defconfig 1>/dev/null 2>&1
