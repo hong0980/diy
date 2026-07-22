@@ -435,7 +435,7 @@ clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
 clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
 # clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 
-clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi libtorrent-rasterbar \
+clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi \
 		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
 		luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
