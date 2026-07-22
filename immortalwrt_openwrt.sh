@@ -558,7 +558,7 @@ sed -Ei '{
 	sed -i 's/transmission-daemon/transmission-daemon +transmission-web-control/' feeds/luci/applications/luci-app-transmission/Makefile
 
 [[ "$TARGET_DEVICE" =~ armvirt ]] && sed -i '/qbittorrent/d' .config
-[[ $REPO_BRANCH =~ master ]] && sed -i '/deluge/d' .config
+[[ $REPO_BRANCH =~ master|25|24 ]] && sed -i '/deluge/d' .config
 # grep -q 'deluge' .config && {
 # 	add_package "boost-python3 python3-libtorrent"
 # }
