@@ -476,8 +476,8 @@ else
 fi
 
 del_package "luci-app-filetransfer luci-app-turboacc"
-clone_dir sbwml/openwrt_helloworld luci-app-passwall luci-app-passwall2 luci-app-openclash \
-		  chinadns-ng geoview xray-core simple-obfs kcptun shadowsocks-rust
+clone_dir sbwml/openwrt_helloworld luci-app-passwall luci-app-passwall2 chinadns-ng \
+		  geoview xray-core simple-obfs kcptun shadowsocks-rust
 clone_dir dev vernesong/OpenClash luci-app-openclash
 
 clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
@@ -486,10 +486,7 @@ clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
 # clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
 # clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
 clone_dir Openwrt-Passwall/openwrt-passwall-packages geoview
-# clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb \
-# 		luci-app-advancedplus luci-app-arpbind luci-app-ddns-go luci-app-gecoosac \
-# 		luci-app-istorex luci-app-pushbot luci-app-quickstart luci-app-store \
-# 		luci-app-syncdial luci-lib-taskd luci-lib-xterm taskd
+# clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb
 
 ! grep -q "GO_VERSION.*1.26.*" feeds/packages/lang/golang/golang/Makefile 2>/dev/null && \
 rm -rf feeds/packages/lang/golang && \
@@ -562,7 +559,9 @@ sed -Ei '{
 
 [[ "$TARGET_DEVICE" =~ armvirt ]] && sed -i '/qbittorrent/d' .config
 [[ $REPO_BRANCH =~ master ]] && sed -i '/deluge/d' .config
-
+grep -q 'deluge' && {
+	add_package "boost-python3 python3-libtorrent"
+}
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
 make defconfig 1>/dev/null 2>&1
