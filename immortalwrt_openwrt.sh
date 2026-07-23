@@ -498,6 +498,7 @@ wget -qO package/base-files/files/etc/banner git.io/JoNK8
 [ -f 'feeds/packages/lang/python/python-mako/Makefile' ] && {
 	sed -Ei '{
 		/ONLY/ s/^/#/g
+		/python3-host-build.mk/a\PYTHON3_HOST_WHEEL_NAME := Mako
 	}' feeds/packages/lang/python/python-mako/Makefile
 }
 
