@@ -436,12 +436,12 @@ clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
 clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
 # clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 
-clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi \
+clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi libtorrent-rasterbar \
 		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
 		luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
 		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
-		python-pyasn1 python-pyxdg python-rencode python-setproctitle python-mako luci-app-mesh11sd \
+		python-pyasn1 python-pyxdg python-rencode python-setproctitle luci-app-mesh11sd \
 		transmission qBittorrent-static luci-app-diskman-js luci-app-tinynote-js \
 		luci-app-mesh-node luci-app-nikki
 
@@ -498,6 +498,12 @@ wget -qO package/base-files/files/etc/banner git.io/JoNK8
 
 [ -f 'feeds/packages/lang/python/typing-extensions/Makefile' ] && \
 sed -Ei 's/(PKG_HASH:=).*/\1dc983d19a509c94dba722ee6abd33940f7c05a89e243c47e907eb4db6f1a43e5/; s/(PKG_VERSION:=).*/\14.16.0/' feeds/packages/lang/python/typing-extensions/Makefile
+
+[ -f 'feeds/packages/lang/python/python-mako/Makefile' ] && \
+sed -Ei '{
+	/ONLY/ s/^/#/g
+	/HOST_BUILD_DEPENDS/i\PYTHON3_PKG_WHEEL_NAME:=mako
+}' feeds/packages/lang/python/python-mako/Makefile
 
 profile='package/base-files/files/etc/profile.d/apk-cheatsheet.sh'
 [ -e "$profile" ] && \
