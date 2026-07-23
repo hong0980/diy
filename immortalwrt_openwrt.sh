@@ -378,18 +378,17 @@ set_config (){
 			echo "FIRMWARE_TYPE=$TARGET_DEVICE" >> $GITHUB_ENV
 			;;
 	esac
-	# [[ $TARGET_DEVICE =~ k2p|d2|360|nx30|ax3000t ]] || add_package \
-	# 	axel automount autosamba diffutils patch luci-app-diskman luci-app-poweroff luci-app-diskman-js \
-	# 	luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-nikki \
-	# 	luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter luci-app-ddns-go \
-	# 	luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2 \
-	# 	luci-app-miaplus luci-app-watchdog luci-app-fchomo luci-app-clashoo
+	[[ $TARGET_DEVICE =~ k2p|d2|360|nx30|ax3000t ]] || add_package \
+		axel automount autosamba diffutils patch luci-app-diskman luci-app-poweroff luci-app-diskman-js \
+		luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-nikki \
+		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter luci-app-ddns-go \
+		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2 \
+		luci-app-miaplus luci-app-watchdog luci-app-fchomo luci-app-clashoo
 
-	# add_package autocore luci-app-arpbind luci-app-ssr-plus luci-app-passwall \
-	# 			luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard luci-app-tinynote-js \
-	# 			default-settings-chn luci-app-package-manager luci-app-filebrowser #luci-app-ddnsto
+	add_package autocore luci-app-arpbind luci-app-ssr-plus luci-app-passwall \
+				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard luci-app-tinynote-js \
+				default-settings-chn luci-app-package-manager luci-app-filebrowser #luci-app-ddnsto
 
-	add_package "luci-app-deluge"
 }
 
 deploy_cache() {
@@ -497,12 +496,11 @@ git clone -q https://github.com/sbwml/packages_lang_golang -b 26.x feeds/package
 color cy "自定义设置.... "
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
 
-[ -f 'feeds/packages/lang/python/python-mako/Makefile' ] && {
-	sed -Ei '{
-		/ONLY/ s/^/#/g
-		/HOST_BUILD_DEPENDS/i\PYTHON3_PKG_WHEEL_NAME:=mako
-	}' feeds/packages/lang/python/python-mako/Makefile
-}
+[ -f 'feeds/packages/lang/python/python-mako/Makefile' ] && \
+sed -Ei '{
+	/ONLY/ s/^/#/g
+	/HOST_BUILD_DEPENDS/i\PYTHON3_PKG_WHEEL_NAME:=mako
+}' feeds/packages/lang/python/python-mako/Makefile
 
 profile='package/base-files/files/etc/profile.d/apk-cheatsheet.sh'
 [ -e "$profile" ] && \
