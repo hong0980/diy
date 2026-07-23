@@ -495,12 +495,11 @@ git clone -q https://github.com/sbwml/packages_lang_golang -b 26.x feeds/package
 color cy "自定义设置.... "
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
 
-# [ -f 'feeds/packages/lang/python/python-mako/Makefile' ] && {
-# 	sed -Ei '{
-# 		/BUILDONLY/ s/^/#/g
-# 		/python3-host-build.mk/a\PYTHON3_HOST_WHEEL_NAME := Mako
-# 	}' feeds/packages/lang/python/python-mako/Makefile
-# }
+[ -f 'feeds/packages/lang/python/python-mako/Makefile' ] && {
+	sed -Ei '{
+		/ONLY/ s/^/#/g
+	}' feeds/packages/lang/python/python-mako/Makefile
+}
 
 profile='package/base-files/files/etc/profile.d/apk-cheatsheet.sh'
 [ -e "$profile" ] && \
@@ -566,7 +565,7 @@ sed -Ei '{
 
 [[ "$TARGET_DEVICE" =~ armvirt ]] && sed -i '/qbittorrent/d' .config
 [[ $REPO_BRANCH =~ master|24 ]] && sed -i '/deluge/d' .config
-
+# feeds/packages/lang/ruby
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
 make defconfig 1>/dev/null 2>&1
