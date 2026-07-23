@@ -498,7 +498,7 @@ wget -qO package/base-files/files/etc/banner git.io/JoNK8
 [ -f 'feeds/packages/lang/python/python-mako/Makefile' ] && {
 	sed -Ei '{
 		/ONLY/ s/^/#/g
-		/python3-host-build.mk/a\PYTHON3_HOST_WHEEL_NAME := Mako
+		/HOST_BUILD_DEPENDS/i\PYTHON3_PKG_WHEEL_NAME:=mako
 	}' feeds/packages/lang/python/python-mako/Makefile
 }
 
@@ -589,5 +589,4 @@ echo "LINUX_VERSION_ARCH=$LINUX_VERSION-$ARCH" >> $GITHUB_ENV
 
 deploy_cache
 echo -e "$(color cy 当前机型) $(color cb $REPO-${REPO_BRANCH#*-}-$LINUX_VERSION-${DEVICE_NAME})"
-make package/feeds/packages/python-mako/{clean,compile} V=s
 echo -e "\e[1;35m脚本运行完成！\e[0m"
