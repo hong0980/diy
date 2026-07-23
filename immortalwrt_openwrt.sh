@@ -16,7 +16,7 @@ op_cache=$(
     curl -sL "${TOKEN[@]}" https://api.github.com/repos/hong0980/OpenWrt-Cache/releases \
         | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*'
 )
-echo $GH_TOKEN
+
 # curl -s https://api.github.com/repos/kiddin9/kwrt-packages/contents/ | jq -r '.[] | select(.type == "dir" and (.name | startswith(".") | not)) | .name' > kiddin9_packages
 
 color() {
@@ -565,10 +565,8 @@ sed -Ei '{
 	sed -i 's/transmission-daemon/transmission-daemon +transmission-web-control/' feeds/luci/applications/luci-app-transmission/Makefile
 
 [[ "$TARGET_DEVICE" =~ armvirt ]] && sed -i '/qbittorrent/d' .config
-[[ $REPO_BRANCH =~ master ]] && sed -i '/deluge/d' .config
-# grep -q 'deluge' .config && {
-# 	add_package "boost-python3 python3-libtorrent"
-# }
+[[ $REPO_BRANCH =~ master|24|25 ]] && sed -i '/deluge/d' .config
+
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
 make defconfig 1>/dev/null 2>&1
