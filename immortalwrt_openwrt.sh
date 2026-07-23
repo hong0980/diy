@@ -589,4 +589,5 @@ echo "LINUX_VERSION_ARCH=$LINUX_VERSION-$ARCH" >> $GITHUB_ENV
 
 deploy_cache
 echo -e "$(color cy 当前机型) $(color cb $REPO-${REPO_BRANCH#*-}-$LINUX_VERSION-${DEVICE_NAME})"
+make package/feeds/packages/python-mako/{clean,compile} V=s
 echo -e "\e[1;35m脚本运行完成！\e[0m"
