@@ -441,7 +441,7 @@ clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
 		luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
 		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
-		python-pyasn1 python-pyxdg python-rencode python-setproctitle luci-app-mesh11sd \
+		python-pyasn1 python-pyxdg python-rencode python-setproctitle python-mako luci-app-mesh11sd \
 		transmission qBittorrent-static luci-app-diskman-js luci-app-tinynote-js \
 		luci-app-mesh-node luci-app-nikki
 
@@ -496,11 +496,11 @@ git clone -q https://github.com/sbwml/packages_lang_golang -b 26.x feeds/package
 color cy "自定义设置.... "
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
 
-[ -f 'feeds/packages/lang/python/python-mako/Makefile' ] && \
-sed -Ei '{
-	/ONLY/ s/^/#/g
-	/HOST_BUILD_DEPENDS/i\PYTHON3_PKG_WHEEL_NAME:=mako
-}' feeds/packages/lang/python/python-mako/Makefile
+# [ -f 'feeds/packages/lang/python/python-mako/Makefile' ] && \
+# sed -Ei '{
+# 	/ONLY/ s/^/#/g
+# 	/HOST_BUILD_DEPENDS/i\PYTHON3_PKG_WHEEL_NAME:=mako
+# }' feeds/packages/lang/python/python-mako/Makefile
 
 profile='package/base-files/files/etc/profile.d/apk-cheatsheet.sh'
 [ -e "$profile" ] && \
