@@ -493,8 +493,8 @@ git clone -q https://github.com/sbwml/packages_lang_golang -b 26.x feeds/package
 color cy "自定义设置.... "
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
 
-[ -f 'feeds/packages/lang/python/typing-extensions/Makefile' ] && \
-sed -Ei 's/(PKG_HASH:=).*/\1skip/; s/(PKG_VERSION:=).*/\14.16.0/' feeds/packages/lang/python/typing-extensions/Makefile
+[ -f 'feeds/packages/lang/python/python-typing-extensions/Makefile' ] && \
+sed -Ei 's/(PKG_HASH:=).*/\1skip/; s/(PKG_VERSION:=).*/\14.16.0/' feeds/packages/lang/python/python-typing-extensions/Makefile
 
 [ -f 'feeds/packages/lang/python/python-mako/Makefile' ] && \
 sed -Ei '{
