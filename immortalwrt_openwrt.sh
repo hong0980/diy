@@ -378,16 +378,18 @@ set_config (){
 			echo "FIRMWARE_TYPE=$TARGET_DEVICE" >> $GITHUB_ENV
 			;;
 	esac
-	[[ $TARGET_DEVICE =~ k2p|d2|360|nx30|ax3000t ]] || add_package \
-		axel automount autosamba diffutils patch luci-app-diskman luci-app-poweroff luci-app-diskman-js \
-		luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-nikki \
-		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter luci-app-ddns-go \
-		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2 \
-		luci-app-miaplus luci-app-watchdog luci-app-fchomo luci-app-clashoo
+	# [[ $TARGET_DEVICE =~ k2p|d2|360|nx30|ax3000t ]] || add_package \
+	# 	axel automount autosamba diffutils patch luci-app-diskman luci-app-poweroff luci-app-diskman-js \
+	# 	luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-nikki \
+	# 	luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter luci-app-ddns-go \
+	# 	luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2 \
+	# 	luci-app-miaplus luci-app-watchdog luci-app-fchomo luci-app-clashoo
 
-	add_package autocore luci-app-arpbind luci-app-ssr-plus luci-app-passwall \
-				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard luci-app-tinynote-js \
-				default-settings-chn luci-app-package-manager luci-app-filebrowser #luci-app-ddnsto
+	# add_package autocore luci-app-arpbind luci-app-ssr-plus luci-app-passwall \
+	# 			luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard luci-app-tinynote-js \
+	# 			default-settings-chn luci-app-package-manager luci-app-filebrowser #luci-app-ddnsto
+
+	add_package "luci-app-deluge"
 
 }
 
@@ -436,7 +438,7 @@ clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
 clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
 # clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 
-clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi libtorrent-rasterbar \
+clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi \
 		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
 		luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
@@ -504,6 +506,10 @@ sed -Ei '{
 	/ONLY/ s/^/#/g
 	/HOST_BUILD_DEPENDS/i\PYTHON3_PKG_WHEEL_NAME:=mako
 }' feeds/packages/lang/python/python-mako/Makefile
+
+del_package "luci-app-homeproxy"
+[[ $REPO_BRANCH =~ 24 ]] && [ -f 'feeds/packages/libs/libtorrent-rasterbar/Makefile' ] && \
+sed -Ei 's/(.*bindings=).*/\1OFF/; s/(.*egg-info=).*/\1OFF/' feeds/packages/libs/libtorrent-rasterbar/Makefile
 
 profile='package/base-files/files/etc/profile.d/apk-cheatsheet.sh'
 [ -e "$profile" ] && \
