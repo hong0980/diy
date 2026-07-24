@@ -169,7 +169,7 @@ clone_dir() {
 
 	# [[ $repo_url =~ nikkinikki-org ]] && (cd "$temp_dir" && git reset --hard cd3a9ec)
 
-	[[ $REPO_BRANCH =~ 24 ]] && [[ $repo_url =~ hong0980/build ]] && set -- "$@" libtorrent-rasterbar
+	# [[ $REPO_BRANCH =~ 24 ]] && [[ $repo_url =~ hong0980/build ]] && set -- "$@" libtorrent-rasterbar
 
 	[[ $repo_url =~ sbwml && $REPO =~ openwrt ]] && set -- "$@" \
 		"ipt2socks" "microsocks" "naiveproxy" "pdnsd" "redsocks2" "tcping" "tuic-client" \
