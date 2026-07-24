@@ -167,13 +167,10 @@ clone_dir() {
 	    return 1
 	}
 
-	[[ $repo_url =~ nikkinikki-org ]] && (cd "$temp_dir" && git reset --hard cd3a9ec)
+	# [[ $repo_url =~ nikkinikki-org ]] && (cd "$temp_dir" && git reset --hard cd3a9ec)
 
-	[[ $REPO_BRANCH =~ master|23|24|25 ]] || {
-		[[ $repo_url =~ hong0980/diy ]] && set -- "$@" luci-app-wizard
-		# [[ $repo_url =~ coolsnowwolf/packages ]] && set -- "$@" "bash" \
-		# 		"btrfs-progs" "gawk" "jq" "nginx-util" "pciutils" "curl"
-	}
+	[[ $REPO_BRANCH =~ 24 ]] && [[ $repo_url =~ hong0980/build ]] && set -- "$@" libtorrent-rasterbar
+
 	[[ $repo_url =~ sbwml && $REPO =~ openwrt ]] && set -- "$@" \
 		"ipt2socks" "microsocks" "naiveproxy" "pdnsd" "redsocks2" "tcping" "tuic-client" \
 		"v2ray-core" "v2ray-geodata" "v2ray-plugin" "xray-plugin" "hysteria"
