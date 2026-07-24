@@ -378,18 +378,16 @@ set_config (){
 			echo "FIRMWARE_TYPE=$TARGET_DEVICE" >> $GITHUB_ENV
 			;;
 	esac
-	# [[ $TARGET_DEVICE =~ k2p|d2|360|nx30|ax3000t ]] || add_package \
-	# 	axel automount autosamba diffutils patch luci-app-diskman luci-app-poweroff luci-app-diskman-js \
-	# 	luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-nikki \
-	# 	luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter luci-app-ddns-go \
-	# 	luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2 \
-	# 	luci-app-miaplus luci-app-watchdog luci-app-fchomo luci-app-clashoo
+	[[ $TARGET_DEVICE =~ k2p|d2|360|nx30|ax3000t ]] || add_package \
+		axel automount autosamba diffutils patch luci-app-diskman luci-app-poweroff luci-app-diskman-js \
+		luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-nikki \
+		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter luci-app-ddns-go \
+		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2 \
+		luci-app-miaplus luci-app-watchdog luci-app-fchomo luci-app-clashoo
 
-	# add_package autocore luci-app-arpbind luci-app-ssr-plus luci-app-passwall \
-	# 			luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard luci-app-tinynote-js \
-	# 			default-settings-chn luci-app-package-manager luci-app-filebrowser #luci-app-ddnsto
-
-	add_package "luci-app-deluge"
+	add_package autocore luci-app-arpbind luci-app-ssr-plus luci-app-passwall \
+				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard luci-app-tinynote-js \
+				default-settings-chn luci-app-package-manager luci-app-filebrowser #luci-app-ddnsto
 
 }
 
