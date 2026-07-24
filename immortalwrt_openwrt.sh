@@ -378,18 +378,16 @@ set_config (){
 			echo "FIRMWARE_TYPE=$TARGET_DEVICE" >> $GITHUB_ENV
 			;;
 	esac
-	# [[ $TARGET_DEVICE =~ k2p|d2|360|nx30|ax3000t ]] || add_package \
-	# 	axel automount autosamba diffutils patch luci-app-diskman luci-app-poweroff luci-app-diskman-js \
-	# 	luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-nikki \
-	# 	luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter luci-app-ddns-go \
-	# 	luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2 \
-	# 	luci-app-miaplus luci-app-watchdog luci-app-fchomo luci-app-clashoo
+	[[ $TARGET_DEVICE =~ k2p|d2|360|nx30|ax3000t ]] || add_package \
+		axel automount autosamba diffutils patch luci-app-diskman luci-app-poweroff luci-app-diskman-js \
+		luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-nikki \
+		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter luci-app-ddns-go \
+		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2 \
+		luci-app-miaplus luci-app-watchdog luci-app-fchomo luci-app-clashoo
 
-	# add_package autocore luci-app-arpbind luci-app-ssr-plus luci-app-passwall \
-	# 			luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard luci-app-tinynote-js \
-	# 			default-settings-chn luci-app-package-manager luci-app-filebrowser #luci-app-ddnsto
-
-	add_package "luci-app-deluge"
+	add_package autocore luci-app-arpbind luci-app-ssr-plus luci-app-passwall \
+				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard luci-app-tinynote-js \
+				default-settings-chn luci-app-package-manager luci-app-filebrowser #luci-app-ddnsto
 
 }
 
@@ -507,10 +505,6 @@ sed -Ei '{
 	/HOST_BUILD_DEPENDS/i\PYTHON3_PKG_WHEEL_NAME:=mako
 }' feeds/packages/lang/python/python-mako/Makefile
 
-del_package "luci-app-homeproxy"
-[[ $REPO_BRANCH =~ 24 ]] && [ -f 'feeds/packages/libs/libtorrent-rasterbar/Makefile' ] && \
-sed -Ei 's/(.*bindings=).*/\1OFF/; s/(.*egg-info=).*/\1OFF/' feeds/packages/libs/libtorrent-rasterbar/Makefile
-
 profile='package/base-files/files/etc/profile.d/apk-cheatsheet.sh'
 [ -e "$profile" ] && \
 grep -Fq '[ -x /usr/bin/apk ]' "$profile" && sed -i 's|\[ -x /usr/bin/apk \]|false|' "$profile"
@@ -599,3 +593,4 @@ echo "LINUX_VERSION_ARCH=$LINUX_VERSION-$ARCH" >> $GITHUB_ENV
 deploy_cache
 echo -e "$(color cy 当前机型) $(color cb $REPO-${REPO_BRANCH#*-}-$LINUX_VERSION-${DEVICE_NAME})"
 echo -e "\e[1;35m脚本运行完成！\e[0m"
+[[ $REPO_BRANCH =~ 24 ]] && grep -E "(boost-python3|libtorrent)" .config
