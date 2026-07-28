@@ -1,17 +1,23 @@
 #!/usr/bin/env bash
 # irm https://x.ai/cli/install.ps1 | iex
 rm -rf openwrt
-qb_version=$(curl -sL https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K(.*?)(?=/)' | sort -Vr | uniq | awk 'NR==1')
+TOKEN=()
+[[ -n $GH_TOKEN ]] && TOKEN=(-H "Authorization: token $GH_TOKEN")
+qb_version=$(curl -sL "${TOKEN[@]}" https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K(.*?)(?=/)' | sort -Vr | uniq | awk 'NR==1')
 
 op_cache=$(
-    for page in 1 2 3 4; do
-        curl -sL "$GITHUB_API_URL/repos/hong0980/Actions-OpenWrt/releases?page=$page"
-    done | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*'
-
-    curl -sL https://api.github.com/repos/hong0980/OpenWrt-Cache/releases \
-        | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*'
+	page=1
+	while (( page <= 20 )); do
+		body=$(curl -sL "${TOKEN[@]}" "https://api.github.com/repos/hong0980/Actions-OpenWrt/releases?page=$page&per_page=15")
+		[[ $body != \[* ]] && break
+		grep -oP '"browser_download_url": "\K[^"]*-cache[^"]*' <<< "$body"
+		((page++))
+	done
+	curl -sL "${TOKEN[@]}" https://api.github.com/repos/hong0980/OpenWrt-Cache/releases \
+		| grep -oP '"browser_download_url": "\K[^"]*cache[^"]*'
 )
 
+CURL_OPTS="-sfL --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 2"
 # curl -s https://api.github.com/repos/kiddin9/kwrt-packages/contents/ | jq -r '.[] | select(.type == "dir" and (.name | startswith(".") | not)) | .name' > kiddin9_packages
 
 color() {
@@ -158,17 +164,14 @@ clone_dir() {
 	[[ $repo_url =~ nikkinikki-org ]] && depth_arg=""
 
 	git clone -q $branch $depth_arg "$repo_url" $temp_dir 2>/dev/null || {
-	    _printf "$(color cr 拉取) $repo_url [ $(color cr ✕) ]"
-	    return 1
+		_printf "$(color cr 拉取) $repo_url [ $(color cr ✕) ]"
+		return 1
 	}
 
-	[[ $repo_url =~ nikkinikki-org ]] && (cd "$temp_dir" && git reset --hard cd3a9ec)
+	# [[ $repo_url =~ nikkinikki-org ]] && (cd "$temp_dir" && git reset --hard cd3a9ec)
 
-	[[ $REPO_BRANCH =~ master|23|24|25 ]] || {
-		[[ $repo_url =~ hong0980/diy ]] && set -- "$@" luci-app-wizard
-		# [[ $repo_url =~ coolsnowwolf/packages ]] && set -- "$@" "bash" \
-		# 		"btrfs-progs" "gawk" "jq" "nginx-util" "pciutils" "curl"
-	}
+	[[ $REPO_BRANCH =~ master && $repo_url =~ hong0980/build ]] && set -- "$@" python-chardet
+
 	[[ $repo_url =~ sbwml && $REPO =~ openwrt ]] && set -- "$@" \
 		"ipt2socks" "microsocks" "naiveproxy" "pdnsd" "redsocks2" "tcping" "tuic-client" \
 		"v2ray-core" "v2ray-geodata" "v2ray-plugin" "xray-plugin" "hysteria"
@@ -383,26 +386,26 @@ set_config (){
 	add_package autocore luci-app-arpbind luci-app-ssr-plus luci-app-passwall \
 				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard luci-app-tinynote-js \
 				default-settings-chn luci-app-package-manager luci-app-filebrowser #luci-app-ddnsto
+
 }
 
 deploy_cache() {
 	TOOLS_HASH=$(git log --pretty=tformat:"%h" -n1 tools toolchain)
 	time=$(TZ=UTC-8 date +%m-%d)
 	echo "CACHE_NAME=$REPO-${REPO_BRANCH#*-}-$ARCH-$time-$TOOLS_HASH" >> $GITHUB_ENV
-
 	local CACHE_URL; CACHE_URL=$(grep -m 1 "$REPO.*$ARCH.*$TOOLS_HASH" <<< "$op_cache")
 	if [ -n "$CACHE_URL" ]; then
-		echo -e "$(color cy '下载tz-cache')\c"
+		echo -e "$(color cy '下载缓存')\c"
 		begin_time=$(date '+%H:%M:%S')
-		wget -qc -t 3 -P ../ "$CACHE_URL"
-		status
-
-		if ls ../*"$TOOLS_HASH"* >/dev/null 2>&1; then
-			echo -e "$(color cy '部署tz-cache')\c"
+		if wget -qc -t 3 -P ../ "$CACHE_URL"; then
+			status
+			echo -e "$(color cy '部署缓存')\c"
 			begin_time=$(date '+%H:%M:%S')
-			tar -I unzstd -xf ../*"$TOOLS_HASH"* || tar --zstd -xf ../*"$TOOLS_HASH"* || tar -xf ../*"$TOOLS_HASH"*
+			( tar -I unzstd -xf ../*"$TOOLS_HASH"* || tar --zstd -xf ../*"$TOOLS_HASH"* ) && \
 			sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
 			[ -d staging_dir ]; status
+		else
+			echo "CACHE_ACTIONS=true" >> $GITHUB_ENV
 		fi
 	else
 		echo "CACHE_ACTIONS=true" >> $GITHUB_ENV
@@ -426,8 +429,6 @@ begin_time=$(date '+%H:%M:%S')
 status
 create_directory "package/A"
 set_config
-# grep -qv "PKG_VERSION:=1.93.0" feeds/packages/lang/rust/Makefile && \
-# clone_dir coolsnowwolf/packages rust
 
 clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
 clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
@@ -438,7 +439,7 @@ clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi libtorrent-rasterbar \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
 		luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
 		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
-		python-pyasn1 python-pyxdg python-rencode python-setproctitle python-twisted luci-app-mesh11sd \
+		python-pyasn1 python-pyxdg python-rencode python-setproctitle luci-app-mesh11sd \
 		transmission qBittorrent-static luci-app-diskman-js luci-app-tinynote-js \
 		luci-app-mesh-node luci-app-nikki
 
@@ -447,39 +448,19 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 		del_package "dnsmasq"
 		create_directory "package/emortal"
 		git clone -q https://github.com/immortalwrt/homeproxy package/A/luci-app-homeproxy
-		[[ $REPO_BRANCH =~ master|24|25 ]] || ucode=ucode
 		clone_dir immortalwrt/packages transmission-web-control
-		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal r8152 $ucode
+		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal r8152
 	else
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
 	fi
-	[[ $REPO_BRANCH =~ master|24|25 ]] && {
-		[[ $REPO_BRANCH =~ 24 ]] && {
-			sed -i 's#"\$(PYTHON3_PKG_BUILD_DIR)"/openwrt-build/\$(PYTHON3_PKG_WHEEL_NAME)-\$(PYTHON3_PKG_WHEEL_VERSION)-\*.whl#$(PYTHON3_PKG_BUILD_DIR)/openwrt-build/*\$(PYTHON3_PKG_WHEEL_VERSION)*.whl#' feeds/packages/lang/python/python3-package.mk
-		}
-	}
-	# [[ -f feeds/packages/libs/libutp/Makefile ]] && [[ $REPO_BRANCH =~ 25 ]] && \
-	# 	sed -i 's/-DLIBUTP_ENABLE_WERROR:BOOL=YES/-DLIBUTP_ENABLE_WERROR:BOOL=NO/' feeds/packages/libs/libutp/Makefile
+
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy"
-	#add_package "axel luci-app-gecoosac" luci-app-istorex luci-app-partexp
 	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
-else
-	create_directory "package/network/config/firewall4" "package/utils/ucode" "package/network/utils/fullconenat-nft" "package/libs/libmd" "package/kernel/bpf-headers"
-	clone_dir coolsnowwolf/lede automount ppp busybox parted r8152 firewall openssls
-	[[ "$REPO_BRANCH" =~ 21 ]] && {
-		git_apply "https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/openwrt-21.02-dmesg.js.patch" "feeds/luci"
-		git_apply "https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/openwrt-21.02-syslog.js.patch" "feeds/luci"
-	}
-	curl -sSo package/kernel/linux/modules/netfilter.mk \
-		https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/package/kernel/linux/modules/netfilter.mk
-	curl -sSo include/openssl-module.mk \
-		https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/include/openssl-module.mk
 fi
 
-# [[ $REPO_BRANCH =~ master|25 ]] || clone_dir openwrt/packages docker dockerd containerd docker-compose runc #nlbwmon
 del_package "luci-app-filetransfer luci-app-turboacc"
-clone_dir sbwml/openwrt_helloworld luci-app-passwall luci-app-passwall2 luci-app-openclash \
-		  chinadns-ng geoview xray-core simple-obfs kcptun shadowsocks-rust
+clone_dir sbwml/openwrt_helloworld luci-app-passwall luci-app-passwall2 chinadns-ng \
+		  geoview xray-core simple-obfs kcptun shadowsocks-rust
 clone_dir dev vernesong/OpenClash luci-app-openclash
 
 clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
@@ -488,10 +469,7 @@ clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
 # clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
 # clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
 clone_dir Openwrt-Passwall/openwrt-passwall-packages geoview
-# clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb \
-# 		luci-app-advancedplus luci-app-arpbind luci-app-ddns-go luci-app-gecoosac \
-# 		luci-app-istorex luci-app-pushbot luci-app-quickstart luci-app-store \
-# 		luci-app-syncdial luci-lib-taskd luci-lib-xterm taskd
+# clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb
 
 ! grep -q "GO_VERSION.*1.26.*" feeds/packages/lang/golang/golang/Makefile 2>/dev/null && \
 rm -rf feeds/packages/lang/golang && \
@@ -499,7 +477,19 @@ git clone -q https://github.com/sbwml/packages_lang_golang -b 26.x feeds/package
 
 color cy "自定义设置.... "
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
-sed -i "/ONLY/ s/^/#/g" feeds/packages/lang/python/python-mako/Makefile
+
+[ -f 'feeds/packages/lang/python/python-typing-extensions/Makefile' ] && \
+sed -Ei 's/(PKG_HASH:=).*/\1dc983d19a509c94dba722ee6abd33940f7c05a89e243c47e907eb4db6f1a43e5/; s/(PKG_VERSION:=).*/\14.16.0/' feeds/packages/lang/python/python-typing-extensions/Makefile
+
+[ -f 'feeds/packages/lang/python/python-mako/Makefile' ] && \
+sed -Ei '{
+	/ONLY/ s/^/#/g
+	/HOST_BUILD_DEPENDS/i\PYTHON3_PKG_WHEEL_NAME:=mako
+}' feeds/packages/lang/python/python-mako/Makefile
+
+# [[ $REPO_BRANCH =~ 24 ]] && sed -i \
+# 's/rasterbar +boost-python3/rasterbar +boost +boost-python3/' feeds/packages/libs/libtorrent-rasterbar/Makefile
+
 profile='package/base-files/files/etc/profile.d/apk-cheatsheet.sh'
 [ -e "$profile" ] && \
 grep -Fq '[ -x /usr/bin/apk ]' "$profile" && sed -i 's|\[ -x /usr/bin/apk \]|false|' "$profile"
@@ -515,13 +505,6 @@ done
 	package/A/clashoo/Makefile
 	sed -i '/BuildPackage/i\define Build/Compile\nendef' package/A/clashoo/Makefile
 }
-
-# [ -f "feeds/routing/mesh11sd/Makefile" ] && \
-# 	sed -i \
-# 	    -e 's/PKG_VERSION:=.*/PKG_VERSION:=5.1.3/' \
-# 	    -e 's/PKG_HASH:=.*/PKG_HASH:=skip/' \
-# 	    feeds/routing/mesh11sd/Makefile
-# /etc/init.d/rpcd restart
 
 sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
 sed -i 's|/bin/login|/bin/login -f root|' feeds/packages/utils/ttyd/files/ttyd.config
@@ -570,7 +553,24 @@ sed -Ei '{
 	sed -i 's/transmission-daemon/transmission-daemon +transmission-web-control/' feeds/luci/applications/luci-app-transmission/Makefile
 
 [[ "$TARGET_DEVICE" =~ armvirt ]] && sed -i '/qbittorrent/d' .config
-[[ $REPO_BRANCH =~ master|25|24 ]] && sed -i '/deluge/d' .config
+
+# [[ $REPO_BRANCH =~ master ]] && sed -i \
+# 	"s/ || (fval == this.default \&\& (this.optional || this.rmempty))//" \
+#   feeds/luci/modules/luci-base/htdocs/luci-static/resources/form.js
+
+[ "$REPO" = 'immortalwrt' -a "$TARGET_DEVICE" = 'x86_64' ] && {
+	PATCH_NAME="952-add-net-conntrack-events-support-multiple-registrant.patch"
+	for dir in target/linux/generic/hack-*; do
+		[ -d "$dir" ] || continue
+		ver=$(sed -nr 's/.*hack-(.*)/\1/p' <<<"$dir")
+		if curl $CURL_OPTS -o "${dir}/${PATCH_NAME}" \
+			"https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/target/linux/generic/hack-${ver}/${PATCH_NAME}"; then
+			echo "已添加 hack-${ver} 的 952 补丁"
+		else
+			echo "coolsnowwolf/lede 中未找到 hack-${ver} 的补丁，跳过" >&2
+		fi
+	done
+}
 
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
