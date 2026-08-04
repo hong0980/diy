@@ -456,7 +456,8 @@ clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
 [ -f 'feeds/packages/lang/python/python-mako/Makefile' ] && \
 sed -Ei '{
 	/ONLY/ s/^/#/g
-	/HOST_BUILD_DEPENDS/i\PYTHON3_PKG_WHEEL_NAME:=mako
+	/include \.\.\/python3-package\.mk/a\
+	PYTHON3_PKG_WHEEL_NAME:=Mako
 }' feeds/packages/lang/python/python-mako/Makefile
 
 for d in package/A/luci-app-openclash  feeds/luci/applications/luci-app-openclash; do
