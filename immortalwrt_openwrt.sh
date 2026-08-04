@@ -322,7 +322,7 @@ set_config (){
 			export DEVICE_NAME="$D_NAME"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
 			# add_busybox "pkill lsof"
-			add_package "luci-app-mesh-node libustream-mbedtls luci-app-nikki luci-app-fchomo luci-app-clashoo luci-app-mesh11sd"
+			add_package "luci-app-mesh-node libustream-mbedtls luci-app-nikki luci-app-fchomo luci-i18n-clashoo-zh-cn luci-app-mesh11sd"
 			del_package "wpad-basic-mbedtls wpad-openssl libustream-openssl libustream-wolfssl"
 			;;
 		newifi-d2)
@@ -376,12 +376,12 @@ set_config (){
 			echo "FIRMWARE_TYPE=$TARGET_DEVICE" >> $GITHUB_ENV
 			;;
 	esac
-	[[ $TARGET_DEVICE =~ k2p|d2|360|nx30|ax3000t ]] || add_package \
+	[[ $TARGET_DEVICE =~ k2p|d2|nx30|ax3000t ]] || add_package \
 		axel automount autosamba diffutils patch luci-app-diskman luci-app-poweroff luci-app-diskman-js \
 		luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-nikki \
 		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter luci-app-ddns-go \
 		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2 \
-		luci-app-miaplus luci-app-watchdog luci-app-fchomo luci-app-clashoo
+		luci-app-miaplus luci-app-watchdog luci-app-fchomo luci-i18n-clashoo-zh-cn
 
 	add_package autocore luci-app-arpbind luci-app-ssr-plus luci-app-passwall \
 				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard luci-app-tinynote-js \
@@ -471,9 +471,10 @@ clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
 clone_dir Openwrt-Passwall/openwrt-passwall-packages geoview
 # clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb
 
-! grep -q "GO_VERSION.*1.26.*" feeds/packages/lang/golang/golang/Makefile 2>/dev/null && \
-rm -rf feeds/packages/lang/golang && \
-git clone -q https://github.com/sbwml/packages_lang_golang -b 26.x feeds/packages/lang/golang
+[[ $REPO_BRANCH =~ master|25 ]] || {
+	rm -rf feeds/packages/lang/golang
+	git clone -q https://github.com/sbwml/packages_lang_golang -b 26.x feeds/packages/lang/golang
+}
 
 color cy "自定义设置.... "
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
@@ -513,7 +514,7 @@ sed -i "s|^\(OPENWRT_RELEASE.*%C\)\(.*\)|\1 ${REPLACEMENT}$(TZ=UTC-8 date +%m月
 # sed -i "/VERSION_NUMBER/ s/if.*/if \$(VERSION_NUMBER),\$(VERSION_NUMBER),${REPO_BRANCH#*-}-SNAPSHOT)/" include/version.mk || true
 
 settings="
-uci -q set upnpd.config.enabled='1'
+uci -q set upnpd.config.enabled='0'
 uci -q set system.@system[0].hostname='OpenWrt'
 uci -q set luci.main.lang='zh_cn'
 uci -q set luci.main.mediaurlbase='/luci-static/bootstrap'
@@ -558,7 +559,7 @@ sed -Ei '{
 # 	"s/ || (fval == this.default \&\& (this.optional || this.rmempty))//" \
 #   feeds/luci/modules/luci-base/htdocs/luci-static/resources/form.js
 
-[ "$REPO" = 'immortalwrt' -a "$TARGET_DEVICE" = 'x86_64' ] && {
+[[ "$REPO" =~ immortal && "$TARGET_DEVICE" =~ x86 ]] && {
 	PATCH_NAME="952-add-net-conntrack-events-support-multiple-registrant.patch"
 	for dir in target/linux/generic/hack-*; do
 		[ -d "$dir" ] || continue
@@ -571,7 +572,7 @@ sed -Ei '{
 		fi
 	done
 }
-
+chmod +x feeds/packages/utils/dockerd/git-short-commit.sh 1>/dev/null 2>&1
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
 make defconfig 1>/dev/null 2>&1

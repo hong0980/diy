@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
 rm -rf openwrt
-qb_version=$(curl -sL https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K(.*?)(?=/)' | sort -Vr | uniq | awk 'NR==1')
+TOKEN=()
+[[ -n $GH_TOKEN ]] && TOKEN=(-H "Authorization: token $GH_TOKEN")
+qb_version=$(curl -sL "${TOKEN[@]}" https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K(.*?)(?=/)' | sort -Vr | uniq | awk 'NR==1')
 
 op_cache=$(
-    for page in 1 2 3 4; do
-        curl -sL "$GITHUB_API_URL/repos/hong0980/Actions-OpenWrt/releases?page=$page"
-    done | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*'
-
-    curl -sL https://api.github.com/repos/hong0980/OpenWrt-Cache/releases \
-        | grep -oP '"browser_download_url": "\K[^"]*cache[^"]*'
+	page=1
+	while (( page <= 20 )); do
+		body=$(curl -sL "${TOKEN[@]}" "https://api.github.com/repos/hong0980/Actions-OpenWrt/releases?page=$page&per_page=15")
+		[[ $body != \[* ]] && break
+		grep -oP '"browser_download_url": "\K[^"]*-cache[^"]*' <<< "$body"
+		((page++))
+	done
+	curl -sL "${TOKEN[@]}" https://api.github.com/repos/hong0980/OpenWrt-Cache/releases \
+		| grep -oP '"browser_download_url": "\K[^"]*cache[^"]*'
 )
 
 color() {
@@ -46,8 +51,9 @@ find_first_dir() {
 }
 
 create_directory() {
-	for dir in $@; do
+	for dir in "$@"; do
 		mkdir -p "$dir" 2>/dev/null || return 1
+		return 0
 	done
 }
 
@@ -151,7 +157,10 @@ clone_dir() {
 	fi
 	[[ $repo_url =~ ^https?:// ]] || repo_url="https://github.com/$repo_url"
 
-	git clone -q $branch --depth 1 "$repo_url" $temp_dir 2>/dev/null || {
+	local depth_arg="--depth 1"
+	[[ $repo_url =~ nikkinikki-org ]] && depth_arg=""
+
+	git clone -q $branch $depth_arg "$repo_url" $temp_dir 2>/dev/null || {
 		_printf "$(color cr 拉取) $repo_url [ $(color cr ✕) ]"
 		return 1
 	}
@@ -242,6 +251,7 @@ set_config (){
 			CONFIG_TARGET_x86_64=y
 			CONFIG_TARGET_x86_64_DEVICE_generic=y
 			CONFIG_TARGET_ROOTFS_PARTSIZE=$PARTSIZE
+			CONFIG_TARGET_KERNEL_PARTSIZE=16
 			CONFIG_BUILD_NLS=y
 			CONFIG_GRUB_IMAGES=y
 			CONFIG_GRUB_TIMEOUT="2"
@@ -280,23 +290,27 @@ set_config (){
 			EOF
 			case "$TARGET_DEVICE" in
 					*360*)
-						CONF_ID="qihoo_360t7"
 						D_NAME="360T7"
+						CONF_ID="qihoo_360t7"
 						;;
 					*nx30*)
-						CONF_ID="h3c_magic-nx30-pro"
 						D_NAME="H3C-NX30-Pro"
+						CONF_ID="h3c_magic-nx30-pro"
 						;;
 					*ax3000t*)
-						CONF_ID="xiaomi_mi-router-ax3000t"
 						D_NAME="Xiaomi-AX3000T"
+						CONF_ID="xiaomi_mi-router-ax3000t"
 						;;
 			esac
 			echo "CONFIG_TARGET_mediatek_filogic_DEVICE_${CONF_ID}=y" >> .config
+			echo "CONFIG_TARGET_mediatek_filogic_DEVICE_${CONF_ID}-nmbm=y" >> .config
+			echo "CONFIG_TARGET_mediatek_filogic_DEVICE_${CONF_ID}-stock=y" >> .config
+			echo "CONFIG_TARGET_mediatek_filogic_DEVICE_${CONF_ID}-ubootmod=y" >> .config
 			lan_ip "192.168.5.1"
 			export DEVICE_NAME="$D_NAME"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
-			add_package "luci-app-mesh-node libustream-mbedtls luci-app-nikki luci-app-clashoo"
+			# add_busybox "pkill lsof"
+			add_package "luci-app-mesh-node libustream-mbedtls luci-app-nikki luci-app-fchomo luci-i18n-clashoo-zh-cn luci-app-mesh11sd"
 			del_package "wpad-basic-mbedtls wpad-openssl libustream-openssl libustream-wolfssl"
 			;;
 		newifi-d2)
@@ -356,35 +370,37 @@ set_config (){
 			}
 			;;
 	esac
-	[[ $TARGET_DEVICE =~ k2p|d2|360|nx30|ax3000t ]] || \
-		add_package automount autosamba luci-app-diskman luci-app-poweroff \
-			luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote \
-			luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter diffutils \
-			patch luci-app-qbittorrent luci-app-nikki luci-app-homeproxy \
-			luci-app-transmission luci-app-aria2 luci-app-clashoo
-	add_package luci-app-filebrowser luci-app-passwall luci-app-ttyd luci-app-wizard luci-app-taskplan \
-			luci-app-ksmbd luci-app-miaplus luci-app-watchdog luci-theme-bootstrap luci-app-diskman-js \
-			luci-app-tinynote-js
-	del_package luci-app-ddns luci-app-autoreboot luci-app-wol luci-app-vlmcsd luci-app-filetransfer
+	[[ $TARGET_DEVICE =~ k2p|d2|nx30|ax3000t ]] || add_package \
+		axel automount autosamba diffutils patch luci-app-diskman luci-app-poweroff luci-app-diskman-js \
+		luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-nikki \
+		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter luci-app-ddns-go \
+		luci-app-qbittorrent luci-app-transmission luci-app-aria2 webui-aria2 \
+		luci-app-miaplus luci-app-watchdog luci-app-fchomo luci-i18n-clashoo-zh-cn luci-app-deluge
+
+	add_package autocore luci-app-arpbind luci-app-ssr-plus luci-app-passwall \
+				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard luci-app-tinynote-js \
+				default-settings-chn luci-app-package-manager luci-app-filebrowser #luci-app-ddnsto
+
 }
 
 deploy_cache() {
 	TOOLS_HASH=$(git log --pretty=tformat:"%h" -n1 tools toolchain)
 	time=$(TZ=UTC-8 date +%m-%d)
-	echo "CACHE_NAME=$SOURCE_NAME-$repo_branch-$ARCH-$time-$TOOLS_HASH" >> $GITHUB_ENV
+	echo "CACHE_NAME=$SOURCE_NAME-$REPO_BRANCH-$ARCH-$time-$TOOLS_HASH" >> $GITHUB_ENV
 
-	local CACHE_URL; CACHE_URL=$(grep -m 1 "$REPO.*$ARCH.*$TOOLS_HASH" <<< "$op_cache")
+	local CACHE_URL; CACHE_URL=$(grep -m 1 "$ARCH.*$TOOLS_HASH" <<< "$op_cache")
 	if [ -n "$CACHE_URL" ]; then
-		echo -e "$(color cy '下载tz-cache')\c"
+		echo -e "$(color cy '下载缓存')\c"
 		begin_time=$(date '+%H:%M:%S')
-		wget -qc -t 3 -P ../ "$CACHE_URL"
-		status
-
-		if ls ../*"$TOOLS_HASH"* >/dev/null 2>&1; then
-			echo -e "$(color cy '部署tz-cache')\c"
+		if wget -qc -t 3 -P ../ "$CACHE_URL"; then
+			status
+			echo -e "$(color cy '部署缓存')\c"
 			begin_time=$(date '+%H:%M:%S')
-			(tar -I unzstd -xf ../*"$TOOLS_HASH"* || tar -xf ../*"$TOOLS_HASH"*) && sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
+			( tar -I unzstd -xf ../*"$TOOLS_HASH"* || tar --zstd -xf ../*"$TOOLS_HASH"* ) && \
+			sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
 			[ -d staging_dir ]; status
+		else
+			echo "CACHE_ACTIONS=true" >> $GITHUB_ENV
 		fi
 	else
 		echo "CACHE_ACTIONS=true" >> $GITHUB_ENV
@@ -392,19 +408,20 @@ deploy_cache() {
 }
 
 git_clone() {
-	local cmd
 	echo -e "$(color cy '拉取源码....')\c"
 	begin_time=$(date '+%H:%M:%S')
-	[ "$REPO_BRANCH" ] && cmd="-b $REPO_BRANCH --single-branch"
-	git clone -q $cmd $REPO_URL openwrt # --depth 1
+	git clone -q $REPO_URL openwrt # --depth 1
 	status
 	[[ -d openwrt ]] && cd openwrt || exit
-
 	echo -e "$(color cy '更新软件....')\c"
 	begin_time=$(date '+%H:%M:%S')
-	export repo_branch=$(sed -En 's/^src-git luci.*;(.*)/\1/p' feeds.conf.default)
-	# sed -i 's/openwrt-23.05/openwrt-24.10/' feeds.conf.default
-	sed -i '/#.*helloworld/ s/^#//' feeds.conf.default
+	cat > feeds.conf.default <<-EOF
+		src-git packages https://github.com/coolsnowwolf/packages
+		src-git routing https://github.com/coolsnowwolf/routing
+		src-git telephony https://github.com/coolsnowwolf/telephony.git
+		src-git helloworld https://github.com/fw876/helloworld.git
+		src-git luci https://github.com/coolsnowwolf/luci$([[ "$REPO_BRANCH" != master ]] && echo ".git;${REPO_BRANCH}")
+	EOF
 	./scripts/feeds update -a 1>/dev/null 2>&1
 	./scripts/feeds install -a 1>/dev/null 2>&1
 	status
@@ -418,17 +435,13 @@ REPO_URL="https://github.com/coolsnowwolf/lede"
 SOURCE_NAME=$(basename $(dirname $REPO_URL))
 git_clone
 
-! grep -q "GO_VERSION.*1.26.*" feeds/packages/lang/golang/golang/Makefile 2>/dev/null && \
-rm -rf feeds/packages/lang/golang && \
-git clone -q https://github.com/sbwml/packages_lang_golang -b 26.x feeds/packages/lang/golang
 # git diff ./ >> ../output/t.patch || true
-
 # clone_dir immortalwrt/packages libdeflate libdht libutp libb64
 clone_dir dev vernesong/OpenClash luci-app-openclash
 clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
 clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
 # clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview trojan-plus
-clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo
+clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
 clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
 
 clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
@@ -440,12 +453,25 @@ clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
 		sunpanel qBittorrent-static luci-app-diskman-js luci-app-tinynote-js \
 		luci-app-mesh-node luci-app-nikki
 
+[ -f 'feeds/packages/lang/python/python-typing-extensions/Makefile' ] && \
+sed -Ei 's/(PKG_HASH:=).*/\1dc983d19a509c94dba722ee6abd33940f7c05a89e243c47e907eb4db6f1a43e5/; s/(PKG_VERSION:=).*/\14.16.0/' feeds/packages/lang/python/python-typing-extensions/Makefile
+
+[ -f 'feeds/packages/lang/python/python-mako/Makefile' ] && \
+sed -Ei '{
+	/ONLY/ s/^/#/g
+	/HOST_BUILD_DEPENDS/i\PYTHON3_PKG_WHEEL_NAME:=mako
+}' feeds/packages/lang/python/python-mako/Makefile
+
+for d in package/A/luci-app-openclash  feeds/luci/applications/luci-app-openclash; do
+	[ -d "$d" ] || continue
+	[ -f "$d/root/etc/init.d/openclash" ] && sed -i "/procd_open_instance \"openclash\"/i\\   command -v yq &>/dev/null && yq -i '.' \"\$CONFIG_FILE\"" "$d/root/etc/init.d/openclash"
+	[ -f "$d/root/etc/uci-defaults/luci-openclash" ] && sed -Ei "/exit 0/i [ -x /usr/bin/mihomo ] && ln -sf /usr/bin/mihomo /etc/openclash/core/clash_meta\n[ -x /usr/bin/sing-box ] && [ ! -x /usr/bin/sing-box-stable ] && ln -sf /usr/bin/sing-box /usr/bin/sing-box-stable" "$d/root/etc/uci-defaults/luci-openclash"
+done
+
 [ -f "package/A/clashoo/Makefile" ] && {
-	sed -r -i '/(golang|PROVIDES|logic_test|GO_PKG|PKG_SOURCE|PKG_HASH|PKG_BUILD_|GoPackage|GoBinPackage)/d' \
+	sed -r -i '/(golang|PROVIDES|logic_test|GO_PKG|PKG_SOURCE|PKG_HASH|PKG_BUILD_|GoPackage|GoBinPackage|DEPENDS)/d' \
 	package/A/clashoo/Makefile
-	sed -i -e 's/\$(GO_ARCH_DEPENDS) //' \
-	       -e '/BuildPackage/i\define Build/Compile\nendef' \
-	package/A/clashoo/Makefile
+	sed -i '/BuildPackage/i\define Build/Compile\nendef' package/A/clashoo/Makefile
 }
 
 REPO_BRANCH=$(sed -En 's/^src-git luci.*;(.*)/\1/p' feeds.conf.default)
