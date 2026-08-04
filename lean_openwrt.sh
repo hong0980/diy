@@ -375,7 +375,7 @@ set_config (){
 		luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-nikki \
 		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter luci-app-ddns-go \
 		luci-app-qbittorrent luci-app-transmission luci-app-aria2 webui-aria2 \
-		luci-app-miaplus luci-app-watchdog luci-app-fchomo luci-i18n-clashoo-zh-cn luci-app-deluge
+		luci-app-miaplus luci-app-watchdog luci-i18n-clashoo-zh-cn luci-app-deluge luci-app-fchomo
 
 	add_package autocore luci-app-arpbind luci-app-ssr-plus luci-app-passwall \
 				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard luci-app-tinynote-js \
@@ -441,7 +441,7 @@ clone_dir dev vernesong/OpenClash luci-app-openclash
 clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
 clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
 # clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview trojan-plus
-clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
+# clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
 clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
 
 clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
@@ -452,9 +452,6 @@ clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
 		python-pyxdg python-rencode python-setproctitle python-twisted \
 		sunpanel qBittorrent-static luci-app-diskman-js luci-app-tinynote-js \
 		luci-app-mesh-node luci-app-nikki
-
-[ -f 'feeds/packages/lang/python/python-typing-extensions/Makefile' ] && \
-sed -Ei 's/(PKG_HASH:=).*/\1dc983d19a509c94dba722ee6abd33940f7c05a89e243c47e907eb4db6f1a43e5/; s/(PKG_VERSION:=).*/\14.16.0/' feeds/packages/lang/python/python-typing-extensions/Makefile
 
 [ -f 'feeds/packages/lang/python/python-mako/Makefile' ] && \
 sed -Ei '{
