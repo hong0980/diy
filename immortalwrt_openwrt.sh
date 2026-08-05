@@ -393,7 +393,19 @@ deploy_cache() {
 	TOOLS_HASH=$(git log --pretty=tformat:"%h" -n1 tools toolchain)
 	time=$(TZ=UTC-8 date +%m-%d)
 	echo "CACHE_NAME=$REPO-${REPO_BRANCH#*-}-$ARCH-$time-$TOOLS_HASH" >> $GITHUB_ENV
-	local CACHE_URL; CACHE_URL=$(grep -m 1 "$REPO.*$ARCH.*$TOOLS_HASH" <<< "$op_cache")
+	local CACHE_URL; CACHE_URL=$(grep "$REPO.*$ARCH.*$TOOLS_HASH" <<< "$op_cache")
+
+	if [ -z "$CACHE_URL" ]; then
+		local url date epoch age
+		url=$(grep "$REPO-${REPO_BRANCH#*-}-$ARCH.*" <<< "$op_cache" | tail -n1)
+		if [ -n "$url" ]; then
+			date=$(echo "$url" | sed -nE 's/.*-([0-9]{2}-[0-9]{2})-[0-9a-f]+-cache\.tzst/\1/p')
+			epoch=$(date -d "$(date +%Y)-$date" +%s 2>/dev/null || date -d "$(($(date +%Y)-1))-$date" +%s)
+			age=$(( ($(date +%s) - epoch) / 86400 ))
+			[ "$age" -lt 30 ] && CACHE_URL=$url
+		fi
+	fi
+
 	if [ -n "$CACHE_URL" ]; then
 		echo -e "$(color cy '下载缓存')\c"
 		begin_time=$(date '+%H:%M:%S')
