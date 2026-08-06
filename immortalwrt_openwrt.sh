@@ -402,16 +402,19 @@ deploy_cache() {
 			date=$(echo "$url" | sed -nE 's/.*-([0-9]{2}-[0-9]{2})-[0-9a-f]+-cache\.tzst/\1/p')
 			epoch=$(date -d "$(date +%Y)-$date" +%s 2>/dev/null || date -d "$(($(date +%Y)-1))-$date" +%s)
 			age=$(( ($(date +%s) - epoch) / 86400 ))
-			[ "$age" -lt 30 ] && CACHE_URL=$url
+			[ "$age" -lt 30 ] && {
+				CACHE_URL=$url
+				echo -e "$(color cy '使用以前缓存')\c"
+			}
 		fi
 	fi
 
 	if [ -n "$CACHE_URL" ]; then
-		echo -e "$(color cy '下载缓存')\c"
+		echo -e "$(color cy '下载缓存完成')\c"
 		begin_time=$(date '+%H:%M:%S')
 		if wget -qc -t 3 -P ../ "$CACHE_URL"; then
 			status
-			echo -e "$(color cy '部署缓存')\c"
+			echo -e "$(color cy '部署缓存完成')\c"
 			begin_time=$(date '+%H:%M:%S')
 			( tar -I unzstd -xf ../*"$TOOLS_HASH"* || tar --zstd -xf ../*"$TOOLS_HASH"* ) && \
 			sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
