@@ -404,7 +404,7 @@ deploy_cache() {
 			age=$(( ($(date +%s) - epoch) / 86400 ))
 			[ "$age" -lt 30 ] && {
 				CACHE_URL=$url
-				echo -e "$(color cy '使用以前缓存')\c"
+				color cy "使用${date}缓存"
 			}
 		fi
 	fi
@@ -588,6 +588,8 @@ sed -Ei '{
 		fi
 	done
 }
+
+sed -i '/deluge/d' .config
 chmod +x feeds/packages/utils/dockerd/git-short-commit.sh 1>/dev/null 2>&1
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
