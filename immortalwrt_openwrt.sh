@@ -410,13 +410,14 @@ deploy_cache() {
 	fi
 
 	if [ -n "$CACHE_URL" ]; then
-		echo -e "$(color cy '下载缓存完成')\c"
+		echo -e "$(color cy '开始下载缓存')\c"
+		rm -rf ../*-cache.tzst
 		begin_time=$(date '+%H:%M:%S')
 		if wget -qc -t 3 -P ../ "$CACHE_URL"; then
 			status
 			echo -e "$(color cy '部署缓存完成')\c"
 			begin_time=$(date '+%H:%M:%S')
-			( tar -I unzstd -xf ../*"$TOOLS_HASH"* || tar --zstd -xf ../*"$TOOLS_HASH"* ) && \
+			( tar -I unzstd -xf ../*-cache.tzst || tar --zstd -xf ../*-cache.tzst* ) && \
 			sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
 			[ -d staging_dir ]; status
 		else
