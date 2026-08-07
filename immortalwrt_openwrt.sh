@@ -589,7 +589,9 @@ sed -Ei '{
 	done
 }
 
-sed -i '/deluge/d' .config
+[[ "$VERSION" == 'slim' ]] && {
+	sed -Ei '/dockerman|deluge|aria2|transmission|qbittorrent|softwarecenter|clashoo|fchomo|watchdog/d' .config
+}
 chmod +x feeds/packages/utils/dockerd/git-short-commit.sh 1>/dev/null 2>&1
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
