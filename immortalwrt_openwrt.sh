@@ -411,13 +411,12 @@ deploy_cache() {
 
 	if [ -n "$CACHE_URL" ]; then
 		echo -e "$(color cy '开始下载缓存')\c"
-		rm -rf ../*-cache.tzst
 		begin_time=$(date '+%H:%M:%S')
-		if wget -qc -t 3 -P ../ "$CACHE_URL"; then
+		if wget -qc -t 3 -O ../openwrt_cache.tzst "$CACHE_URL"; then
 			status
 			echo -e "$(color cy '部署缓存完成')\c"
 			begin_time=$(date '+%H:%M:%S')
-			( tar -I unzstd -xf ../*-cache.tzst || tar --zstd -xf ../*-cache.tzst* ) && \
+			( tar -I unzstd -xf ../openwrt_cache.tzst || tar --zstd -xf ../openwrt_cache.tzst ) && \
 			sed -i 's/ $(tool.*\/stamp-compile)//' Makefile
 			[ -d staging_dir ]; status
 		else
@@ -590,7 +589,7 @@ sed -Ei '{
 }
 
 [[ "$VERSION" == 'slim' ]] && \
-	sed -Ei '/dockerman|deluge|aria2|transmission|qbittorrent|softwarecenter|clashoo|fchomo|watchdog|ddns/d' .config
+	sed -Ei '/dockerman|deluge|aria2|transmission|qbittorrent|softwarecenter|watchdog|ddns/d' .config
 
 chmod +x feeds/packages/utils/dockerd/git-short-commit.sh 1>/dev/null 2>&1
 echo -e "$(color cy '更新配置....')\c"
