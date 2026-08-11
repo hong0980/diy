@@ -1,0 +1,235 @@
+%YAML 1.2
+---
+name: ucode
+file_extensions: [uc, uc.tmpl, utpl]
+first_line_match: '^#!.*?\bucode\b'
+scope: source.uc
+version: 2
+
+# =============================================================================
+# ucode Sublime Text Syntax — Official-Accurate + Unclosed Quote Detection
+# =============================================================================
+# Based on ucode lexer.c & official docs:
+#   - Single/double quotes CANNOT span lines (newline = invalid + pop)
+#   - Template strings (`) CAN span lines + support ${…} placeholders
+#   - Escape sequences aligned with lexer parse_escape()
+# =============================================================================
+
+variables:
+  identifier: '[A-Za-z_][A-Za-z0-9_]*'
+  builtin_funcs: '\b(print|printf|sprintf|length|type|int|double|bool|str|json|match|replace|regexp|assert|die|exit|getenv|time|localtime|gmtime|clock|push|pop|shift|unshift|map|filter|sort|reverse|index|keys|values|exists|proto|call|require|include|loadfile|loadstring|gc|hex|hexdec|hexenc|b64enc|b64dec|chr|ord|trim|ltrim|rtrim|split|join|toupper|tolower|lc|uc|substr|wildcard|arrtoip|iptoarr|system|uci|warn|error|info|debug|min|max|sleep|rand|srand)\b'
+
+contexts:
+  main:
+    - match: '^#!.*$'
+      scope: comment.line.shebang.uc punctuation.definition.comment.uc
+
+    - match: '\{%-?'
+      scope: punctuation.definition.template.begin.uc
+      push: template_statement
+
+    - match: '\{\{-?'
+      scope: punctuation.definition.template.begin.uc
+      push: template_expression
+
+    - match: '\{#-?'
+      scope: punctuation.definition.comment.begin.uc
+      push:
+        - meta_scope: comment.block.template.uc
+        - match: '-?#\}'
+          scope: punctuation.definition.comment.end.uc
+          pop: true
+
+    - include: code
+
+  code:
+    - include: comments
+    - include: strings
+    - include: regexps
+    - include: numbers
+    - include: function_declaration
+    - include: keywords
+    - include: constants
+    - include: builtin_functions
+    - include: function_calls
+    - include: operators
+    - include: property_access
+    - include: identifiers
+    - include: punctuation
+
+  comments:
+    - match: '(//).*$'
+      captures:
+        1: punctuation.definition.comment.uc
+      scope: comment.line.double-slash.uc
+    - match: '/\*'
+      scope: punctuation.definition.comment.begin.uc
+      push:
+        - meta_scope: comment.block.uc
+        - match: '\*/'
+          scope: punctuation.definition.comment.end.uc
+          pop: true
+
+  strings:
+    - match: '`'
+      scope: punctuation.definition.string.begin.uc
+      push: template_string
+    - match: '"'
+      scope: punctuation.definition.string.begin.uc
+      push: double_quoted_string
+    - match: "'"
+      scope: punctuation.definition.string.begin.uc
+      push: single_quoted_string
+
+  # --------------------------------------------------------------------------
+  # TEMPLATE STRING — spans lines, supports ${…} placeholders
+  # --------------------------------------------------------------------------
+  template_string:
+    - meta_scope: string.quoted.other.template.uc
+    # escapes: \a \b \e \f \n \r \t \v \\ \' \" \` \$ \0
+    - match: '\\[abefnrtv\\''"`$]'
+      scope: constant.character.escape.uc
+    # octal escapes: \0 .. \777 (max 3 digits)
+    - match: '\\[0-7]{1,3}'
+      scope: constant.character.escape.uc
+    - match: '\\x[0-9a-fA-F]{2}'
+      scope: constant.character.escape.uc
+    - match: '\\u[0-9a-fA-F]{4}'
+      scope: constant.character.escape.uc
+    # ${…} placeholder
+    - match: '\$\{'
+      scope: punctuation.definition.template-expression.begin.uc
+      push:
+        - meta_scope: meta.embedded.expression.uc
+        - clear_scopes: true
+        - match: '\}'
+          scope: punctuation.definition.template-expression.end.uc
+          pop: true
+        - include: code
+    - match: '`'
+      scope: punctuation.definition.string.end.uc
+      pop: true
+
+  # --------------------------------------------------------------------------
+  # DOUBLE QUOTED STRING — cannot span lines
+  # --------------------------------------------------------------------------
+  double_quoted_string:
+    - meta_scope: string.quoted.double.uc
+    - match: '\\.'
+      scope: constant.character.escape.uc
+    - match: '"'
+      scope: punctuation.definition.string.end.uc
+      pop: true
+    # CRITICAL FIX: newline in unclosed string → invalid + POP
+    - match: '\n'
+      scope: invalid.illegal.unclosed-string.uc
+      pop: true
+
+  # --------------------------------------------------------------------------
+  # SINGLE QUOTED STRING — cannot span lines
+  # --------------------------------------------------------------------------
+  single_quoted_string:
+    - meta_scope: string.quoted.single.uc
+    - match: '\\.'
+      scope: constant.character.escape.uc
+    - match: "'"
+      scope: punctuation.definition.string.end.uc
+      pop: true
+    # CRITICAL FIX: newline in unclosed string → invalid + POP
+    - match: '\n'
+      scope: invalid.illegal.unclosed-string.uc
+      pop: true
+
+  regexps:
+    - match: '(?<=[\s(,=:!&|?+\-*/~^%<>]|^)\s*/(?![/*])'
+      scope: punctuation.definition.string.begin.uc
+      push:
+        - meta_scope: string.regexp.uc
+        - match: '\\.'
+          scope: constant.character.escape.uc
+        - match: '/([gimsuy]*)'
+          captures:
+            1: keyword.other.flag.uc
+          scope: punctuation.definition.string.end.uc
+          pop: true
+
+  numbers:
+    - match: '\b0[xX][0-9a-fA-F]+\b'
+      scope: constant.numeric.hex.uc
+    - match: '\b0[bB][01]+\b'
+      scope: constant.numeric.binary.uc
+    - match: '\b0[oO][0-7]+\b'
+      scope: constant.numeric.octal.uc
+    - match: '\b\d+\.\d*([eE][+-]?\d+)?\b|\b\d+[eE][+-]?\d+\b|\b\.\d+([eE][+-]?\d+)?\b'
+      scope: constant.numeric.float.uc
+    - match: '\b\d+\b'
+      scope: constant.numeric.integer.uc
+
+  function_declaration:
+    - match: '\b(function)\s+({{identifier}})\s*(?=\()'
+      captures:
+        1: keyword.control.uc
+        2: entity.name.function.uc
+    - match: '\b(function)\s+({{identifier}})\s*;'
+      captures:
+        1: keyword.control.uc
+        2: entity.name.function.uc
+
+  keywords:
+    # control flow — aligned with lexer.c reserved_words[]
+    - match: '\b(if|elif|else|for|while|function|return|break|continue|switch|case|default|import|export|let|const|in|delete|try|catch)\b'
+      scope: keyword.control.uc
+    # alternative syntax end keywords
+    - match: '\b(endif|endfor|endwhile|endfunction)\b'
+      scope: keyword.control.end.uc
+
+  constants:
+    - match: '\b(true|false|null|undefined|NaN|Infinity)\b'
+      scope: constant.language.uc
+    - match: '\bthis\b'
+      scope: variable.language.uc
+
+  builtin_functions:
+    - match: '{{builtin_funcs}}(?=\s*\()'
+      scope: support.function.builtin.uc
+
+  function_calls:
+    - match: '\b({{identifier}})\b(?=\s*\()'
+      captures:
+        1: variable.function.uc
+
+  operators:
+    - match: '\?\?|\?\.|===|!==|==|!=|<=|>=|\|\||&&|\+\+|--|\*\*|<<=|>>=|&&=|\|\|=|\?\?=|\*\*=|[-+*/%&|^~!=<>]=?|\?|\.{3}|=>'
+      scope: keyword.operator.uc
+
+  property_access:
+    - match: '(\?\.)({{identifier}})'
+      captures:
+        1: punctuation.accessor.uc
+        2: variable.other.property.uc
+    - match: '(\.)({{identifier}})'
+      captures:
+        1: punctuation.accessor.uc
+        2: variable.other.property.uc
+
+  identifiers:
+    - match: '\b{{identifier}}\b'
+      scope: variable.other.uc
+
+  punctuation:
+    - match: '[{}()\[\];,.:]'
+      scope: punctuation.uc
+
+  template_statement:
+    - meta_scope: meta.template.statement.uc
+    - match: '-?%\}'
+      scope: punctuation.definition.template.end.uc
+      pop: true
+    - include: code
+
+  template_expression:
+    - meta_scope: meta.template.expression.uc
+    - match: '-?\}\}'
+      scope: punctuation.definition.template.end.uc
+      pop: true
+    - include: code
