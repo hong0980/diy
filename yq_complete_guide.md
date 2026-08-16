@@ -1,7 +1,7 @@
-# yq 完全使用手册（增强实战版）
+# yq 完全使用手册
 
 > 基于 [mikefarah/yq](https://mikefarah.gitbook.io/yq) v4.40+ 官方文档整理并深度扩展
-> 
+>
 > yq 是一个轻量级、可移植的命令行 YAML/JSON/XML/INI/Properties/CSV/TSV/TOML/HCL 处理器，使用类似 jq 的表达式语法。
 
 ---
@@ -35,17 +35,18 @@
 25. [格式转换](#25-格式转换)
 26. [Reduce 与函数式操作](#26-reduce-与函数式操作)
 27. [With 与 Entries 操作](#27-with-与-entries-操作)
-28. [拆分为文档](#28-拆分为文档)
-29. [加法与数值运算](#29-加法与数值运算)
-30. [实战专题：Kubernetes 与容器配置](#30-实战专题kubernetes-与容器配置)
-31. [实战专题：CI/CD 与配置管理](#31-实战专题cicd-与配置管理)
-32. [实战专题：Docker Compose 管理](#32-实战专题docker-compose-管理)
-33. [与 jq 对比迁移指南](#33-与-jq-对比迁移指南)
-34. [性能优化与大数据处理](#34-性能优化与大数据处理)
-35. [Shell 集成技巧](#35-shell-集成技巧)
-36. [PowerShell 使用指南](#36-powershell-使用指南)
-37. [常见陷阱与故障排除](#37-常见陷阱与故障排除)
-38. [附录：速查表](#38-附录速查表)
+28. [数组映射 map](#28-数组映射-map)
+29. [拆分为文档](#29-拆分为文档)
+30. [加法与数值运算](#30-加法与数值运算)
+31. [实战专题：Kubernetes 与容器配置](#31-实战专题kubernetes-与容器配置)
+32. [实战专题：CI/CD 与配置管理](#32-实战专题cicd-与配置管理)
+33. [实战专题：Docker Compose 管理](#33-实战专题docker-compose-管理)
+34. [与 jq 对比迁移指南](#34-与-jq-对比迁移指南)
+35. [性能优化与大数据处理](#35-性能优化与大数据处理)
+36. [Shell 集成技巧](#36-shell-集成技巧)
+37. [PowerShell 使用指南](#37-powershell-使用指南)
+38. [常见陷阱与故障排除](#38-常见陷阱与故障排除)
+39. [附录：速查表](#39-附录速查表)
 
 ---
 
@@ -142,15 +143,6 @@ curl -sL "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_lin
 chmod +x yq
 ./yq --version
 ```
-
-### 1.5 版本兼容性说明
-
-yq v4 是一次重大重构，与 v3 完全不兼容。v4 采用类似 jq 的表达式语法，而 v3 使用类似 `yq read/write` 的命令式语法。如果你维护使用 v3 的老项目，建议：
-
-1. 逐步迁移到 v4（v3 已不再维护）
-2. 在迁移期间使用 `yq4` 别名区分版本
-3. 参考官方迁移指南：https://mikefarah.gitbook.io/yq/upgrading-from-v3
-
 ---
 
 ## 2. 基础用法与核心概念
@@ -228,7 +220,6 @@ yq '.a' file1.yaml file2.yaml
 yq eval-all '.[0].a + .[1].b' file1.yaml file2.yaml
 # 可以跨文件引用
 ```
-
 
 ---
 
@@ -321,7 +312,7 @@ yq --security-disable-file-ops --security-disable-env-ops '.' untrusted.yaml
 ```bash
 # XML 转 YAML 示例
 yq -p xml -P '
-  .root.item[] | 
+  .root.item[] |
   {"name": .["+@name"], "value": .["+content"]}
 ' data.xml
 ```
@@ -804,7 +795,6 @@ yq '.a.b.[0] |= "bogs"' sample.yml
 yq '.x.y.z[2].name = "test"' sample.yml
 ```
 
-
 ---
 
 ## 6. 条件过滤
@@ -1102,8 +1092,9 @@ yq '.users[] | {"name": .name, "email": .contact.email}' data.yml
 ```
 
 ---
-
 ## 9. 变量与作用域
+
+`as` 是 yq 中最重要的操作之一，用于将值暂存到变量中，供后续表达式复用。
 
 ### 9.1 单值变量
 
@@ -1191,7 +1182,58 @@ yq '.a.b ref $x | $x = "new" | $x style="double"' sample.yml
 #   c: something
 ```
 
-### 9.6 变量作用域规则
+### 9.6 环境变量绑定（OpenWrt / CI 最常用）
+
+```bash
+export DB_HOST="localhost"
+export DB_PORT="5432"
+export INTERVAL="300"
+
+yq -i '
+  (strenv(DB_HOST)  // "") as $h |
+  (strenv(DB_PORT)  // "") as $p |
+  (strenv(INTERVAL) // "") as $i |
+  .database.host = $h |
+  .database.port = ($p | tonumber) |
+  .interval = ($i | tonumber)
+' config.yaml
+```
+
+**关键点：**
+- `strenv(NAME)` 读取环境变量，始终返回字符串
+- `// ""` 提供默认值，防止变量未设置时报错
+- `as $var` 绑定后，在后续整个表达式中可用
+- `tonumber` 将字符串数字转为真正的数字
+
+### 9.7 在 with_entries 中使用 as
+
+```bash
+# 将键名暂存，用于构造新值
+yq '
+  .providers |= with_entries(
+    .key as $k |
+    .value.path = "./provider/\($k).yaml"
+  )
+' config.yaml
+```
+
+### 9.8 多变量同时绑定
+
+```bash
+# 同时绑定多个环境变量
+yq -i '
+  (strenv(URL)      // "") as $u |
+  (strenv(INTERVAL) // "") as $i |
+  (strenv(TIMEOUT)  // "") as $t |
+  .proxy-groups |= map(
+    ((select($u != "") | .url = $u) // .) |
+    ((select($i != "" and .type == "url-test") | .interval = ($i | tonumber)) // .) |
+    ((select($t != "" and .type == "url-test") | .timeout = ($t | tonumber)) // .)
+  )
+' config.yaml
+```
+
+### 9.9 变量作用域规则
 
 ```bash
 # 变量在定义后的整个表达式中可用
@@ -1199,6 +1241,13 @@ yq '.a as $x | .b | .c = $x' sample.yml
 
 # 但在子表达式中重新定义会遮蔽外层
 yq '.a as $x | (.b as $x | $x) | $x' sample.yml  # 最后 $x 仍是 .a
+
+# 子表达式中的变量不会泄漏到外层
+yq '
+  .base as $b |
+  (.items | .[0] as $first | $first.name) |
+  .copy = $b    # $b 仍可用，$first 不可用
+' sample.yml
 ```
 
 ---
@@ -1555,7 +1604,7 @@ yq '.. | .c?' sample.yml   # 安全查找所有 .c
 
 ```bash
 # 查找所有包含 "image" 的字段并统一更新
-yq -i '(.. | select(has("image"))).image = "nginx:latest"' deployment.yaml
+yq -i '(.. | select(has("image")).image) = "nginx:latest"' deployment.yaml
 
 # 递归删除所有 difficulty 字段
 yq -i 'del(.. | .difficulty?)' question-file.yml
@@ -1700,6 +1749,36 @@ yq 'unique | sort' sample.yml
 yq 'unique_by(.name)' users.yml
 ```
 
+### 13.9 保留最新去重（反转去重法）
+
+```yaml
+# sample.yml
+proxies:
+  - name: node1
+    server: 1.1.1.1
+  - name: node2
+    server: 2.2.2.2
+  - name: node1
+    server: 3.3.3.3
+```
+
+```bash
+# 后面的配置优先：先反转，去重，再反转回来
+yq '.proxies |= (reverse | unique_by(.name) | reverse)' sample.yml
+# 结果保留最后一个 node1（server: 3.3.3.3）
+```
+
+### 13.10 去重统计
+
+```bash
+# 查看去重前后的数量
+yq '
+  (.proxies | length) as $before |
+  (.proxies | unique_by(.name) | length) as $after |
+  "Before: \($before), After: \($after)"
+' config.yaml
+```
+
 ---
 
 ## 14. 键操作
@@ -1808,9 +1887,7 @@ yq '[.[] | select(.active == true)] | length' sample.yml
 yq '[.. | select(tag == "!!seq")] | map(length) | add' sample.yml
 ```
 
-
 ---
-
 ## 16. 字符串操作
 
 ### 16.1 插值
@@ -1898,7 +1975,44 @@ yq 'capture("(?P<a>[a-z]+)-(?P<n>[0-9]+)")' sample.yml
 # n: "14"
 ```
 
-### 16.7 替换
+### 16.7 正则测试 test
+
+`test` 用于判断字符串是否匹配正则表达式，返回布尔值，是条件过滤的核心工具。
+
+```yaml
+# sample.yml
+- name: server-us-01
+  region: america
+- name: server-hk-01
+  region: asia
+- name: server-uk-01
+  region: europe
+```
+
+```bash
+# 基础匹配
+yq '.[] | select(.name | test("^server-"))' sample.yml
+
+# 忽略大小写 (?i)
+yq '.[] | select(.region | test("(?i)US|america|美国"))' sample.yml
+
+# 匹配结尾
+yq '.[] | select(.name | test("-01$"))' sample.yml
+
+# 不匹配
+yq '.[] | select(.name | test("hk") | not)' sample.yml
+
+# 在 with_entries 中使用
+yq '
+  .providers |= with_entries(
+    .value.path = (
+      (.value.path | select(test("/$")) | . + "suffix") // .value.path
+    )
+  )
+' sample.yml
+```
+
+### 16.8 替换
 
 ```yaml
 # sample.yml
@@ -1919,7 +2033,7 @@ yq '.[] |= gsub("a"; "A")' sample.yml
 yq '.[] |= sub("cat"; "dog")' sample.yml
 ```
 
-### 16.8 分割
+### 16.9 分割
 
 ```bash
 yq 'split("; ")' sample.yml
@@ -1928,7 +2042,7 @@ yq 'split("; ")' sample.yml
 yq 'split("\n")' sample.yml
 ```
 
-### 16.9 startsWith / endsWith / contains
+### 16.10 startsWith / endsWith / contains
 
 ```bash
 yq '.[] | select(startswith("pre"))' sample.yml
@@ -1988,18 +2102,58 @@ yq '.[] |= all_c(tag == "!!str")' sample.yml
 # b: true
 ```
 
-### 17.4 条件表达式（if-then-else 模式）
-
-虽然 yq 没有直接的 if/else，但可以用 `//` 和 `select` 模拟：
+### 17.4 条件表达式（if-then-else）
 
 ```bash
 # 设置默认值（如果为 null 则使用默认值）
 yq '.name // "unknown"' sample.yml
 
 # 条件赋值
-yq '.status = (if .active then "running" else "stopped" end)' sample.yml
-# 实际上 yq 支持 if-then-else:
 yq 'if .active == true then "running" else "stopped" end' sample.yml
+
+# 多分支条件
+yq '
+  if .status == "green" then "healthy"
+  elif .status == "yellow" then "warning"
+  else "critical"
+  end
+' sample.yml
+```
+
+### 17.5 字符串转布尔（环境变量场景）
+
+```bash
+export ENABLE_FEATURE="true"
+
+# 将字符串 "true"/"false" 转为布尔值
+yq -i '
+  (strenv(ENABLE_FEATURE) // "") as $e |
+  .feature_enabled = (select($e != "") | ($e == "true")) // .
+' config.yaml
+
+# 批量转换所有 "true"/"false" 字符串
+yq '(.. | select(. == "true" or . == "false")) |= (. == "true")' config.yaml
+```
+
+### 17.6 安全条件更新模式（select + //）
+
+```bash
+# 核心模式：((select(条件) | .field = 新值) // .)
+# 只在条件满足时更新，否则保持原样
+
+yq -i '
+  .proxies |= map(
+    ((select(.type == "ss" and .cipher == "aes-256-gcm") | .plugin = "obfs") // .)
+  )
+' config.yaml
+
+# 多条件组合
+yq -i '
+  .proxy-groups |= map(
+    ((select(.type == "url-test") | .url = "http://test.com") // .) |
+    ((select(.type == "fallback") | .url = "http://fallback.com") // .)
+  )
+' config.yaml
 ```
 
 ---
@@ -2189,13 +2343,23 @@ yq '.a line_comment=""' sample.yml
 yq '... comments=""' sample.yml
 ```
 
-### 20.8 查找注释位置
+### 20.8 全局注释清理
+
+```bash
+# 合并多个文件后清理所有注释，输出纯净 YAML
+yq ea '
+  . as $item ireduce ({}; . * $item) |
+  ... comments=""
+' file1.yaml file2.yaml > merged.yaml
+```
+
+### 20.9 查找注释位置
 
 ```bash
 yq '[... | {"p": path | join("."), "isKey": is_key, "hc": headComment, "lc": lineComment, "fc": footComment}]' sample.yml
 ```
 
-### 20.9 注释保留注意事项
+### 20.10 注释保留注意事项
 
 yq 基于 go-yaml v3，**会尽力保留注释**，但在以下场景可能丢失：
 - 删除节点后，依附于该节点的注释可能消失
@@ -2286,8 +2450,18 @@ yq '.thingOne |= (explode(.) | sort_keys(.)) * {"value": false}' sample.yml
 ### 21.7 删除所有锚点和别名（内联化）
 
 ```bash
+# 展开后所有锚点消失，配置自包含
 yq 'explode(.)' sample.yml
-# 将所有别名引用替换为实际值，删除锚点
+```
+
+### 21.8 合并前展开（重要）
+
+```bash
+# 先展开别名，再合并，避免别名指向错误
+yq ea '
+  . as $item ireduce ({}; . * $item) |
+  explode(.)
+' base.yaml mixin.yaml
 ```
 
 ---
@@ -2600,15 +2774,13 @@ cat file.xml | yq -p xml '.'
 yq -o json '.' file.yaml
 ```
 
-
 ---
-
 ## 26. Reduce 与函数式操作
 
 ### 26.1 语法
 
 ```
-<exp> as $<name> ireduce (<init>; <block>)
+<表达式> as $<name> ireduce (<初始值>; <累积表达式>)
 ```
 
 ### 26.2 数组求和
@@ -2626,13 +2798,27 @@ yq '.[] as $item ireduce (0; . + $item)' sample.yml
 # 输出: 20
 ```
 
-### 26.3 合并所有文件
+### 26.3 合并所有文件（ireduce 核心场景）
 
 ```bash
-yq eval-all '. as $item ireduce ({}; . * $item )' *.yml
+# 合并所有 mixin 文件，后面的覆盖前面的
+yq ea '. as $item ireduce ({}; . * $item)' mixin1.yaml mixin2.yaml mixin3.yaml
 ```
 
-### 26.4 数组转对象
+**执行过程：**
+1. 初始值 `{}`
+2. 加载第一个文件，与 `{}` 合并 → 结果1
+3. 加载第二个文件，与结果1 合并 → 结果2
+4. 加载第三个文件，与结果2 合并 → 最终结果
+
+### 26.4 深度合并（保留嵌套结构）
+
+```bash
+# 深度合并，数组按索引合并
+yq ea '. as $item ireduce ({}; . *d $item)' base.yaml patch.yaml
+```
+
+### 26.5 数组转对象
 
 ```yaml
 # sample.yml
@@ -2649,7 +2835,7 @@ yq '.[] as $item ireduce ({}; .[$item | .name] = ($item | .has) )' sample.yml
 # Bob: bananas
 ```
 
-### 26.5 分组统计
+### 26.6 分组统计
 
 ```yaml
 # sample.yml
@@ -2667,6 +2853,16 @@ yq '.[] as $item ireduce ({}; .[$item.category] += $item.value)' sample.yml
 # 输出:
 # A: 40
 # B: 20
+```
+
+### 26.7 合并 + 清理（完整流程）
+
+```bash
+yq -Mi ea '
+  . as $item ireduce ({}; . * $item) |
+  ... comments="" |
+  explode(.)
+' base.yaml extra.yaml > merged.yaml
 ```
 
 ---
@@ -2756,11 +2952,160 @@ yq 'with_entries(.key |= "KEY_" + .)' sample.yml
 yq '(.. | select(tag=="!!map")) |= with_entries(.key |= "KEY_" + .)' sample.yml
 ```
 
+### 27.5 with_entries 动态键名处理
+
+```yaml
+# sample.yml
+providers:
+  custom1:
+    path: ""
+    url: http://example.com/1
+  custom2:
+    path: "/tmp/rules/"
+    url: http://example.com/2
+```
+
+```bash
+# 如果 path 为空，使用默认路径
+yq '
+  .providers |= with_entries(
+    .key as $k |
+    .value.path = ((.value.path | select(. != "")) // ("./provider/" + $k))
+  )
+' sample.yml
+```
+
+### 27.6 结合 as 和 test 处理路径
+
+```bash
+# 如果路径以 / 结尾，自动追加键名
+yq '
+  .providers |= with_entries(
+    .key as $k |
+    ((.value.path | select(. != "")) // ("./provider/" + $k)) as $base |
+    .value.path = (
+      ($base | select(test("/$")) | . + $k) // $base
+    )
+  )
+' sample.yml
+```
+
+### 27.7 过滤特定键
+
+```bash
+# 只保留以 "custom_" 开头的 provider
+yq '.providers |= with_entries(select(.key | startswith("custom_")))' sample.yml
+
+# 删除特定键
+yq '.providers |= with_entries(select(.key != "deprecated"))' sample.yml
+```
+
+### 27.8 批量修改键名格式
+
+```bash
+# 将键名中的横线改为下划线
+yq '. |= with_entries(.key |= sub("-"; "_"))' sample.yml
+
+# 键名转大写
+yq '.providers |= with_entries(.key |= upcase)' sample.yml
+```
+
 ---
 
-## 28. 拆分为文档
+## 28. 数组映射 map
 
-### 28.1 数组拆分为多文档
+`map` 用于对数组的每个元素应用表达式，是批量修改数组的核心工具。
+
+### 28.1 基础用法
+
+```yaml
+# sample.yml
+proxies:
+  - name: node1
+    type: ss
+  - name: node2
+    type: vmess
+```
+
+```bash
+# 给所有元素添加字段
+yq '.proxies |= map(.udp = true)' sample.yml
+
+# 修改所有元素的字段
+yq '.proxies |= map(.port = 443)' sample.yml
+```
+
+### 28.2 条件映射（核心模式）
+
+```bash
+# 核心模式：((select(条件) | .field = 新值) // .)
+# 只在条件满足时更新，否则保持原样
+
+export URL="http://test.com"
+export INTERVAL="300"
+
+yq -i '
+  (strenv(URL)      // "") as $u |
+  (strenv(INTERVAL) // "") as $i |
+  (.proxy-groups // []) |= map(
+    ((select($u != "") | .url = $u) // .) |
+    ((select($i != "" and .type == "url-test") | .interval = ($i | tonumber)) // .)
+  )
+' config.yaml
+```
+
+### 28.3 过滤 + 映射组合
+
+```bash
+# 只修改特定类型的元素
+yq '.proxies |= map(
+  (select(.type == "ss" and (.plugin | length == 0)) | .plugin = "obfs") // .
+)' config.yaml
+
+# 删除特定字段
+yq '.proxies |= map(del(.unused_field))' config.yaml
+```
+
+### 28.4 嵌套映射
+
+```bash
+# 修改 proxy-groups 中的每个代理引用
+yq '
+  .proxy-groups |= map(
+    .proxies |= map(
+      (select(. == "DIRECT") | "🎯 DIRECT") // .
+    )
+  )
+' config.yaml
+```
+
+### 28.5 多条件映射
+
+```bash
+export URL="http://test.com"
+export INTERVAL="300"
+export TOLERANCE="50"
+export TIMEOUT="5000"
+
+yq -i '
+  (strenv(URL)       // "") as $u  |
+  (strenv(INTERVAL)  // "") as $i  |
+  (strenv(TOLERANCE) // "") as $t  |
+  (strenv(TIMEOUT)   // "") as $to |
+  (.proxy-groups // []) |= map(
+    ((select($u  != "") | .url = $u) // .) |
+    ((select($i  != "" and (.type == "url-test" or .type == "fallback")) | .interval = ($i | tonumber)) // .) |
+    ((select($t  != "" and  .type == "url-test") | .tolerance = ($t | tonumber)) // .) |
+    ((select($to != "" and (.type == "url-test" or .type == "fallback")) | .timeout = ($to | tonumber)) // .)
+  )
+' config.yaml
+```
+
+---
+
+## 29. 拆分为文档
+
+### 29.1 数组拆分为多文档
 
 ```yaml
 # sample.yml
@@ -2776,7 +3121,7 @@ yq '.[] | split_doc' sample.yml
 # b: dog
 ```
 
-### 28.2 按条件拆分
+### 29.2 按条件拆分
 
 ```bash
 # 将活跃和非活跃用户拆分为不同文档
@@ -2786,39 +3131,39 @@ yq '.users[] | select(.active | not) | split_doc' users.yml > inactive.yml
 
 ---
 
-## 29. 加法与数值运算
+## 30. 加法与数值运算
 
-### 29.1 数字相加
-
-```bash
-yq '.a + .b' sample.yml
-```
-
-### 29.2 字符串拼接
+### 30.1 数字相加
 
 ```bash
 yq '.a + .b' sample.yml
 ```
 
-### 29.3 数组合并
+### 30.2 字符串拼接
 
 ```bash
 yq '.a + .b' sample.yml
 ```
 
-### 29.4 日期加法
+### 30.3 数组合并
+
+```bash
+yq '.a + .b' sample.yml
+```
+
+### 30.4 日期加法
 
 ```bash
 yq 'with_dtf("Monday, 02-Jan-06 at 3:04PM MST", .a += "3h1m")' sample.yml
 ```
 
-### 29.5 null 加法
+### 30.5 null 加法
 
 ```bash
 yq --null-input 'null + "cat"'    # 输出: cat
 ```
 
-### 29.6 数值运算
+### 30.6 数值运算
 
 ```bash
 # 基本运算
@@ -2831,11 +3176,44 @@ yq '.a | pow(.; 2)' sample.yml  # 幂运算
 yq '.a | sqrt' sample.yml    # 平方根
 ```
 
+### 30.7 字符串转数字 tonumber
+
+```bash
+export INTERVAL="300"
+
+# 基础转换
+yq -i '
+  (strenv(INTERVAL) | tonumber) as $i |
+  .interval = $i
+' config.yaml
+
+# 安全转换（防止空值报错）
+yq '
+  (strenv(INTERVAL) // "") as $s |
+  .interval = (select($s != "") | ($s | tonumber)) // .
+' config.yaml
+
+# 批量转换所有字符串数字
+yq '(.. | select(test("^[0-9]+$"))) |= tonumber' config.yaml
+```
+
+### 30.8 布尔转换
+
+```bash
+export ENABLE_UDP="true"
+
+# 将字符串 "true"/"false" 转为布尔值
+yq -i '
+  (strenv(ENABLE_UDP) // "") as $e |
+  .udp = (select($e != "") | ($e == "true")) // .
+' config.yaml
+```
+
 ---
 
-## 30. 实战专题：Kubernetes 与容器配置
+## 31. 实战专题：Kubernetes 与容器配置
 
-### 30.1 批量更新镜像标签
+### 31.1 批量更新镜像标签
 
 ```bash
 # 更新所有容器的镜像为最新版本
@@ -2848,7 +3226,7 @@ yq -i '(.spec.template.spec.containers[] | select(.name == "app")).image = "myap
 IMAGE_TAG=v1.2.3 yq -i '(.spec.template.spec.containers[].image) |= sub("(?<=:).*"; strenv(IMAGE_TAG))' deployment.yaml
 ```
 
-### 30.2 资源限制管理
+### 31.2 资源限制管理
 
 ```bash
 # 统一设置所有容器的资源限制
@@ -2863,7 +3241,7 @@ yq -i '(.spec.template.spec.containers[] | select(has("resources") | not)).resou
 }' deployment.yaml
 ```
 
-### 30.3 环境变量注入
+### 31.3 环境变量注入
 
 ```bash
 # 从 ConfigMap 注入环境变量
@@ -2876,7 +3254,7 @@ ENV_VARS='[{name: LOG_LEVEL, value: debug}, {name: TIMEOUT, value: "30"}]' \
   yq -i '.spec.template.spec.containers[0].env += env(ENV_VARS)' deployment.yaml
 ```
 
-### 30.4 副本数管理
+### 31.4 副本数管理
 
 ```bash
 # 设置副本数
@@ -2886,7 +3264,7 @@ yq -i '.spec.replicas = 3' deployment.yaml
 REPLICAS=5 yq -i '.spec.replicas = env(REPLICAS)' deployment.yaml
 ```
 
-### 30.5 标签和选择器管理
+### 31.5 标签和选择器管理
 
 ```bash
 # 添加标签
@@ -2899,7 +3277,7 @@ yq -i '.metadata.labels *= {"team": "platform", "cost-center": "cc123"}' deploym
 yq -i '.spec.selector.matchLabels.app = "new-app-name"' deployment.yaml
 ```
 
-### 30.6 Service 配置管理
+### 31.6 Service 配置管理
 
 ```bash
 # 更新 Service 端口
@@ -2909,7 +3287,7 @@ yq -i '(.spec.ports[] | select(.name == "http")).targetPort = 8080' service.yaml
 yq -i '.spec.ports += [{"name": "metrics", "port": 9090, "targetPort": 9090}]' service.yaml
 ```
 
-### 30.7 ConfigMap 数据管理
+### 31.7 ConfigMap 数据管理
 
 ```bash
 # 添加/更新配置项
@@ -2921,9 +3299,9 @@ yq -i '.data."app.conf" = load_str("app.conf")' configmap.yaml
 
 ---
 
-## 31. 实战专题：CI/CD 与配置管理
+## 32. 实战专题：CI/CD 与配置管理
 
-### 31.1 GitHub Actions 工作流管理
+### 32.1 GitHub Actions 工作流管理
 
 ```yaml
 # .github/workflows/deploy.yml
@@ -2949,7 +3327,7 @@ yq -i '.jobs.deploy.env.DEPLOY_ENV = "production"' .github/workflows/deploy.yml
 yq -i '.jobs.deploy.steps += [{"name": "Run tests", "run": "npm test"}]' .github/workflows/deploy.yml
 ```
 
-### 31.2 Helm Values 文件管理
+### 32.2 Helm Values 文件管理
 
 ```bash
 # 更新镜像仓库
@@ -2966,7 +3344,7 @@ ENV=prod yq -i '
 yq eval-all '. as $item ireduce ({}; . * $item)' values-base.yaml values-prod.yaml > values-merged.yaml
 ```
 
-### 31.3 多环境配置管理
+### 32.3 多环境配置管理
 
 ```bash
 # 目录结构：
@@ -2984,7 +3362,7 @@ yq --exit-status '.database.host and .database.port and .api.key' config/merged.
   || { echo "Missing required config"; exit 1; }
 ```
 
-### 31.4 版本号自动递增
+### 32.4 版本号自动递增
 
 ```bash
 # 读取当前版本
@@ -2997,7 +3375,7 @@ NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{print $1"."$2"."($3+1)}')
 yq -i '.version = strenv(NEW_VERSION)' package.yaml
 ```
 
-### 31.5  secrets 管理（不泄露）
+### 32.5  secrets 管理（不泄露）
 
 ```bash
 # 从环境变量注入 secrets（不硬编码）
@@ -3014,9 +3392,9 @@ yq '[.database.password, .api.token, .oauth.client_secret] | all' secrets.yaml \
 
 ---
 
-## 32. 实战专题：Docker Compose 管理
+## 33. 实战专题：Docker Compose 管理
 
-### 32.1 服务镜像更新
+### 33.1 服务镜像更新
 
 ```bash
 # 更新所有服务的镜像标签
@@ -3026,7 +3404,7 @@ TAG=v2.0 yq -i '.services[].image |= sub("(?<=:).*"; strenv(TAG))' docker-compos
 yq -i '.services.app.image = "myapp:v2"' docker-compose.yml
 ```
 
-### 32.2 环境变量注入
+### 33.2 环境变量注入
 
 ```bash
 # 添加环境变量到所有服务
@@ -3039,7 +3417,7 @@ while IFS='=' read -r key value; do
 done < .env
 ```
 
-### 32.3 端口映射管理
+### 33.3 端口映射管理
 
 ```bash
 # 添加端口映射
@@ -3049,7 +3427,7 @@ yq -i '.services.app.ports += ["8080:80"]' docker-compose.yml
 yq -i '(.services.app.ports[] | select(contains("80:80"))) = "8080:80"' docker-compose.yml
 ```
 
-### 32.4 卷管理
+### 33.4 卷管理
 
 ```bash
 # 添加卷
@@ -3060,7 +3438,7 @@ yq -i '.services.app.volumes += ["app-data:/app/data"]' docker-compose.yml
 yq -i '.volumes.app-data = {"driver": "local"}' docker-compose.yml
 ```
 
-### 32.5 网络配置
+### 33.5 网络配置
 
 ```bash
 # 添加自定义网络
@@ -3068,7 +3446,7 @@ yq -i '.services.app.networks += ["backend"]' docker-compose.yml
 yq -i '.networks.backend = {"driver": "bridge"}' docker-compose.yml
 ```
 
-### 32.6 健康检查配置
+### 33.6 健康检查配置
 
 ```bash
 yq -i '.services.app.healthcheck = {
@@ -3082,9 +3460,9 @@ yq -i '.services.app.healthcheck = {
 
 ---
 
-## 33. 与 jq 对比迁移指南
+## 34. 与 jq 对比迁移指南
 
-### 33.1 语法对照表
+### 34.1 语法对照表
 
 | 操作 | jq | yq | 说明 |
 |------|-----|-----|------|
@@ -3111,7 +3489,7 @@ yq -i '.services.app.healthcheck = {
 | 注释操作 | 不支持 | `line_comment` | yq 特有 |
 | 锚点/别名 | 不支持 | `anchor` / `alias` | yq 特有 |
 
-### 33.2 jq 用户常见陷阱
+### 34.2 jq 用户常见陷阱
 
 **陷阱 1：YAML 是类型敏感的**
 
@@ -3146,11 +3524,11 @@ yq -i '.foo = "bar"' file.yaml  # 注释会被保留
 yq '.foobar.a' sample.yml  # 可以读取通过 << 合并的字段
 ```
 
-### 33.3 从 jq 迁移的实用技巧
+### 34.3 从 jq 迁移的实用技巧
 
 ```bash
 # jq 脚本基本可以直接用于 yq（处理 JSON 时）
-cat data.json | jq '.items[] | select(.active)' 
+cat data.json | jq '.items[] | select(.active)'
 # 等价于
 cat data.json | yq -p json '.items[] | select(.active)'
 
@@ -3161,9 +3539,9 @@ yq --from-file query.yq data.yaml
 
 ---
 
-## 34. 性能优化与大数据处理
+## 35. 性能优化与大数据处理
 
-### 34.1 大文件处理策略
+### 35.1 大文件处理策略
 
 ```bash
 # 对于超大 YAML 文件（>100MB），避免使用递归操作
@@ -3177,7 +3555,7 @@ yq '.spec.template.spec.containers[].image' large-file.yaml
 yq '.items[].metadata.name' large-file.yaml
 ```
 
-### 34.2 管道优化
+### 35.2 管道优化
 
 ```bash
 # 避免多次读取同一文件
@@ -3191,7 +3569,7 @@ yq '.items[] | select(.active) | .name' file.yaml
 yq eval-all '.[] | select(.active)' *.yaml  # 所有文件加载到内存
 ```
 
-### 34.3 内存优化
+### 35.3 内存优化
 
 ```bash
 # 对于超大数据集，考虑分批处理
@@ -3203,7 +3581,7 @@ done
 yq '.items[] | split_doc' large-file.yaml | split -l 1 - item-
 ```
 
-### 34.4 原地更新的性能
+### 35.4 原地更新的性能
 
 ```bash
 # -i 会创建临时文件然后替换原文件
@@ -3220,9 +3598,9 @@ yq -i '.a = 1 | .b = 2 | .c = 3' file.yaml
 
 ---
 
-## 35. Shell 集成技巧
+## 36. Shell 集成技巧
 
-### 35.1 Bash 数组创建
+### 36.1 Bash 数组创建
 
 ```bash
 # 将 yq 输出读入 Bash 数组
@@ -3230,7 +3608,7 @@ readarray actions < <(yq '.coolActions[]' sample.yaml)
 echo "${actions[1]}"
 ```
 
-### 35.2 Bash 循环中使用 yq
+### 36.2 Bash 循环中使用 yq
 
 ```bash
 readarray identityMappings < <(yq -o=j -I=0 '.identities[]' test.yml)
@@ -3241,7 +3619,7 @@ for identityMapping in "${identityMappings[@]}"; do
 done
 ```
 
-### 35.3 批量更新多个文件
+### 36.3 批量更新多个文件
 
 ```bash
 # 使用 find 批量更新
@@ -3251,7 +3629,7 @@ find *.yaml -exec yq '. += "cow"' -i {} \;
 ls *.yaml | xargs -P 4 -I {} yq '.version = "2.0"' -i {}
 ```
 
-### 35.4 比较 YAML 文件
+### 36.4 比较 YAML 文件
 
 ```bash
 # 规范化后比较（忽略格式差异）
@@ -3261,13 +3639,13 @@ diff <(yq -P 'sort_keys(..)' -o=props file1.yaml) <(yq -P 'sort_keys(..)' -o=pro
 diff <(yq '.spec' file1.yaml) <(yq '.spec' file2.yaml)
 ```
 
-### 35.5 读取多个 STDIN
+### 36.5 读取多个 STDIN
 
 ```bash
 yq '.apple' <(curl -s https://somewhere/data1.yaml) <(cat file.yml)
 ```
 
-### 35.6 逻辑判断（无 if/else）
+### 36.6 逻辑判断（无 if/else）
 
 ```yaml
 # sample.yml
@@ -3292,7 +3670,7 @@ yq '.[] |= (
 )' sample.yml
 ```
 
-### 35.7 验证 YAML 文件
+### 36.7 验证 YAML 文件
 
 ```bash
 # 验证文件是否为有效的 YAML/JSON
@@ -3303,7 +3681,7 @@ yq --exit-status '.name and .version and .description' package.yaml > /dev/null 
   || { echo "Invalid package.yaml"; exit 1; }
 ```
 
-### 35.8 生成随机数据
+### 36.8 生成随机数据
 
 ```bash
 # 生成带时间戳的配置
@@ -3315,9 +3693,9 @@ yq -n '
 
 ---
 
-## 36. PowerShell 使用指南
+## 37. PowerShell 使用指南
 
-### 36.1 引号问题
+### 37.1 引号问题
 
 PowerShell 对引号的处理与 Bash 不同，需要特别注意：
 
@@ -3340,7 +3718,7 @@ $expr = @'
 yq -i $expr file.yaml
 ```
 
-### 36.2 环境变量
+### 37.2 环境变量
 
 ```powershell
 # PowerShell 中设置环境变量
@@ -3352,7 +3730,7 @@ $env:VERSION = "1.2.3"
 yq -i '.version = strenv(VERSION)' file.yaml
 ```
 
-### 36.3 管道使用
+### 37.3 管道使用
 
 ```powershell
 # PowerShell 管道与 yq
@@ -3362,7 +3740,7 @@ Get-Content file.yaml | yq '.items[] | select(.active)'
 Get-ChildItem *.yaml | ForEach-Object { yq '.version' $_.FullName }
 ```
 
-### 36.4 路径处理
+### 37.4 路径处理
 
 ```powershell
 # PowerShell 路径可能包含空格，使用引号包裹
@@ -3375,9 +3753,9 @@ yq -i '.debug = true' $configPath
 
 ---
 
-## 37. 常见陷阱与故障排除
+## 38. 常见陷阱与故障排除
 
-### 37.1 引号地狱（Shell 转义）
+### 38.1 引号地狱（Shell 转义）
 
 **问题：** 表达式中的引号与 Shell 引号冲突
 
@@ -3399,7 +3777,7 @@ MESSAGE='He said "hello"' yq -i '.message = strenv(MESSAGE)' file.yaml
 yq --from-file expression.yq file.yaml
 ```
 
-### 37.2 注释和空白丢失
+### 38.2 注释和空白丢失
 
 **问题：** 更新后注释位置变化或丢失
 
@@ -3410,7 +3788,6 @@ yq --from-file expression.yq file.yaml
 # 3. 使用 sort 或 unique 后，注释通常不保留
 
 # 建议：在 CI 流水线中，如果注释很重要，先备份
-
 cp important.yaml important.yaml.bak
 yq -i '.version = "2.0"' important.yaml
 
@@ -3418,7 +3795,7 @@ yq -i '.version = "2.0"' important.yaml
 yq --version  # 确保版本一致
 ```
 
-### 37.3 布尔值解析差异
+### 38.3 布尔值解析差异
 
 **问题：** YAML 1.1 和 YAML 1.2 的布尔值不同
 
@@ -3437,7 +3814,7 @@ yq --null-input '.a = "yes"'  # a: "yes"
 VALUE=yes yq --null-input '.a = strenv(VALUE)'  # a: "yes"
 ```
 
-### 37.4 Merge 锚点行为
+### 38.4 Merge 锚点行为
 
 **问题：** YAML Merge 键（`<<`）的行为可能与预期不同
 
@@ -3460,7 +3837,7 @@ yq '.derived' sample.yml
 yq --yaml-fix-merge-anchor-to-spec '.derived' sample.yml
 ```
 
-### 37.5 数字被解析为科学计数法
+### 38.5 数字被解析为科学计数法
 
 **问题：** 大数字可能被错误解析
 
@@ -3473,7 +3850,7 @@ yq '.big_number tag = "!!str"' file.yaml
 yq --null-input '.id = "12345678901234567890"'
 ```
 
-### 37.6 空值与 null 的区别
+### 38.6 空值与 null 的区别
 
 ```bash
 # YAML 中以下都是 null：
@@ -3490,7 +3867,7 @@ yq '.a == null' file.yaml
 yq '.a // "default"' file.yaml  # 如果为 null 则使用默认值
 ```
 
-### 37.7 数组索引越界
+### 38.7 数组索引越界
 
 ```bash
 # 访问不存在的数组索引会返回 null（不会报错）
@@ -3503,7 +3880,7 @@ yq '.nonexistent[0]' sample.yml  # Error: Cannot index ...
 yq '.nonexistent?[0]?' sample.yml  # null
 ```
 
-### 37.8 原地更新文件权限
+### 38.8 原地更新文件权限
 
 ```bash
 # yq -i 会保留原文件的权限和所有者
@@ -3512,7 +3889,7 @@ chmod +w file.yaml
 yq -i '.version = "2.0"' file.yaml
 ```
 
-### 37.9 已知问题汇总
+### 38.9 已知问题汇总
 
 1. **注释和空白**：yq 尝试保留注释位置和空白，但并非所有场景都能处理（参见 go-yaml/yaml v3）。
 2. **布尔值**：YAML 1.2 标准中移除了 `yes`/`no` 作为布尔值，yq 假设使用 YAML 1.2 标准。
@@ -3522,7 +3899,7 @@ yq -i '.version = "2.0"' file.yaml
 
 ---
 
-## 38. 附录：速查表
+## 39. 附录：速查表
 
 ### A. 读取值
 
@@ -3615,7 +3992,9 @@ yq '.[] |= . * 2' file.yaml           # 批量更新
 yq 'sort_by(.name)' file.yaml         # 排序
 yq 'unique' file.yaml                 # 去重
 yq 'unique_by(.name)' file.yaml       # 按字段去重
+yq 'reverse | unique_by(.name) | reverse' file.yaml  # 保留最新
 yq 'length' file.yaml                 # 长度
+yq 'map(.field = "value")' file.yaml  # 映射
 ```
 
 ### J. 字符串操作
@@ -3629,6 +4008,7 @@ yq '. | gsub("a"; "b")' file.yaml
 yq 'join(", ")' file.yaml
 yq 'split(";")' file.yaml
 yq 'capture("(?P<a>\w+)-(?P<n>\d+)")' file.yaml
+yq 'test("pattern"; "i")' file.yaml   # 正则测试
 ```
 
 ### K. 样式与标签
@@ -3659,7 +4039,27 @@ yq 'explode(.)' file.yaml             # 展开所有别名
 yq '.a anchor = "new"' file.yaml
 ```
 
-### N. GitHub Action 使用
+### N. 变量与 Reduce
+
+```bash
+yq '.a as $x | .b = $x' file.yaml
+yq '.[] as $item ireduce (0; . + $item)' file.yaml
+yq 'with_entries(.key |= "prefix_" + .)' file.yaml
+```
+
+### O. 安全条件更新
+
+```bash
+# 核心模式
+((select(条件) | .field = 新值) // .)
+
+# 示例
+yq '.proxies |= map(
+  ((select(.type == "ss") | .plugin = "obfs") // .)
+)' file.yaml
+```
+
+### P. GitHub Action 使用
 
 ```yaml
 - name: Set foobar to cool
