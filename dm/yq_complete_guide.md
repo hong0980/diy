@@ -441,12 +441,12 @@ yq --null-input '1, true, "cat"'
 yq '.a, .c' sample.yml
 ```
 
-### 4.6 管道 `\|`
+### 4.6 管道 `|`
 
-`\|` 将左侧结果作为右侧的输入上下文：
+`|` 将左侧结果作为右侧的输入上下文：
 
 ```bash
-yq '.a | .b' sample.yml     # 先取 .a，再取 .a 结果中的 .b
+yq '.a | .b' sample.yml      # 先取 .a，再取 .a 结果中的 .b
 yq '.a.b' sample.yml         # 等价写法
 ```
 
@@ -509,7 +509,7 @@ yq '.[] | select(.age >= 18 and .age <= 65)' users.yml
 yq '.[] | select(.name == "*at")' sample.yml   # cat, goat 匹配
 
 # 非存在键的比较行为
-yq 'select(.b != "thing")' sample.yml   # .b 不存在时返回 true
+yq 'select(.b != "thing")' sample.yml     # .b 不存在时返回 true
 yq 'select(.b == .c)' sample.yml          # 两个都不存在时返回 true
 ```
 
@@ -587,9 +587,7 @@ yq '.[1:]' sample.yml     # 从索引1到末尾: [2, 3]
 yq '.[]' sample.yml
 # 输出:
 # b: apple
-# ---
 # c: banana
-# ---
 # d: cherry
 
 # 展开映射的所有值
@@ -676,7 +674,7 @@ yq '.a."*a*"' sample.yml  # 输出 apple 和 things
 yq '.a."c*"' sample.yml   # 输出: apple
 
 # 匹配以 "g" 结尾的键
-yq '.a."*g"' sample.yml   # 输出: things
+yq '.a."*g"' sample.yml   # 输出: banana
 ```
 
 ### 5.8 锚点和别名处理
@@ -771,18 +769,17 @@ a:
 # 获取父节点
 yq '.a.b.c | parent' sample.yml
 # 输出:
-# b:
-#   c: hello
+# c: hello
 
 # 获取所有祖先节点（从近到远）
 yq '.a.b.c | parents' sample.yml
 # 输出:
-# b:
-#   c: hello
-# ---
-# a:
-#   b:
+# - c: hello
+# - b:
 #     c: hello
+# - a:
+#     b:
+#       c: hello
 
 # 获取根节点
 yq '.a.b.c | root' sample.yml
@@ -2782,8 +2779,6 @@ yq '.. | kind' sample.yml
 # scalar
 # scalar
 # seq
-# map
-# scalar
 ```
 
 ```bash
@@ -5207,58 +5202,58 @@ yq '. *d load("file2.yml")' file1.yml  # 深度合并
 ### F. 环境变量
 
 ```bash
-NAME=value yq -i '.name = strenv(NAME)' file.yaml
-yq -i '.value = env(VAR)' file.yaml
+yq -i '.value = env(VAR)'                      file.yaml
+myenv="cat" yq '.[env(myenv)]'                 file.yaml
+NAME=value yq -i '.name = strenv(NAME)'        file.yaml
 yq '(.. | select(tag == "!!str")) |= envsubst' file.yaml
-myenv="cat" yq '.[env(myenv)]' file.yaml
 ```
 
 ### G. 条件与过滤
 
 ```bash
-yq '.[] | select(.active == true)' file.yaml
-yq '.[] | select(.name == "*test*")' file.yaml
-yq '.[] | select(test("^[a-z]+$"))' file.yaml
+yq '1 in [1,2,3]'                       file.yaml # 成员检查
+yq 'filter(. > 3)'                      file.yaml # 过滤数组
+yq 'first(.name == "cat")'              file.yaml # 第一个匹配
+yq '[1,2] | inside([1,2,3])'            file.yaml # 子集检查
+yq '.[] | select(.active == true)'      file.yaml
+yq '.[] | select(test("^[a-z]+$"))'     file.yaml
+yq '.[] | select(.name == "*test*")'    file.yaml
 yq '[.[] | select(.age > 18)] | length' file.yaml
-yq 'filter(. > 3)' file.yaml         # 过滤数组
-yq 'first(.name == "cat")' file.yaml # 第一个匹配
-yq '[1,2] | inside([1,2,3])' file.yaml # 子集检查
-yq '1 in [1,2,3]' file.yaml          # 成员检查
 ```
 
 ### H. 递归操作
 
 ```bash
-yq '.. | select(has("image")).image' file.yaml
-yq 'del(.. | .secret?)' file.yaml
+yq '.. style="double"'                           file.yaml
+yq 'del(.. | .secret?)'                          file.yaml
+yq '.. | select(has("image")).image'             file.yaml
 yq '(.. | select(tag == "!!int")) tag = "!!str"' file.yaml
-yq '.. style="double"' file.yaml
 ```
 
 ### I. 数组操作
 
 ```bash
-yq '.[]' file.yaml                    # 迭代
-yq '.[0, 2, 4]' file.yaml             # 多选
-yq '.[1:5]' file.yaml                 # 切片
-yq '.[] |= . * 2' file.yaml           # 批量更新
-yq 'sort_by(.name)' file.yaml         # 排序
-yq 'unique' file.yaml                 # 去重
-yq 'unique_by(.name)' file.yaml       # 按字段去重
+yq '.[]'                   file.yaml # 迭代
+yq 'pivot'                 file.yaml # 矩阵转置
+yq 'unique'                file.yaml # 去重
+yq '.[1:5]'                file.yaml # 切片
+yq 'length'                file.yaml # 长度
+yq 'flatten'               file.yaml # 扁平化
+yq 'shuffle'               file.yaml # 随机打乱
+yq '.[0, 2, 4]'            file.yaml # 多选
+yq '[range(5)]'            file.yaml # 生成序列
+yq '.[] |= . * 2'          file.yaml # 批量更新
+yq 'filter(. > 3)'         file.yaml # 过滤
+yq 'limit(3; .[])'         file.yaml # 限制数量
+yq 'sort_by(.name)'        file.yaml # 排序
+yq 'pick(["a","b"])'       file.yaml # 选择键
+yq 'omit(["a","b"])'       file.yaml # 排除键
+yq 'unique_by(.name)'      file.yaml # 按字段去重
+yq 'map_values(. + 1)'     file.yaml # 映射值
+yq 'group_by(.category)'   file.yaml # 分组
+yq 'map(.field = "value")' file.yaml # 映射
+yq 'first(.name == "cat")' file.yaml # 第一个匹配
 yq 'reverse | unique_by(.name) | reverse' file.yaml  # 保留最新
-yq 'length' file.yaml                 # 长度
-yq 'map(.field = "value")' file.yaml  # 映射
-yq 'map_values(. + 1)' file.yaml      # 映射值
-yq 'flatten' file.yaml                # 扁平化
-yq 'group_by(.category)' file.yaml    # 分组
-yq 'shuffle' file.yaml                # 随机打乱
-yq 'filter(. > 3)' file.yaml          # 过滤
-yq 'first(.name == "cat")' file.yaml  # 第一个匹配
-yq 'pick(["a","b"])' file.yaml        # 选择键
-yq 'omit(["a","b"])' file.yaml        # 排除键
-yq 'pivot' file.yaml                  # 矩阵转置
-yq 'limit(3; .[])' file.yaml          # 限制数量
-yq '[range(5)]' file.yaml             # 生成序列
 ```
 
 ### J. 字符串操作
@@ -5364,15 +5359,16 @@ yq 'now | to_unix' file.yaml            # 日期转时间戳
 yq 'now | tz("Asia/Shanghai")' file.yaml # 时区转换
 ```
 
-### R. 比较运算
+### R. 比较与默认值
 
 ```bash
-yq '.a == .b' file.yaml     # 相等
-yq '.a != .b' file.yaml     # 不等
-yq '.a > .b' file.yaml      # 大于
-yq '.a >= .b' file.yaml     # 大于等于
-yq '.a < .b' file.yaml      # 小于
-yq '.a <= .b' file.yaml     # 小于等于
+yq '.a == .b' file.yaml       # 相等
+yq '.a != .b' file.yaml       # 不等
+yq '.a > .b' file.yaml        # 大于
+yq '.a >= .b' file.yaml       # 大于等于
+yq '.a < .b' file.yaml        # 小于
+yq '.a <= .b' file.yaml       # 小于等于
+yq '.a // "default"' file.yaml # 默认值（null/false 时回退）
 ```
 
 ### S. 逻辑运算
@@ -5385,19 +5381,7 @@ yq 'any' file.yaml          # 任一 true
 yq 'all' file.yaml          # 全部 true
 ```
 
-### T. 比较与默认值
-
-```bash
-yq '.a == .b' file.yaml       # 相等
-yq '.a != .b' file.yaml       # 不等
-yq '.a > .b' file.yaml        # 大于
-yq '.a >= .b' file.yaml       # 大于等于
-yq '.a < .b' file.yaml        # 小于
-yq '.a <= .b' file.yaml       # 小于等于
-yq '.a // "default"' file.yaml # 默认值（null/false 时回退）
-```
-
-### U. 文档与文件索引
+### T. 文档与文件索引
 
 ```bash
 yq 'select(di == 0)' file.yaml      # 选择第一个文档
@@ -5441,7 +5425,7 @@ yq '.. | iterables' file.yaml   # 只保留可迭代
 yq '.. | nulls' file.yaml       # 只保留 null
 ```
 
-### W. 系统与调试
+### X. 系统与调试
 
 ```bash
 yq 'debug' file.yaml            # 调试输出
@@ -5450,7 +5434,7 @@ yq 'error("msg")' file.yaml     # 抛出错误
 yq 'halt' file.yaml             # 停止求值
 ```
 
-### W. GitHub Action 使用
+### Y. GitHub Action 使用
 
 ```yaml
 - name: Set foobar to cool
