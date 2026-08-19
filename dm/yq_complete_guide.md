@@ -39,11 +39,15 @@
 29. [数组映射 map](#29-数组映射-map)
 30. [拆分为文档](#30-拆分为文档)
 31. [加法与数值运算](#31-加法与数值运算)
-32. [节点元信息](#32-节点元信息)
-33. [动态求值与系统函数](#33-动态求值与系统函数)
-34. [内置函数速查表](#34-内置函数速查表)
-35. [常见陷阱与故障排除](#35-常见陷阱与故障排除)
-36. [附录：速查表](#36-附录速查表)
+32. [减法运算](#32-减法运算)
+33. [乘法与除法](#33-乘法与除法)
+34. [取模运算](#34-取模运算)
+35. [节点元信息](#35-节点元信息)
+36. [动态求值与系统函数](#36-动态求值与系统函数)
+37. [新增操作符详解](#37-新增操作符详解)
+38. [内置函数速查表](#38-内置函数速查表)
+39. [常见陷阱与故障排除](#39-常见陷阱与故障排除)
+40. [附录：速查表](#40-附录速查表)
 
 ---
 
@@ -283,18 +287,18 @@ c: null   # 无引号时为 !!null
 yq '.a == null' sample.yml   # true
 yq '.b == null' sample.yml   # true
 yq '.c == null' sample.yml   # true
-yq '"null" == null' --null-input  # false
+yq '"null" == null' -n       # true
 ```
 
 ### 3.5 布尔值陷阱（YAML 1.2）
 
 ```bash
 # 错误：YAML 1.2 中 yes/no 不是布尔值
-yq --null-input '.a = yes'     # Error: unknown name "yes"
+yq -n '.a = yes'     # Error: unknown name "yes"
 
 # 正确
-yq --null-input '.a = true'    # a: true
-yq --null-input '.a = "yes"'   # a: "yes"
+yq -n '.a = true'    # a: true
+yq -n '.a = "yes"'   # a: "yes"
 ```
 
 ### 3.6 类型检查与过滤
@@ -310,34 +314,31 @@ yq '[.. | select(tag == "!!int" or tag == "!!float")] | add' sample.yml
 yq '[.. | select(. == null)] | length > 0' sample.yml
 ```
 
----
-
 ## 4. 表达式语法基础
 
 ### 4.1 字面量（Literals）
 
 ```bash
 # 字符串
-yq --null-input '"hello"'          # hello
+yq -n '"hello"'          # hello
 
 # 数字
-yq --null-input '42'                # 42
-yq --null-input '3.14'             # 3.14
+yq -n '42'               # 42
+yq -n '3.14'             # 3.14
 
 # 布尔
-yq --null-input 'true'             # true
-yq --null-input 'false'            # false
+yq -n 'true'             # true
+yq -n 'false'            # false
 
 # null
-yq --null-input 'null'             # null
-yq --null-input '~'                # null
+yq -n 'null'             # null
+yq -n '~'                # ~
 
 # 数组
-yq --null-input '[1, 2, 3]'         # [1, 2, 3]
+yq -n '[1, 2, 3]'         # [1, 2, 3]
 
 # 对象
-yq --null-input '{"a": 1, "b": 2}'  # a: 1
-b: 2
+yq -n '{"a": 1, "b": 2}'  # a: 1 b: 2
 ```
 
 ### 4.2 当前节点上下文 `.`
@@ -388,7 +389,7 @@ yq '.a?.b?.c?' sample.yml # 任何一层不存在都返回 null
 
 ```bash
 # 组合多个标量
-yq --null-input '1, true, "cat"'
+yq -n '1, true, "cat"'
 # 输出:
 # 1
 # true
@@ -494,9 +495,11 @@ a:
 ```
 
 ```bash
-yq '.a' sample.yml        # 输出: b: apple
-c:
-  d: deep_value
+yq '.a' sample.yml
+# 输出:
+# b: apple
+# c:
+#   d: deep_value
 yq '.a.b' sample.yml      # 输出: apple
 yq '.a.c.d' sample.yml    # 输出: deep_value
 ```
@@ -612,8 +615,14 @@ b: *cat
 yq '.b' sample.yml        # *cat
 yq '.b[]' sample.yml      # frog, meow
 yq '.b.c' sample.yml      # frog（自动解引用）
-yq 'explode(.b)' sample.yml  # c: frog
-d: meow
+yq 'explode(.b)' sample.yml
+# 输出:
+# a: &cat
+#   c: frog
+#   d: meow
+# b:
+#   c: frog
+#   d: meow
 ```
 
 ### 5.9 Merge 锚点（YAML 继承）
@@ -865,13 +874,37 @@ yq '. | keys' sample.yml           # [a, c]
 
 ### 7.6 contains 运算符
 
+`contains` 检查左侧是否包含右侧的所有内容。
+
 ```bash
-yq --null-input '[1,2,3] | contains([1,2])'     # true
-yq --null-input '{"a": 1, "b": 2} | contains({"a": 1})'   # true
-yq --null-input '"concatenate" | contains("cat")'   # true
+# 数组包含子数组
+yq -n '[1,2,3] | contains([1,2])'
+# true
+
+# 对象包含检查
+yq -n '{"a": 1, "b": 2} | contains({"a": 1})'
+# true
+
+# 字符串包含子串
+yq -n '"concatenate" | contains("cat")'
+# true
+
+# 检查子集（严格匹配）
+yq -n '["baz", "bar"] - . | length == 0' sample.yml
 ```
 
----
+**输入示例：**
+```yaml
+- "cat"
+- "dog"
+- "goat"
+```
+
+```bash
+yq 'contains(["baz", "bar"])' sample.yml    # true
+yq 'contains(["dog"])' sample.yml           # true
+yq 'contains(["dog", "not-gonna-work"])' sample.yml   # false
+```
 
 ## 8. 删除操作
 
@@ -933,7 +966,7 @@ yq '.a = "cat" | .b = "dog"' sample.yml
 ### 9.3 Union（联合多个结果）
 
 ```bash
-yq --null-input '1, true, "cat"'
+yq -n '1, true, "cat"'
 yq '.a, .c' sample.yml
 ```
 
@@ -1010,17 +1043,17 @@ yq '.a as $x | (.b as $x | $x) | $x' sample.yml  # 最后 $x 仍是 .a
 ### 11.2 env() - 自动类型识别
 
 ```bash
-myenv="cat meow" yq --null-input '.a = env(myenv)'     # a: cat meow
-myenv="true" yq --null-input '.a = env(myenv)'         # a: true
-myenv="12" yq --null-input '.a = env(myenv)'           # a: 12
-myenv="[1, 2, 3]" yq --null-input '.a = env(myenv)'    # a: [1, 2, 3]
+myenv="cat meow" yq -n '.a = env(myenv)'     # a: cat meow
+myenv="true" yq -n '.a = env(myenv)'         # a: true
+myenv="12" yq -n '.a = env(myenv)'           # a: 12
+myenv="[1, 2, 3]" yq -n '.a = env(myenv)'    # a: [1, 2, 3]
 ```
 
 ### 11.3 strenv() - 始终作为字符串
 
 ```bash
-myenv="true" yq --null-input '.a = strenv(myenv)'   # a: "true"
-myenv="12" yq --null-input '.a = strenv(myenv)'     # a: "12"
+myenv="true" yq -n '.a = strenv(myenv)'   # a: "true"
+myenv="12" yq -n '.a = strenv(myenv)'     # a: "12"
 ```
 
 ### 11.4 动态路径更新
@@ -1032,16 +1065,16 @@ pathEnv=".a.b[0].name" valueEnv="moo"   yq 'eval(strenv(pathEnv)) = strenv(value
 ### 11.5 envsubst - 字符串插值
 
 ```bash
-myenv="cat" other="red" yq --null-input '"the ${myenv} is ${other}" | envsubst'
+myenv="cat" other="red" yq -n '"the ${myenv} is ${other}" | envsubst'
 # 输出: the cat is red
 ```
 
 ### 11.6 envsubst 高级选项
 
 ```bash
-yq --null-input '"the ${missing} meows" | envsubst(nu)'     # 未设置报错
-yq --null-input '"the ${myenv} meows" | envsubst(ne)'       # 空值报错
-yq --null-input '"the ${missing-dog} meows" | envsubst'      # 默认值
+yq -n '"the ${missing} meows" | envsubst(nu)'     # 未设置报错
+yq -n '"the ${myenv} meows" | envsubst(ne)'       # 空值报错
+yq -n '"the ${missing-dog} meows" | envsubst'      # 默认值
 ```
 
 ### 11.7 文档中批量替换环境变量
@@ -1188,23 +1221,78 @@ yq 'sort' sample.yml
 yq 'sort_by(key | downcase)' sample.yml
 ```
 
-### 14.5 标量数组去重
+### 14.5 按数组元素的首键排序
+
+```yaml
+# sample.yml
+cool:
+  - b: 1
+    a: 2
+  - c: 3
+    a: 4
+```
+
+```bash
+yq '.cool |= sort_by(keys | .[0])' sample.yml
+# 输出:
+# cool:
+#   - a: 2
+#     b: 1
+#   - a: 4
+#     c: 3
+```
+
+### 14.6 按自定义日期格式排序
+
+```yaml
+# sample.yml
+- a: 02-Jan-2006
+- a: 01-Dec-2005
+- a: 03-Feb-2007
+```
+
+```bash
+yq 'with_dtf("02-Jan-2006"; sort_by(.a))' sample.yml
+# 输出:
+# - a: 01-Dec-2005
+# - a: 02-Jan-2006
+# - a: 03-Feb-2007
+```
+
+### 14.7 标量数组去重
 
 ```bash
 yq 'unique' sample.yml
 yq 'unique | sort' sample.yml
 ```
 
-### 14.6 对象数组去重（按字段）
+### 14.8 对象数组去重（按字段）
 
 ```bash
 yq 'unique_by(.name)' users.yml
 ```
 
-### 14.7 保留最新去重（反转去重法）
+### 14.9 保留最新去重（反转去重法）
 
 ```bash
 yq '.proxies |= (reverse | unique_by(.name) | reverse)' sample.yml
+```
+
+### 14.10 null 排序位置
+
+```yaml
+# sample.yml
+- 3
+- 1
+- ~
+```
+
+```bash
+yq 'sort' sample.yml
+# 输出:
+# - ~
+# - 1
+# - 3
 ```
 
 ---
@@ -1239,8 +1327,6 @@ yq 'with_entries(.key |= sub("-", "_"))' sample.yml
 yq '(.. | select(tag=="!!map")) |= with_entries(.key |= upcase)' sample.yml
 ```
 
----
-
 ## 16. 长度与计数
 
 ### 16.1 各类长度
@@ -1265,14 +1351,14 @@ yq '[.. | select(tag == "!!seq")] | map(length) | add' sample.yml
 ### 17.1 插值
 
 ```bash
-yq '.message = "I like \(.value) and \(.another)"' sample.yml
+yq '.message = "I like \\(.value) and \\(.another)"' sample.yml
 ```
 
 ### 17.2 大小写转换
 
 ```bash
-yq 'upcase' sample.yml       # 转大写（支持 Unicode）
-yq 'downcase' sample.yml     # 转小写（支持 Unicode）
+yq -n '"frog" | upcase'     # FROG 转大写（支持 Unicode）
+yq -n '"FROG" | downcase'   # frog 转小写（支持 Unicode）
 ```
 
 ### 17.3 连接字符串
@@ -1296,17 +1382,33 @@ yq '[match("(?i)foo"; "g")]' sample.yml
 yq '[match("(ab)(c)"; "g")]' sample.yml
 ```
 
-### 17.6 命名捕获组
+### 17.6 全局匹配
 
 ```bash
-yq 'capture("(?P<a>[a-z]+)-(?P<n>[0-9]+)")' sample.yml
+yq -n '"foo foo foo" | [match("(?i)foo"; "g")]'
+# 输出:
+# - string: foo
+#   offset: 0
+#   length: 3
+# - string: foo
+#   offset: 4
+#   length: 3
+# - string: foo
+#   offset: 8
+#   length: 3
+```
+
+### 17.7 命名捕获组
+
+```bash
+yq -n '"xyzzy-14" | capture("(?P<a>[a-z]+)-(?P<n>[0-9]+)")'
 # 输入: xyzzy-14
 # 输出:
 # a: xyzzy
 # n: "14"
 ```
 
-### 17.7 正则测试 test
+### 17.8 正则测试 test
 
 ```bash
 yq '.[] | select(.name | test("^server-"))' sample.yml
@@ -1314,7 +1416,7 @@ yq '.[] | select(.region | test("(?i)US|america"))' sample.yml
 yq '.[] | select(.name | test("hk") | not)' sample.yml
 ```
 
-### 17.8 替换
+### 17.9 替换
 
 ```bash
 yq '.[] |= sub("(a)", "${1}r")' sample.yml   # 注意：参数用逗号分隔
@@ -1322,24 +1424,22 @@ yq '.[] |= gsub("a", "A")' sample.yml
 yq '.[] |= sub("cat", "dog")' sample.yml
 ```
 
-> ⚠️ **注意**：`sub` 和 `gsub` 的参数使用**逗号 `,`** 分隔，不是分号 `;`。
-
-### 17.9 分割
+### 17.10 分割
 
 ```bash
 yq 'split("; ")' sample.yml
 yq 'split("\n")' sample.yml
 ```
 
-### 17.10 字符串切片
+### 17.11 字符串切片
 
 ```bash
-yq '.country[0:5]' sample.yml     # Austr
-yq '.country[5:]' sample.yml      # alia
+yq '.country[0:5]' sample.yml      # Austr
+yq '.country[5:]' sample.yml       # alia
 yq '.country[-5:]' sample.yml      # ralia
 ```
 
-### 17.11 to_string
+### 17.12 to_string
 
 ```bash
 yq '.[] |= to_string' sample.yml
@@ -1352,10 +1452,10 @@ yq '.[] |= to_string' sample.yml
 ### 18.1 逻辑运算
 
 ```bash
-yq --null-input 'true and false'     # false
-yq --null-input 'true or false'      # true
-yq --null-input 'true | not'         # false
-yq --null-input 'true != false'      # true（异或）
+yq -n 'true and false'     # false
+yq -n 'true or false'      # true
+yq -n 'true | not'         # false
+yq -n 'true != false'      # true（异或）
 ```
 
 ### 18.2 any / all
@@ -1446,7 +1546,35 @@ yq '.. style="literal"' sample.yml     # 字面量块
 yq '.. style="flow"' sample.yml        # 流式格式
 ```
 
-### 19.5 重置样式（美化打印）
+### 19.5 设置 tagged 样式
+
+```bash
+yq '.. style="tagged"' sample.yml
+# 输出:
+# !!map
+# a: !!str cat
+```
+
+### 19.6 设置 literal 样式（\|）
+
+```bash
+yq '.. style="literal"' sample.yml
+# 输出:
+# a: |
+#   cat
+#   meow
+```
+
+### 19.7 设置 folded 样式（>）
+
+```bash
+yq '.. style="folded"' sample.yml
+# 输出:
+# a: >
+#   cat meow
+```
+
+### 19.8 重置样式（美化打印）
 
 ```bash
 yq '... style=""' sample.yml
@@ -1454,7 +1582,7 @@ yq '... style=""' sample.yml
 yq -P '.' sample.yml
 ```
 
-### 19.6 读取样式
+### 19.9 读取样式
 
 ```bash
 yq '.. | style' sample.yml
@@ -1549,7 +1677,7 @@ yq ea '
 
 ---
 
-## 22. 锚点与别名
+## 22. 锚点与别名（完整示例 + LEGACY vs FIXED）
 
 ### 22.1 获取锚点名
 
@@ -1588,7 +1716,60 @@ yq 'explode(.)' sample.yml     # 展开所有别名
 yq '.thingOne |= (explode(.) | sort_keys(.)) * {"value": false}' sample.yml
 ```
 
----
+### 22.7 Merge 锚点 LEGACY vs FIXED 行为对比
+
+> ⚠️ yq 4.35+ 引入了 `--yaml-fix-merge-anchor-to-spec` 标志，用于修复 Merge 键（`<<`）的规范兼容性问题。
+
+**LEGACY 行为（默认）：**
+
+```yaml
+# sample.yml
+foo: &foo
+  a: foo_a
+  thing: foo_thing
+bar: &bar
+  b: bar_b
+  thing: bar_thing
+foobar:
+  c: foobar_c
+  !!merge <<: *foo
+  thing: foobar_thing
+```
+
+```bash
+# 默认 LEGACY 行为
+yq '.foobar' sample.yml
+# 输出:
+# c: foobar_c
+# !!merge <<: *foo
+# thing: foobar_thing
+# a: foo_a
+
+# 注意：LEGACY 模式下，合并的键顺序可能不符合 YAML 1.1 规范
+```
+
+**FIXED 行为（使用 --yaml-fix-merge-anchor-to-spec）：**
+
+```bash
+# FIXED 行为（符合规范）
+yq --yaml-fix-merge-anchor-to-spec '.foobar' sample.yml
+# 输出:
+# c: foobar_c
+# !!merge <<: *foo
+# a: foo_a
+# thing: foobar_thing
+
+# 注意：FIXED 模式下，本地键（thing）会正确覆盖合并键
+```
+
+**关键区别：**
+
+| 场景 | LEGACY | FIXED |
+|------|--------|-------|
+| 合并键顺序 | 合并键在后 | 合并键在前 |
+| 本地覆盖 | 可能不生效 | 始终生效 |
+| 规范兼容性 | 不完全兼容 | 兼容 YAML 1.1 |
+
 
 ## 23. 加载外部文件
 
@@ -1621,7 +1802,7 @@ yq '.more_stuff = load_base64("../../examples/base64.txt")' sample.yml
 ### 23.5 安全禁用文件操作
 
 ```bash
-yq --security-disable-file-ops --null-input 'load("file.yml")'
+yq --security-disable-file-ops -n 'load("file.yml")'
 # Error: file operations have been disabled
 ```
 
@@ -1703,6 +1884,16 @@ yq '@urid' sample.yml
 yq '.coolData | @sh' sample.yml
 ```
 
+### 24.10 编码解码链式操作
+
+```bash
+# 先 YAML 编码再 Base64
+yq '@yaml | @base64' sample.yml
+
+# 解码链
+yq '.data |= (@base64d | from_yaml)' sample.yml
+```
+
 ---
 
 ## 25. 多文档处理
@@ -1756,7 +1947,7 @@ yq '[.] | length' multi-doc.yaml
 ### 26.1 YAML ↔ JSON
 
 ```bash
-yq -Poy sample.json                    # JSON -> YAML
+yq -Poy sample.json                    # JSON -> YAML（美化）
 yq -o json file.yaml                   # YAML -> JSON
 yq -o json -I=0 file.yaml              # 单行 JSON
 ```
@@ -1990,7 +2181,6 @@ yq '.users[] | select(.active) | split_doc' users.yml > active.yml
 yq '.users[] | select(.active | not) | split_doc' users.yml > inactive.yml
 ```
 
----
 
 ## 31. 加法与数值运算
 
@@ -2021,7 +2211,7 @@ yq 'with_dtf("Monday, 02-Jan-06 at 3:04PM MST", .a += "3h1m")' sample.yml
 ### 31.5 null 加法
 
 ```bash
-yq --null-input 'null + "cat"'    # cat
+yq -n 'null + "cat"'    # cat
 ```
 
 ### 31.6 数值运算
@@ -2099,7 +2289,7 @@ yq '.a = .a % .b' sample.yml    # 浮点取模
 ### 31.15 减法运算
 
 ```bash
-yq --null-input '[1,2] - [2,3]'   # [1]
+yq -n '[1,2] - [2,3]'   # [1]
 yq '.a = .a - .b' sample.yml
 yq '.a -= "3h10m"' sample.yml
 yq '.[] -= 1' sample.yml
@@ -2107,9 +2297,188 @@ yq '.[] -= 1' sample.yml
 
 ---
 
-## 32. 节点元信息
+## 32. 减法运算
 
-### 32.1 `line` — 获取行号
+### 32.1 数组减法
+
+```bash
+yq -n '[1,2] - [2,3]'
+# 输出:
+# - 1
+```
+
+### 32.2 嵌套数组减法
+
+```bash
+yq -n '[[1], 1, 2] - [[1], 3]'
+# 输出:
+# - 1
+# - 2
+```
+
+### 32.3 对象数组减法
+
+```yaml
+# sample.yml
+- a: b
+  c: d
+- a: b
+```
+
+```bash
+yq '. - [{"c": "d", "a": "b"}]' sample.yml
+# 输出:
+# - a: b
+```
+
+### 32.4 浮点数减法
+
+```yaml
+# sample.yml
+a: 3
+b: 4.5
+```
+
+```bash
+yq '.a = .a - .b' sample.yml
+# 输出:
+# a: -1.5
+# b: 4.5
+```
+
+### 32.5 整数减法
+
+```yaml
+# sample.yml
+a: 3
+b: 4
+```
+
+```bash
+yq '.a = .a - .b' sample.yml
+# 输出:
+# a: -1
+# b: 4
+```
+
+### 32.6 批量递减
+
+```yaml
+# sample.yml
+a: 3
+b: 5
+```
+
+```bash
+yq '.[] -= 1' sample.yml
+# 输出:
+# a: 2
+# b: 4
+```
+
+### 32.7 日期减法
+
+```yaml
+# sample.yml
+a: 2021-01-01T03:10:00Z
+```
+
+```bash
+yq '.a -= "3h10m"' sample.yml
+# 输出:
+# a: 2021-01-01T00:00:00Z
+```
+
+### 32.8 自定义格式日期减法
+
+```yaml
+# sample.yml
+a: Saturday, 15-Dec-01 at 6:00AM GMT
+```
+
+```bash
+yq 'with_dtf("Monday, 02-Jan-06 at 3:04PM MST", .a -= "3h1m")' sample.yml
+```
+
+---
+
+## 33. 乘法与除法
+
+### 33.1 乘法运算
+
+```bash
+# 数字相乘
+yq '.a = .a * .b' sample.yml
+
+# 字符串重复
+yq '.b * 4' sample.yml      # banana 重复 4 次
+
+# 对象合并（浅合并）
+yq '.a *= .b' sample.yml
+```
+
+### 33.2 除法运算
+
+```bash
+# 数字除法（结果总是 float）
+yq '.a = .a / .b' sample.yml
+
+# 字符串分割
+yq '.c = .a / .b' sample.yml
+
+# 除以零
+yq '.a = .a / 0' sample.yml    # +Inf
+```
+
+---
+
+## 34. 取模运算
+
+### 34.1 整数取模
+
+```yaml
+# sample.yml
+a: 12
+b: 2
+```
+
+```bash
+yq '.a = .a % .b' sample.yml
+# 输出:
+# a: 0
+# b: 2
+```
+
+### 34.2 浮点取模
+
+```yaml
+# sample.yml
+a: 12
+b: 2.5
+```
+
+```bash
+yq '.a = .a % .b' sample.yml
+# 输出:
+# a: 2
+# b: 2.5
+```
+
+### 34.3 除以零错误
+
+```bash
+# 整数除以零报错
+yq '.a = .a % 0' sample.yml    # Error: cannot modulo by 0
+
+# 浮点除以零得 NaN
+yq '.a = .a % 0' sample.yml    # NaN
+```
+
+---
+
+## 35. 节点元信息
+
+### 35.1 `line` — 获取行号
 
 返回匹配节点的起始行号（从 1 开始），无行号数据时返回 0。
 
@@ -2118,7 +2487,7 @@ yq '.b | line' sample.yml        # 3
 yq '.b | key | line' sample.yml  # 2
 ```
 
-### 32.2 `column` — 获取列号
+### 35.2 `column` — 获取列号
 
 返回匹配节点的起始列号（从 1 开始），无列号数据时返回 0。
 
@@ -2127,20 +2496,20 @@ yq '.b | column' sample.yml      # 4
 yq '.b | key | column' sample.yml  # 1
 ```
 
-### 32.3 `is_key` — 判断是否为键节点
+### 35.3 `is_key` — 判断是否为键节点
 
 ```bash
 yq '[... | {"p": path | join("."), "isKey": is_key, "lc": lineComment}]' sample.yml
 ```
 
-### 32.4 `filename` — 获取文件名
+### 35.4 `filename` — 获取文件名
 
 ```bash
 yq 'filename' sample.yml
 yq eval-all 'filename' file1.yml file2.yml
 ```
 
-### 32.5 `file_index` / `fi` — 获取文件索引
+### 35.5 `file_index` / `fi` — 获取文件索引
 
 ```bash
 yq 'file_index' sample.yml
@@ -2149,34 +2518,34 @@ yq eval-all 'fi' file1.yml file2.yml
 
 ---
 
-## 33. 动态求值与系统函数
+## 36. 动态求值与系统函数
 
-### 33.1 `eval` — 动态执行表达式
+### 36.1 `eval` — 动态执行表达式
 
 ```bash
 yq 'eval(.pathExp)' sample.yml
-pathEnv=".a.b[0].name" valueEnv="moo"   yq 'eval(strenv(pathEnv)) = strenv(valueEnv)' sample.yml
+pathEnv=".a.b[0].name" valueEnv="moo" yq 'eval(strenv(pathEnv)) = strenv(valueEnv)' sample.yml
 ```
 
-### 33.2 `error(msg)` — 抛出错误
+### 36.2 `error(msg)` — 抛出错误
 
 ```bash
 yq 'select(.a == "howdy") or error(".a [" + .a + "] is not howdy!")' sample.yml
 ```
 
-### 33.3 `builtins` — 列出所有内置函数
+### 36.3 `builtins` — 列出所有内置函数
 
 ```bash
 yq 'builtins' --null-input
 ```
 
-### 33.4 `debug` — 调试输出
+### 36.4 `debug` — 调试输出
 
 ```bash
 yq '.items[] | debug | .name' sample.yml
 ```
 
-### 33.5 `system(cmd; args)` — 执行外部命令
+### 36.5 `system(cmd; args)` — 执行外部命令
 
 > ⚠️ 需要显式启用 `--security-enable-system-operator`
 
@@ -2184,9 +2553,11 @@ yq '.items[] | debug | .name' sample.yml
 yq --security-enable-system-operator '.result = system("date"; "+%Y-%m-%d")' sample.yml
 ```
 
+
+
 ---
 
-## 34. 内置函数速查表
+## 38. 内置函数速查表
 
 ### A
 
@@ -2446,9 +2817,9 @@ yq --security-enable-system-operator '.result = system("date"; "+%Y-%m-%d")' sam
 
 ---
 
-## 35. 常见陷阱与故障排除
+## 39. 常见陷阱与故障排除
 
-### 35.1 引号地狱（Shell 转义）
+### 39.1 引号地狱（Shell 转义）
 
 ```bash
 # 错误：Shell 会解析内部引号
@@ -2464,7 +2835,7 @@ MESSAGE='He said "hello"' yq -i '.message = strenv(MESSAGE)' file.yaml
 yq --from-file expression.yq file.yaml
 ```
 
-### 35.2 注释和空白丢失
+### 39.2 注释和空白丢失
 
 ```bash
 # yq 基于 go-yaml v3，会尽力保留注释，但以下场景可能丢失：
@@ -2476,18 +2847,18 @@ cp important.yaml important.yaml.bak
 yq -i '.version = "2.0"' important.yaml
 ```
 
-### 35.3 布尔值解析差异
+### 39.3 布尔值解析差异
 
 ```bash
 # YAML 1.1（旧标准）：yes/no/on/off/TRUE/FALSE 都是布尔值
 # YAML 1.2（yq 使用）：只有 true/false 是布尔值
 
-yq --null-input '.a = yes'   # Error: unknown name "yes"
-yq --null-input '.a = true'  # a: true
-yq --null-input '.a = "yes"'  # a: "yes"
+yq -n '.a = yes'   # Error: unknown name "yes"
+yq -n '.a = true'  # a: true
+yq -n '.a = "yes"'  # a: "yes"
 ```
 
-### 35.4 Merge 锚点行为
+### 39.4 Merge 锚点行为
 
 ```bash
 # 默认行为
@@ -2498,30 +2869,30 @@ yq '.derived' sample.yml
 yq --yaml-fix-merge-anchor-to-spec '.derived' sample.yml
 ```
 
-### 35.5 数字被解析为科学计数法
+### 39.5 数字被解析为科学计数法
 
 ```bash
 # 大数字可能被错误解析
 yq '.big_number tag = "!!str"' file.yaml
 ```
 
-### 35.6 空值与 null 的区别
+### 39.6 空值与 null 的区别
 
 ```bash
-yq --null-input '.a = null'    # a: null（真正的 null）
-yq --null-input '.a = "null"'  # a: "null"（字符串）
-yq --null-input '.a = ~'      # a: null（YAML 的 null 别名）
+yq -n '.a = null'    # a: null（真正的 null）
+yq -n '.a = "null"'  # a: "null"（字符串）
+yq -n '.a = ~'       # a: null（YAML 的 null 别名）
 ```
 
-### 35.7 数组索引越界
+### 39.7 数组索引越界
 
 ```bash
-yq '.[100]' sample.yml  # null（不会报错）
-yq '.nonexistent[0]' sample.yml  # Error
+yq '.[100]' sample.yml             # null（不会报错）
+yq '.nonexistent[0]' sample.yml    # Error
 yq '.nonexistent?[0]?' sample.yml  # null
 ```
 
-### 35.8 原地更新文件权限
+### 39.8 原地更新文件权限
 
 ```bash
 chmod +w file.yaml
@@ -2530,179 +2901,179 @@ yq -i '.version = "2.0"' file.yaml
 
 ---
 
-## 36. 附录：速查表
+## 40. 附录：速查表
 
 ### A. 读取值
 
 ```bash
-yq '.key' file.yaml
-yq '.nested.key' file.yaml
-yq '.array[0]' file.yaml
-yq '.array[].field' file.yaml
-yq '.["key-with-dots"]' file.yaml
-yq '.["key with spaces"]' file.yaml
-yq '.[.dynamic_key]' file.yaml
-yq '.a?.b?.c?' file.yaml
-yq '.a.b.c | parent' file.yaml
-yq '.a.b.c | path' file.yaml
-yq 'getpath(["a","b"])' file.yaml
+yq '.key' file.yaml                              # 读取对象键值
+yq '.nested.key' file.yaml                       # 读取嵌套值
+yq '.array[0]' file.yaml                         # 读取数组第1个元素
+yq '.array[].field' file.yaml                    # 读取数组每个元素的字段
+yq '.["key-with-dots"]' file.yaml                # 读取带点特殊键名
+yq '.["key with spaces"]' file.yaml              # 读取带空格特殊键名
+yq '.[.dynamic_key]' file.yaml                   # 动态键访问（间接引用）
+yq '.a?.b?.c?' file.yaml                         # 安全访问（不存在返回null）
+yq '.a.b.c | parent' file.yaml                   # 获取父节点
+yq '.a.b.c | path' file.yaml                     # 获取路径数组
+yq 'getpath(["a","b"])' file.yaml                # 按路径数组获取值
 ```
 
 ### B. 更新值
 
 ```bash
-yq -i '.key = "value"' file.yaml
-yq -i '.nested.key |= . + 1' file.yaml
-yq -i '(.array[] | select(.name == "x")).field = "y"' file.yaml
-yq -i '(.a, .b, .c) = "same"' file.yaml
-yq -i '.new.path.nested = "value"' file.yaml
-yq -i 'setpath(["a","b"]; "value")' file.yaml
+yq -i '.key = "value"' file.yaml                 # 基本赋值
+yq -i '.nested.key |= . + 1' file.yaml           # 相对赋值（基于旧值更新）
+yq -i '(.array[] | select(.name == "x")).field = "y"' file.yaml  # 数组中查找并更新
+yq -i '(.a, .b, .c) = "same"' file.yaml          # 多路径同时赋值
+yq -i '.new.path.nested = "value"' file.yaml     # 自动创建不存在的路径
+yq -i 'setpath(["a","b"]; "value")' file.yaml    # 按路径数组设置值
 ```
 
 ### C. 删除
 
 ```bash
-yq -i 'del(.key)' file.yaml
-yq -i 'del(.array[0])' file.yaml
-yq -i 'del(.. | select(. == "bad"))' file.yaml
-yq -i 'del(.. | .difficulty?)' file.yaml
-yq -i 'del(.[] | select(.active | not))' file.yaml
-yq -i 'delpaths([["a","b"]])' file.yaml
+yq -i 'del(.key)' file.yaml                         # 删除映射键
+yq -i 'del(.array[0])' file.yaml                    # 删除数组元素
+yq -i 'del(.. | select(. == "bad"))' file.yaml      # 递归删除匹配值
+yq -i 'del(.. | .difficulty?)' file.yaml            # 安全删除（不存在不报错）
+yq -i 'del(.[] | select(.active | not))' file.yaml  # 删除不满足条件的元素
+yq -i 'delpaths([["a","b"]])' file.yaml             # 按路径数组删除
 ```
 
 ### D. 转换
 
 ```bash
-yq -Poy file.json                    # JSON -> YAML
-yq -o json file.yaml                 # YAML -> JSON
-yq -o xml file.yaml                  # YAML -> XML
-yq -P -p xml file.xml                # XML -> YAML
-yq -o props file.yaml                # YAML -> Properties
-yq -o csv file.yaml                  # YAML -> CSV
-yq -o toml file.yaml                 # YAML -> TOML
+yq -Poy file.json                                # JSON -> YAML（美化）
+yq -o json file.yaml                             # YAML -> JSON
+yq -o xml file.yaml                              # YAML -> XML
+yq -P -p xml file.xml                            # XML -> YAML
+yq -o props file.yaml                            # YAML -> Properties
+yq -o csv file.yaml                              # YAML -> CSV
+yq -o toml file.yaml                             # YAML -> TOML
 ```
 
 ### E. 合并文件
 
 ```bash
-yq eval-all '. as $item ireduce ({}; . * $item )' *.yaml
-yq ea '. as $item ireduce ({}; . * $item )' *.yaml
-yq '. *= load("file2.yml")' file1.yml
-yq '. *d load("file2.yml")' file1.yml
+yq eval-all '. as $item ireduce ({}; . * $item )' *.yaml   # 合并所有文件（浅合并）
+yq ea '. as $item ireduce ({}; . * $item )' *.yaml         # 简写形式
+yq '. *= load("file2.yml")' file1.yml                      # 加载并合并另一个文件
+yq '. *d load("file2.yml")' file1.yml                      # 深度合并（数组按索引合并）
 ```
 
 ### F. 环境变量
 
 ```bash
-yq -i '.value = env(VAR)'                      file.yaml
-myenv="cat" yq '.[env(myenv)]'                 file.yaml
-NAME=value yq -i '.name = strenv(NAME)'        file.yaml
-yq '(.. | select(tag == "!!str")) |= envsubst' file.yaml
+yq -i '.value = env(VAR)' file.yaml                       # 读取环境变量（自动识别类型）
+myenv="cat" yq '.[env(myenv)]' file.yaml                  # 用环境变量值作为动态键
+NAME=value yq -i '.name = strenv(NAME)' file.yaml         # 读取环境变量（始终为字符串）
+yq '(.. | select(tag == "!!str")) |= envsubst' file.yaml  # 批量替换字符串中的${VAR}
 ```
 
 ### G. 条件与过滤
 
 ```bash
-yq '.[] | select(.active == true)'      file.yaml
-yq '.[] | select(test("^[a-z]+$"))'     file.yaml
-yq '.[] | select(.name == "*test*")'    file.yaml
-yq '[.[] | select(.age > 18)] | length' file.yaml
+yq '.[] | select(.active == true)' file.yaml       # 选择满足条件的元素
+yq '.[] | select(test("^[a-z]+$"))' file.yaml      # 正则匹配过滤
+yq '.[] | select(.name == "*test*")' file.yaml     # 通配符匹配过滤
+yq '[.[] | select(.age > 18)] | length' file.yaml  # 统计满足条件的数量
 ```
 
 ### H. 递归操作
 
 ```bash
-yq '.. style="double"'                           file.yaml
-yq 'del(.. | .secret?)'                          file.yaml
-yq '.. | select(has("image")).image'             file.yaml
-yq '(.. | select(tag == "!!int")) tag = "!!str"' file.yaml
+yq '.. style="double"' file.yaml                            # 递归设置所有值为双引号
+yq 'del(.. | .secret?)' file.yaml                           # 递归删除所有secret字段
+yq '.. | select(has("image")).image' file.yaml              # 递归查找并读取image字段
+yq '(.. | select(tag == "!!int")) tag = "!!str"' file.yaml  # 递归将所有整数转为字符串
 ```
 
 ### I. 数组操作
 
 ```bash
-yq '.[]'                   file.yaml
-yq 'pivot'                 file.yaml
-yq 'unique'                file.yaml
-yq '.[1:5]'                file.yaml
-yq 'length'                file.yaml
-yq 'flatten'               file.yaml
-yq 'shuffle'               file.yaml
-yq '.[0, 2, 4]'            file.yaml
-yq '[range(5)]'            file.yaml
-yq '.[] |= . * 2'          file.yaml
-yq 'filter(. > 3)'         file.yaml
-yq 'limit(3; .[])'         file.yaml
-yq 'sort_by(.name)'        file.yaml
-yq 'pick(["a","b"])'       file.yaml
-yq 'omit(["a","b"])'       file.yaml
-yq 'unique_by(.name)'      file.yaml
-yq 'map_values(. + 1)'     file.yaml
-yq 'group_by(.category)'   file.yaml
-yq 'map(.field = "value")' file.yaml
-yq 'first(.name == "cat")' file.yaml
-yq 'reverse | unique_by(.name) | reverse' file.yaml
+yq '.[]' file.yaml                                   # 展开数组每个元素
+yq 'pivot' file.yaml                                 # 矩阵转置（行转列）
+yq 'unique' file.yaml                                # 去重
+yq '.[1:5]' file.yaml                                # 切片（索引1到4）
+yq 'length' file.yaml                                # 获取数组/映射长度
+yq 'flatten' file.yaml                               # 递归扁平化嵌套数组
+yq 'shuffle' file.yaml                               # 随机打乱数组
+yq '.[0, 2, 4]' file.yaml                            # 多索引选择
+yq '[range(5)]' file.yaml                            # 生成0-4序列
+yq '.[] |= . * 2' file.yaml                          # 每个元素乘以2
+yq 'filter(. > 3)' file.yaml                         # 过滤数组（保留大于3的）
+yq 'limit(3; .[])' file.yaml                         # 只取前3个结果
+yq 'sort_by(.name)' file.yaml                        # 按字段排序
+yq 'pick(["a","b"])' file.yaml                       # 只保留指定键
+yq 'omit(["a","b"])' file.yaml                       # 排除指定键
+yq 'unique_by(.name)' file.yaml                      # 按字段去重
+yq 'map_values(. + 1)' file.yaml                     # 映射值批量运算（保持键）
+yq 'group_by(.category)' file.yaml                   # 按字段分组
+yq 'map(.field = "value")' file.yaml                 # 数组映射（给每个元素添加字段）
+yq 'first(.name == "cat")' file.yaml                 # 返回第一个匹配条件的元素
+yq 'reverse | unique_by(.name) | reverse' file.yaml  # 保留最新（后出现的优先）
 ```
 
 ### J. 字符串操作
 
 ```bash
-yq '. | upcase' file.yaml
-yq '. | downcase' file.yaml
-yq '. | trim' file.yaml
-yq '. | sub("old", "new")' file.yaml
-yq '. | gsub("a", "b")' file.yaml
-yq 'join(", ")' file.yaml
-yq 'split(";")' file.yaml
-yq 'capture("(?P<a>\w+)-(?P<n>\d+)")' file.yaml
-yq 'test("pattern"; "i")' file.yaml
-yq '.[0:5]' file.yaml
+yq '. | upcase' file.yaml                        # 转大写
+yq '. | downcase' file.yaml                      # 转小写
+yq '. | trim' file.yaml                          # 修剪首尾空白
+yq '. | sub("old", "new")' file.yaml             # 正则替换（首次匹配）
+yq '. | gsub("a", "A")' file.yaml                # 全局替换
+yq 'join(", ")' file.yaml                        # 用逗号连接数组元素
+yq 'split(";")' file.yaml                        # 按分号分割字符串
+yq 'capture("(?P<a>\w+)-(?P<n>\d+)")' file.yaml  # 命名捕获组提取
+yq 'test("pattern"; "i")' file.yaml              # 正则测试（忽略大小写）
+yq '.[0:5]' file.yaml                            # 字符串切片（前5个字符）
 ```
 
 ### K. 样式与标签
 
 ```bash
-yq '.a style="double"' file.yaml
-yq '.a style="single"' file.yaml
-yq '.a style="literal"' file.yaml
-yq '.a tag = "!!str"' file.yaml
-yq '.. | tag' file.yaml
-yq '.. | kind' file.yaml
+yq '.a style="double"' file.yaml                 # 设置双引号样式
+yq '.a style="single"' file.yaml                 # 设置单引号样式
+yq '.a style="literal"' file.yaml                # 设置字面量块样式（|）
+yq '.a tag = "!!str"' file.yaml                  # 设置类型标签为字符串
+yq '.. | tag' file.yaml                          # 递归查看所有类型标签
+yq '.. | kind' file.yaml                         # 递归查看所有节点类型（scalar/map/seq）
 ```
 
 ### L. 注释
 
 ```bash
-yq '.a line_comment="note"' file.yaml
-yq '. head_comment="header"' file.yaml
-yq '. foot_comment="footer"' file.yaml
-yq '... comments=""' file.yaml
+yq '.a line_comment="note"' file.yaml            # 设置行尾注释
+yq '. head_comment="header"' file.yaml           # 设置文档头部注释
+yq '. foot_comment="footer"' file.yaml           # 设置文档尾部注释
+yq '... comments=""' file.yaml                   # 删除所有注释
 ```
 
 ### M. 锚点与别名
 
 ```bash
-yq '.a | anchor' file.yaml
-yq '.a | alias' file.yaml
-yq 'explode(.)' file.yaml
-yq '.a anchor = "new"' file.yaml
+yq '.a | anchor' file.yaml                       # 获取锚点名
+yq '.a | alias' file.yaml                        # 获取别名引用名
+yq 'explode(.)' file.yaml                        # 展开所有别名（内联化）
+yq '.a anchor = "new"' file.yaml                 # 设置锚点名
 ```
 
 ### N. 变量与 Reduce
 
 ```bash
-yq '.a as $x | .b = $x' file.yaml
-yq '.[] as $item ireduce (0; . + $item)' file.yaml
-yq 'with_entries(.key |= "prefix_" + .)' file.yaml
+yq '.a as $x | .b = $x' file.yaml                   # 变量绑定与复用
+yq '.[] as $item ireduce (0; . + $item)' file.yaml  # 数组求和（reduce）
+yq 'with_entries(.key |= "prefix_" + .)' file.yaml  # 批量修改键名（加前缀）
 ```
 
 ### O. 安全条件更新
 
 ```bash
-# 核心模式
+# 核心模式：条件满足时更新，否则保持原样
 ((select(条件) | .field = 新值) // .)
 
-# 示例
+# 示例：只在type为ss时添加plugin字段
 yq '.proxies |= map(
   ((select(.type == "ss") | .plugin = "obfs") // .)
 )' file.yaml
@@ -2711,97 +3082,97 @@ yq '.proxies |= map(
 ### P. 数值运算
 
 ```bash
-yq '.a + .b' file.yaml
-yq '.a - .b' file.yaml
-yq '.a * .b' file.yaml
-yq '.a / .b' file.yaml
-yq '.a % .b' file.yaml
-yq '.a | pow(.; 2)' file.yaml
-yq '.a | sqrt' file.yaml
-yq '.a | min' file.yaml
-yq '.a | max' file.yaml
-yq 'min_by(.age)' file.yaml
-yq 'max_by(.age)' file.yaml
-yq '.a | round' file.yaml
-yq '.a | floor' file.yaml
-yq '.a | ceil' file.yaml
-yq '.a += 1' file.yaml
-yq '.a -= 1' file.yaml
+yq '.a + .b' file.yaml                           # 加法
+yq '.a - .b' file.yaml                           # 减法
+yq '.a * .b' file.yaml                           # 乘法
+yq '.a / .b' file.yaml                           # 除法
+yq '.a % .b' file.yaml                           # 取模
+yq '.a | pow(.; 2)' file.yaml                    # 幂运算（平方）
+yq '.a | sqrt' file.yaml                         # 平方根
+yq '.a | min' file.yaml                          # 最小值
+yq '.a | max' file.yaml                          # 最大值
+yq 'min_by(.age)' file.yaml                      # 按字段取最小元素
+yq 'max_by(.age)' file.yaml                      # 按字段取最大元素
+yq '.a | round' file.yaml                        # 四舍五入
+yq '.a | floor' file.yaml                        # 向下取整
+yq '.a | ceil' file.yaml                         # 向上取整
+yq '.a += 1' file.yaml                           # 自增
+yq '.a -= 1' file.yaml                           # 自减
 ```
 
 ### Q. 日期时间
 
 ```bash
-yq --null-input 'now'
-yq 'now | format_datetime("2006-01-02")' file.yaml
-yq '1675301929 | from_unix' file.yaml
-yq 'now | to_unix' file.yaml
-yq 'now | tz("Asia/Shanghai")' file.yaml
+yq -n 'now'                                  # 获取当前时间
+yq -n 'now | format_datetime("2006-01-02")'  # 格式化日期
+yq -n '1675301929 | from_unix'               # Unix时间戳转日期
+yq -n 'now | to_unix'                        # 日期转Unix时间戳
+yq -n 'now | tz("Asia/Shanghai")'            # 时区转换（需系统安装 zoneinfo）
 ```
 
 ### R. 比较与默认值
 
 ```bash
-yq '.a == .b' file.yaml
-yq '.a != .b' file.yaml
-yq '.a > .b' file.yaml
-yq '.a >= .b' file.yaml
-yq '.a < .b' file.yaml
-yq '.a <= .b' file.yaml
-yq '.a // "default"' file.yaml
+yq '.a == .b' file.yaml                          # 相等
+yq '.a != .b' file.yaml                          # 不等
+yq '.a > .b' file.yaml                           # 大于
+yq '.a >= .b' file.yaml                          # 大于等于
+yq '.a < .b' file.yaml                           # 小于
+yq '.a <= .b' file.yaml                          # 小于等于
+yq '.a // "default"' file.yaml                   # 默认值（null/false时回退）
 ```
 
 ### S. 逻辑运算
 
 ```bash
-yq '.a and .b' file.yaml
-yq '.a or .b' file.yaml
-yq '.a | not' file.yaml
-yq 'any' file.yaml
-yq 'all' file.yaml
+yq '.a and .b' file.yaml                         # 逻辑与
+yq '.a or .b' file.yaml                          # 逻辑或
+yq '.a | not' file.yaml                          # 逻辑非
+yq 'any' file.yaml                               # 数组任一元素为true
+yq 'all' file.yaml                               # 数组所有元素为true
 ```
 
 ### T. 文档与文件索引
 
 ```bash
-yq 'select(di == 0)' file.yaml
-yq 'select(fi == 0)' file1.yaml file2.yaml
-yq '.[] | split_doc' file.yaml
+yq 'select(di == 0)' file.yaml                   # 选择第1个文档
+yq 'select(fi == 0)' file1.yaml file2.yaml       # 选择第1个文件
+yq '.[] | split_doc' file.yaml                   # 数组拆分为多个文档
 ```
 
 ### U. 节点元信息
 
 ```bash
-yq '.a | line' file.yaml
-yq '.a | column' file.yaml
-yq '.a | key | line' file.yaml
-yq 'is_key' file.yaml
-yq 'filename' file.yaml
-yq 'fi' file.yaml
-yq 'di' file.yaml
+yq '.a | line' file.yaml                         # 获取节点行号
+yq '.a | column' file.yaml                       # 获取节点列号
+yq '.a | key | line' file.yaml                   # 获取键节点的行号
+yq 'is_key' file.yaml                            # 判断是否为键节点
+yq 'filename' file.yaml                          # 获取当前文件名
+yq 'fi' file.yaml                                # 获取文件索引
+yq 'di' file.yaml                                # 获取文档索引
 ```
 
 ### V. 动态求值与系统
 
 ```bash
-yq 'eval(".a.b")' file.yaml
-yq 'error("msg")' file.yaml
-yq 'builtins' file.yaml
-yq 'debug' file.yaml
-yq 'system("cmd"; "arg")' file.yaml
+yq 'eval(".a.b")' file.yaml                      # 动态执行表达式字符串
+yq 'error("msg")' file.yaml                      # 抛出错误并停止
+yq 'builtins' file.yaml                          # 列出所有内置函数
+yq 'debug' file.yaml                             # 调试输出当前值到stderr
+yq 'system("cmd"; "arg")' file.yaml              # 执行外部系统命令（需--security-enable-system-operator）
 ```
 
 ### W. 类型过滤器
 
 ```bash
-yq '.. | scalars' file.yaml
-yq '.. | arrays' file.yaml
-yq '.. | objects' file.yaml
-yq '.. | numbers' file.yaml
-yq '.. | strings' file.yaml
-yq '.. | booleans' file.yaml
-yq '.. | iterables' file.yaml
-yq '.. | nulls' file.yaml
+yq '.. | scalars' file.yaml                      # 只保留标量值
+yq '.. | arrays' file.yaml                       # 只保留数组
+yq '.. | objects' file.yaml                      # 只保留对象/映射
+yq '.. | numbers' file.yaml                      # 只保留数字
+yq '.. | strings' file.yaml                      # 只保留字符串
+yq '.. | booleans' file.yaml                     # 只保留布尔值
+yq '.. | iterables' file.yaml                    # 只保留可迭代对象（数组+映射）
+yq '.. | nulls' file.yaml                        # 只保留null值
 ```
 
 ---
