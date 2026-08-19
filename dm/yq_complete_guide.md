@@ -1262,34 +1262,7 @@ yq '. | has("c")' sample.yml       # true（c 存在，即使值为 null）
 yq '. | keys' sample.yml           # [a, c]
 ```
 
-### 7.7 inside 与 in 运算符
-
-`inside` 检查一个值是否被包含在另一个值中（子集关系）。
-
-```bash
-# 数组子集检查
-yq --null-input '[1,2] | inside([1,2,3])'     # true
-yq --null-input '[1,4] | inside([1,2,3])'     # false
-
-# 对象子集检查
-yq --null-input '{"a": 1} | inside({"a": 1, "b": 2})'   # true
-
-# 字符串包含
-yq --null-input '"cat" | inside("concatenate")'   # true
-```
-
-`in` 检查值是否在数组/对象中。
-
-```bash
-# 值在数组中
-yq --null-input '1 in [1,2,3]'     # true
-yq --null-input '4 in [1,2,3]'     # false
-
-# 键在对象中
-yq '.a in .' sample.yml   # 检查 "a" 是否是顶层键
-```
-
-### 7.8 contains 运算符
+### 7.7 contains 运算符
 
 `contains` 检查输入是否包含给定的值（与 `inside` 方向相反）。
 
@@ -2266,26 +2239,7 @@ yq 'with_entries(.key |= sub("-"; "_"))' sample.yml
 yq '(.. | select(tag=="!!map")) |= with_entries(.key |= upcase)' sample.yml
 ```
 
-### 15.6 keys_unsorted
-
-`keys_unsorted` 返回映射的键名列表，**不保证顺序**（比 `keys` 更快，当你不需要排序时）。
-
-```yaml
-# sample.yml
-b: 1
-a: 2
-c: 3
-```
-
-```bash
-yq 'keys_unsorted' sample.yml
-# 输出: [b, a, c]（保持原始顺序）
-
-yq 'keys' sample.yml
-# 输出: [a, b, c]（已排序）
-```
-
-### 15.7 sort_keys
+### 15.6 sort_keys
 
 `sort_keys` 对映射的键进行排序，返回排序后的映射。
 
@@ -2414,9 +2368,6 @@ yq '.[] | trim' sample.yml
 # cat
 # dog
 # cow cow
-
-# 修剪左侧/右侧
-yq '.[] | ltrimstr(" ") | rtrimstr(" ")' sample.yml
 ```
 
 ### 17.5 正则匹配
@@ -2488,16 +2439,16 @@ b: heat
 ```
 
 ```bash
-yq '.[] |= sub("(a)"; "${1}r")' sample.yml
+yq '.[] |= sub("(a)", "${1}r")' sample.yml
 # 输出:
 # a: cart
 # b: heart
 
 # 全局替换
-yq '.[] |= gsub("a"; "A")' sample.yml
+yq '.[] |= gsub("a", "A")' sample.yml
 
 # 条件替换
-yq '.[] |= sub("cat"; "dog")' sample.yml
+yq '.[] |= sub("cat", "dog")' sample.yml
 ```
 
 ### 17.9 分割
@@ -2509,15 +2460,7 @@ yq 'split("; ")' sample.yml
 yq 'split("\\n")' sample.yml
 ```
 
-### 17.10 startsWith / endsWith / contains
-
-```bash
-yq '.[] | select(startswith("pre"))' sample.yml
-yq '.[] | select(endswith("post"))' sample.yml
-yq '.[] | select(contains("middle"))' sample.yml
-```
-
-### 17.11 字符串切片
+### 17.10 字符串切片
 
 ```yaml
 # sample.yml
@@ -2534,7 +2477,7 @@ yq '.country[-5:]' sample.yml      # ralia
 yq '.greeting[1:3]' sample.yml    # 输入 héllo，输出 él
 ```
 
-### 17.12 to_string
+### 17.11 to_string
 
 将所有类型转为字符串表示。
 
@@ -2562,7 +2505,7 @@ yq '.[] |= to_string' sample.yml
 # - "- array\n- 2"
 ```
 
-### 17.13 utf8bytelength
+### 17.12 utf8bytelength
 
 返回字符串的 UTF-8 字节长度（与 `length` 的字符数不同）。
 
@@ -2624,25 +2567,7 @@ yq '.[] |= all_c(tag == "!!str")' sample.yml
 # b: true
 ```
 
-### 18.4 条件表达式（if-then-else）
-
-```bash
-# 设置默认值（如果为 null 则使用默认值）
-yq '.name // "unknown"' sample.yml
-
-# 条件赋值
-yq 'if .active == true then "running" else "stopped" end' sample.yml
-
-# 多分支条件
-yq '
-  if .status == "green" then "healthy"
-  elif .status == "yellow" then "warning"
-  else "critical"
-  end
-' sample.yml
-```
-
-### 18.5 字符串转布尔（环境变量场景）
+### 18.4 字符串转布尔（环境变量场景）
 
 ```bash
 export ENABLE_FEATURE="true"
@@ -2657,7 +2582,7 @@ yq -i '
 yq '(.. | select(. == "true" or . == "false")) |= (. == "true")' config.yaml
 ```
 
-### 18.6 安全条件更新模式（select + //）
+### 18.5 安全条件更新模式（select + //）
 
 ```bash
 # 核心模式：((select(条件) | .field = 新值) // .)
@@ -2898,14 +2823,14 @@ yq ea '
 ### 21.9 查找注释位置
 
 ```bash
-yq '[... | {"p": path | join("."), "isKey": is_key, "hc": headComment, "lc": lineComment, "fc": footComment}]' sample.yml
+yq '[... | {"p": path | join("."), "isKey": is_key, "hc": head_comment, "lc": line_comment, "fc": foot_comment}]' sample.yml
 ```
 
 ### 21.10 `is_key` 在注释定位中的应用
 
 ```bash
 # 判断节点是键还是值，对理解注释归属至关重要
-yq '[... | {"path": path | join("."), "isKey": is_key, "lineComment": lineComment}]' sample.yml
+yq '[... | {"path": path | join("."), "isKey": is_key, "line_comment": line_comment}]' sample.yml
 ```
 
 ### 21.11 注释保留注意事项
@@ -3576,7 +3501,7 @@ yq '.providers |= with_entries(select(.key != "deprecated"))' sample.yml
 
 ```bash
 # 将键名中的横线改为下划线
-yq '. |= with_entries(.key |= sub("-"; "_"))' sample.yml
+yq '. |= with_entries(.key |= sub("-", "_"))' sample.yml
 
 # 键名转大写
 yq '.providers |= with_entries(.key |= upcase)' sample.yml
@@ -3602,6 +3527,7 @@ proxies:
 ```bash
 # 给所有元素添加字段
 yq '.proxies |= map(.udp = true)' sample.yml
+yq '.proxies[].udp = true' sample.yml
 
 # 修改所有元素的字段
 yq '.proxies |= map(.port = 443)' sample.yml
@@ -3961,7 +3887,7 @@ yq '.b | key | column' sample.yml
 
 ```bash
 # 查找所有注释的位置
-yq '[... | {"p": path | join("."), "isKey": is_key, "lc": lineComment}]' sample.yml
+yq '[... | {"p": path | join("."), "isKey": is_key, "lc": line_comment}]' sample.yml
 ```
 
 ### 32.4 `filename` — 获取文件名
@@ -4019,33 +3945,26 @@ yq 'eval(.pathExp)' sample.yml
 pathEnv=".a.b[0].name" valueEnv="moo"   yq 'eval(strenv(pathEnv)) = strenv(valueEnv)' sample.yml
 ```
 
-### 33.2 `error(msg)` — 抛出错误
-
-```bash
-# 条件报错
-yq '.value | if . > 100 then error("value too large") else . end' sample.yml
-```
-
-### 33.3 `halt` — 立即停止求值
+### 33.2 `halt` — 立即停止求值
 
 ```bash
 yq '.items[] | select(.critical) | error("critical found") | halt' sample.yml
 ```
 
-### 33.4 `builtins` — 列出所有内置函数
+### 33.3 `builtins` — 列出所有内置函数
 
 ```bash
 yq 'builtins' --null-input
 ```
 
-### 33.5 `debug` — 调试输出
+### 33.4 `debug` — 调试输出
 
 ```bash
 # 将当前值输出到 stderr，stdout 继续正常输出
 yq '.items[] | debug | .name' sample.yml
 ```
 
-### 33.6 `system(cmd; args)` — 执行外部命令
+### 33.5 `system(cmd; args)` — 执行外部命令
 
 > ⚠️ 需要显式启用 `--security-enable-system-operator`
 
@@ -4158,7 +4077,7 @@ yq 'filter(. > 2)' sample.yml
 
 # 过滤对象值
 yq 'filter(. > 1)' sample.yml
-# 对象: {a: 1, b: 2, c: 3} -> {b: 2, c: 3}
+# 输出: [2, 3, 4, 5]
 ```
 
 #### 34.1.5 first
@@ -4542,9 +4461,6 @@ yq '[.. | nulls] | length > 0' sample.yml
 yq '.items[] | debug | .name' sample.yml
 # stderr 输出调试信息，stdout 正常输出 name
 
-# 条件报错
-yq '.value | if . > 100 then error("value too large") else . end' sample.yml
-
 # 列出所有内置函数
 yq 'builtins' --null-input
 
@@ -4569,8 +4485,6 @@ yq --security-enable-system-operator '.result = system("date"; "+%Y-%m-%d")' sam
 | `any_c(exp)` | 条件 any | `any_c(. > 0)` |
 | `array_to_map` | 数组转映射（索引为键） | `array_to_map` |
 | `as` | 变量绑定 | `.a as $x` |
-| `ascii_downcase` | ASCII 转小写 | `ascii_downcase` |
-| `ascii_upcase` | ASCII 转大写 | `ascii_upcase` |
 | `asin` | 反正弦 | `asin` |
 | `assign` / `=` | 绝对赋值 | `.a = "val"` |
 | `atan` | 反正切 | `atan` |
@@ -4662,7 +4576,6 @@ yq --security-enable-system-operator '.result = system("date"; "+%Y-%m-%d")' sam
 
 | 函数/运算符 | 说明 | 示例 |
 |------------|------|------|
-| `if-then-else` | 条件表达式 | `if .a then 1 else 0 end` |
 | `in` | 检查值是否在数组中 | `.a in ["x","y"]` |
 | `inside` | 检查是否为子集 | `[1,2] \| inside([1,2,3])` |
 | `ireduce` | 迭代 reduce | `.[] as $i ireduce (0; . + $i)` |
@@ -4753,7 +4666,6 @@ yq --security-enable-system-operator '.result = system("date"; "+%Y-%m-%d")' sam
 | `reverse` | 反转数组 | `reverse` |
 | `root` | 获取根节点 | `root` |
 | `round` | 四舍五入 | `round` |
-| `rtrimstr` | 修剪右侧字符串 | `rtrimstr("post")` |
 
 ### S
 
@@ -4809,13 +4721,6 @@ yq --security-enable-system-operator '.result = system("date"; "+%Y-%m-%d")' sam
 | `upcase` | 转大写（Unicode） | `upcase` |
 | `uri` / `@uri` | URI 编码 | `@uri` |
 | `urid` / `@urid` | URI 解码 | `@urid` |
-| `utf8bytelength` | UTF-8 字节长度 | `utf8bytelength` |
-
-### V
-
-| 函数/运算符 | 说明 | 示例 |
-|------------|------|------|
-| `values` | 获取映射值 | `values` |
 
 ### W
 
