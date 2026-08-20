@@ -6,6 +6,7 @@
 
 ## 目录
 
+- [基本语法](#基本语法)
 - [基础操作](#基础操作)
   - [遍历与读取 (Traverse / Read)](#遍历与读取-traverse--read)
   - [赋值与更新 (Assign / Update)](#赋值与更新-assign--update)
@@ -107,6 +108,244 @@
   - [U. 节点元信息](#u-节点元信息)
   - [V. 动态求值与系统](#v-动态求值与系统)
   - [W. 类型过滤器](#w-类型过滤器)
+
+---
+
+## 基本语法
+
+> 本章介绍 yq 表达式的核心语法规则。yq 程序本质上是一个单独的表达式，它从输入的 YAML 文档开始，以当前值（`.`）为上下文逐层求值。
+
+---
+
+### 表达式结构
+
+yq 命令行中传入的字符串会被解析为一棵表达式树，对输入的每个 YAML 文档（或节点）进行求值。
+
+```bash
+yq 'EXPRESSION' file.yaml
+```
+
+- 最外层没有隐式循环，如果需要处理数组每个元素，必须显式展开（`.[]`）或映射（`map`）。
+- 表达式可以包含管道、赋值、变量绑定，但**不支持自定义函数**（`def`）或多语句脚本。
+
+---
+
+### 当前值（`.`）
+
+点号 `.` 表示当前上下文中的值。在表达式最开始，`.` 就是整个 YAML 文档；经过管道后，`.` 会变成左侧表达式的输出。
+
+```yaml
+name: Alice
+age: 30
+```
+
+```bash
+yq '.' sample.yml        # 输出整个文档
+yq '.name' sample.yml    # 输出 Alice
+```
+
+---
+
+### 管道（`|`）
+
+与 Shell 类似，`|` 将左侧表达式的结果作为右侧表达式的输入，并**改变 `.` 的上下文**。
+
+```bash
+yq '.users | .[0] | .name' file.yaml
+```
+
+上式中：
+1. `.users` 从根文档取出 `users` 字段；
+2. `| .[0]` 的 `.` 是 `users` 数组，取出第 1 个元素；
+3. `| .name` 的 `.` 是该元素，取出其 `name` 字段。
+
+**注意**：进入右侧表达式后，`.` 不再是原始文档。如需引用根节点，先用 `. as $root` 保存。
+
+---
+
+### 属性访问与索引
+
+| 语法 | 含义 | 示例 |
+|------|------|------|
+| `.foo` | 访问映射键 | `.name` |
+| `.["foo"]` | 访问含特殊字符的键 | `.["key-with-dots"]` |
+| `.[0]` | 访问数组第 1 个元素 | `.users[0]` |
+| `.[1:3]` | 切片（索引 1 到 2） | `.items[1:3]` |
+| `.[]` | 展开所有子元素 | `.users[]` |
+| `.a?` | 可选访问，类型不匹配时不报错 | `.a?.b?` |
+
+---
+
+### 联合（`,`）
+
+逗号用于组合多个表达式，依次输出多个独立结果。与管道不同，联合**不传递上下文**。
+
+```bash
+yq '.a, .b, .c' file.yaml
+```
+
+---
+
+### 赋值操作符
+
+| 操作符 | 说明 | 示例 |
+|--------|------|------|
+| `=` | 普通赋值。RHS 在**原始上下文**（管道左侧进入前的上下文）求值 | `.a = .b` |
+| `\|=` | 相对赋值。RHS 以**被赋值的 LHS 节点**为上下文求值 | `.a \|= . + 1` |
+| `+=` `-=` `*=` 等 | 复合赋值，等价于 `.a = .a + ...` | `.a += 1` |
+
+**关键区别**：
+
+```yaml
+a: 10
+b: 20
+```
+
+```bash
+# .b 取根文档的 b，结果 a=20
+yq '.a = .b' sample.yml
+
+# . 是 .a 的旧值(10)，结果 a=11
+yq '.a |= . + 1' sample.yml
+```
+
+---
+
+### 数组与对象构造
+
+使用 `[]` 和 `{}` 在表达式中构造新节点。
+
+```bash
+# 构造数组
+yq -n '[1, 2, 3]'
+yq '[.a, .b]' file.yaml
+
+# 构造对象
+yq -n '{"name": "foo", "count": 3}'
+yq '{"key": .value}' file.yaml
+```
+
+---
+
+### 字符串插值
+
+在双引号字符串中使用 `\(...)` 嵌入表达式结果。
+
+```bash
+yq '.message = "Hello, \(.name)"' file.yaml
+```
+
+---
+
+### 变量绑定（`as`）
+
+使用 `as $name` 将表达式结果绑定到变量，在后续管道中复用。变量不会随 `.` 改变而改变。
+
+```bash
+yq '.items | length as $n | "Total: \($n)"' file.yaml
+```
+
+```bash
+yq '. as $root | .a | .b = $root.c' file.yaml
+```
+
+---
+
+### 默认值（`//`）
+
+当左侧为 `null` 或 `false` 时，返回右侧值。对空字符串 `""`、数字 `0`、空数组 `[]` **不会回退**。
+
+```bash
+yq '.timeout // "30s"' file.yaml
+```
+
+如需让空字符串也触发回退，先用 `select` 将其变为 `empty`：
+
+```bash
+yq '(.path | select(. != "")) // "default"' file.yaml
+```
+
+---
+
+### 条件过滤（`select`）
+
+`select(condition)` 保留满足条件的元素，不满足的会被丢弃（输出 `empty`，即无输出）。
+
+```bash
+yq '.users[] | select(.age > 18)' file.yaml
+```
+
+常与 `//` 配合实现"条件更新，否则保持原样"：
+
+```bash
+yq 'map(((select(.type == "ss") | .plugin = "obfs") // .))' file.yaml
+```
+
+---
+
+### 操作符优先级
+
+>当表达式复杂时，**建议用括号 `()` 显式分组**。大致优先级从高到低如下：
+
+1. **属性/索引访问**：`.a` `.[0]` `?`
+2. **一元操作**：`-` `not`
+3. **乘除/合并**：`*` `/` `%`
+4. **加减/拼接**：`+` `-`
+5. **比较**：`==` `!=` `<` `>` `<=` `>=`
+6. **逻辑**：`and` `or`
+7. **联合**：`,`
+8. **默认值**：`//`
+9. **管道**：`|`
+10. **赋值**：`=` `|=` `+=` 等
+11. **变量绑定**：`as`
+
+---
+
+### 常见语法陷阱
+
+#### 1. 管道改变上下文
+
+```bash
+# 错误：右侧 .c 是在 .a 的上下文中解析的
+yq '.a | .b = .c' file.yaml
+
+# 正确：用变量保存根节点
+yq '. as $root | .a | .b = $root.c' file.yaml
+```
+
+#### 2. `//` 不回退空字符串
+
+`//` 只对 `null`/`false` 生效。空字符串是有效值。
+
+```bash
+# 如需处理空字符串
+yq '(.path | select(. != "")) // "default"' file.yaml
+```
+
+#### 3. 赋值返回的是整个文档
+
+`.a = "x"` 的返回值是**修改后的整个文档**，因此可以链式赋值：
+
+```bash
+yq '.a = "x" | .b = "y"' file.yaml
+```
+
+#### 4. `[]` 展开与 `map` 的区别
+
+- `.[]` 是**展开**：把数组/映射的每个元素单独输出到管道
+- `map(...)` 是**映射**：对数组每个元素执行表达式，最后收集回数组
+
+```bash
+# 输出多个独立标量
+yq '.users[].name' file.yaml
+
+# 输出一个数组
+yq '.users | map(.name)' file.yaml
+```
+
+#### 5. 表达式不支持注释
+
+yq 的表达式字符串中**不能写注释**。如需备注，只能写在 Shell 脚本或批注文件中。
 
 ---
 
@@ -5104,8 +5343,8 @@ favouriteAnimal: cat
 
 ```bash
 numberOfCats="3" yq '
-	with(env(numberOfCats); select(tag == "!!int") or error("numberOfCats is not a number :(")) |
-	.numPets = env(numberOfCats)
+  with(env(numberOfCats); select(tag == "!!int") or error("numberOfCats is not a number :(")) |
+  .numPets = env(numberOfCats)
 ' sample.yml
 ```
 ```yaml
@@ -5903,8 +6142,8 @@ a:
 
 ```yaml
 a: |-
-  cats	dogs
-  great	cool as well
+  cats  dogs
+  great cool as well
 ```
 
 ```bash
@@ -6063,8 +6302,8 @@ dog,thing3,false,12
 yq '@tsv' sample.yml
 ```
 ```yaml
-cat	thing1,thing2	true	3.40
-dog	thing3	false	12
+cat thing1,thing2 true  3.40
+dog thing3  false 12
 ```
 
 #### 编码值为 xml 字符串
