@@ -467,7 +467,7 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal r8152
 	else
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
-		[[ $REPO_BRANCH =~ 25 ]] && clone_dir "$REPO_BRANCH" openwrt/packages rust ruby
+		[[ $REPO_BRANCH =~ 25 ]] && clone_dir "$REPO_BRANCH" openwrt/packages rust ruby dockerd
 	fi
 
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy"
