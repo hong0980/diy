@@ -467,12 +467,12 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal r8152
 	else
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
-		[[ $REPO_BRANCH =~ master|25 ]] && clone_dir "$REPO_BRANCH" openwrt/packages rust ruby
 	fi
 	[[ $REPO_BRANCH =~ master|25 ]] && {
 		create_directory feeds/packages/utils/dockerd/patches
 		wget -qO feeds/packages/utils/dockerd/patches/001-fix-copy-binaries.patch \
 			https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/001-fix-copy-binaries.patch
+		[[ $REPO =~ immortalwrt ]] && clone_dir "$REPO_BRANCH" openwrt/packages rust ruby
 	}
 
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy"
@@ -581,19 +581,19 @@ sed -Ei '{
 # 	"s/ || (fval == this.default \&\& (this.optional || this.rmempty))//" \
 #   feeds/luci/modules/luci-base/htdocs/luci-static/resources/form.js
 
-[[ "$REPO" =~ immortal && "$TARGET_DEVICE" =~ x86 ]] && {
-	PATCH_NAME="952-add-net-conntrack-events-support-multiple-registrant.patch"
-	for dir in target/linux/generic/hack-*; do
-		[ -d "$dir" ] || continue
-		ver=$(sed -nr 's/.*hack-(.*)/\1/p' <<<"$dir")
-		if curl $CURL_OPTS -o "${dir}/${PATCH_NAME}" \
-			"https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/target/linux/generic/hack-${ver}/${PATCH_NAME}"; then
-			echo "已添加 hack-${ver} 的 952 补丁"
-		else
-			echo "coolsnowwolf/lede 中未找到 hack-${ver} 的补丁，跳过" >&2
-		fi
-	done
-}
+# [[ "$REPO" =~ immortal && "$TARGET_DEVICE" =~ x86 ]] && {
+# 	PATCH_NAME="952-add-net-conntrack-events-support-multiple-registrant.patch"
+# 	for dir in target/linux/generic/hack-*; do
+# 		[ -d "$dir" ] || continue
+# 		ver=$(sed -nr 's/.*hack-(.*)/\1/p' <<<"$dir")
+# 		if curl $CURL_OPTS -o "${dir}/${PATCH_NAME}" \
+# 			"https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/target/linux/generic/hack-${ver}/${PATCH_NAME}"; then
+# 			echo "已添加 hack-${ver} 的 952 补丁"
+# 		else
+# 			echo "coolsnowwolf/lede 中未找到 hack-${ver} 的补丁，跳过" >&2
+# 		fi
+# 	done
+# }
 
 [[ "$VERSION" == 'slim' ]] && \
 	sed -Ei '/dockerman|deluge|aria2|transmission|qbittorrent|softwarecenter|watchdog|ddns|diskman/d' .config
