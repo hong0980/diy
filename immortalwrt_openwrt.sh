@@ -436,7 +436,7 @@ begin_time=$(date '+%H:%M:%S')
 git clone -q -b $REPO_BRANCH $REPO_URL openwrt # --depth 1
 [[ -d openwrt ]] && cd openwrt || exit
 status
-# [[ $REPO == openwrt && $REPO_BRANCH == master ]] && git reset --hard 914eb43
+[[ $REPO =~ immortalwrt ]] && [[ $REPO_BRANCH =~ 25 ]] && git reset --hard 7466306
 echo -e "$(color cy '更新软件....')\c"
 begin_time=$(date '+%H:%M:%S')
 ./scripts/feeds update -a 1>/dev/null 2>&1
