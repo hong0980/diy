@@ -467,8 +467,13 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal r8152
 	else
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
-		[[ $REPO_BRANCH =~ 25 ]] && clone_dir coolsnowwolf/packages rust ruby dockerd
+		[[ $REPO_BRANCH =~ master|25 ]] && clone_dir "$REPO_BRANCH" openwrt/packages rust ruby
 	fi
+	[[ $REPO_BRANCH =~ master|25 ]] && {
+		create_directory feeds/packages/utils/dockerd/patches
+		wget -qO feeds/packages/utils/dockerd/patches/001-fix-copy-binaries.patch \
+			https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/001-fix-copy-binaries.patch
+	}
 
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy"
 	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
