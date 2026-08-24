@@ -526,6 +526,7 @@ done
 	sed -r -i '/(golang|PROVIDES|logic_test|GO_PKG|PKG_SOURCE|PKG_HASH|PKG_BUILD_|GoPackage|GoBinPackage|DEPENDS)/d' \
 	package/A/clashoo/Makefile
 	sed -i '/BuildPackage/i\define Build/Compile\nendef' package/A/clashoo/Makefile
+	rm -rf package/A/clashoo/patches
 }
 
 sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
