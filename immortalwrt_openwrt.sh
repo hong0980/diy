@@ -436,7 +436,8 @@ begin_time=$(date '+%H:%M:%S')
 git clone -q -b $REPO_BRANCH $REPO_URL openwrt # --depth 1
 [[ -d openwrt ]] && cd openwrt || exit
 status
-[[ $REPO =~ immortalwrt ]] && [[ $REPO_BRANCH =~ 25 ]] && git reset --hard 7466306
+hash=$(git rev-parse HEAD)
+[[ $REPO =~ immortalwrt && $REPO_BRANCH =~ 25 && $hash =~ ^3a0e732 ]] && git reset --hard 6081813
 echo -e "$(color cy '更新软件....')\c"
 begin_time=$(date '+%H:%M:%S')
 ./scripts/feeds update -a 1>/dev/null 2>&1
@@ -581,19 +582,19 @@ sed -Ei '{
 # 	"s/ || (fval == this.default \&\& (this.optional || this.rmempty))//" \
 #   feeds/luci/modules/luci-base/htdocs/luci-static/resources/form.js
 
-# [[ "$REPO" =~ immortal && "$TARGET_DEVICE" =~ x86 ]] && {
-# 	PATCH_NAME="952-add-net-conntrack-events-support-multiple-registrant.patch"
-# 	for dir in target/linux/generic/hack-*; do
-# 		[ -d "$dir" ] || continue
-# 		ver=$(sed -nr 's/.*hack-(.*)/\1/p' <<<"$dir")
-# 		if curl $CURL_OPTS -o "${dir}/${PATCH_NAME}" \
-# 			"https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/target/linux/generic/hack-${ver}/${PATCH_NAME}"; then
-# 			echo "已添加 hack-${ver} 的 952 补丁"
-# 		else
-# 			echo "coolsnowwolf/lede 中未找到 hack-${ver} 的补丁，跳过" >&2
-# 		fi
-# 	done
-# }
+[[ "$REPO" =~ immortal && "$TARGET_DEVICE" =~ x86 ]] && {
+	PATCH_NAME="952-add-net-conntrack-events-support-multiple-registrant.patch"
+	for dir in target/linux/generic/hack-*; do
+		[ -d "$dir" ] || continue
+		ver=$(sed -nr 's/.*hack-(.*)/\1/p' <<<"$dir")
+		if curl $CURL_OPTS -o "${dir}/${PATCH_NAME}" \
+			"https://raw.githubusercontent.com/coolsnowwolf/lede/refs/heads/master/target/linux/generic/hack-${ver}/${PATCH_NAME}"; then
+			echo "已添加 hack-${ver} 的 952 补丁"
+		else
+			echo "coolsnowwolf/lede 中未找到 hack-${ver} 的补丁，跳过" >&2
+		fi
+	done
+}
 
 [[ "$VERSION" == 'slim' ]] && \
 	sed -Ei '/dockerman|deluge|aria2|transmission|qbittorrent|softwarecenter|watchdog|ddns|diskman/d' .config
