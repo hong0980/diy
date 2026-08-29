@@ -404,7 +404,7 @@ deploy_cache() {
 			age=$(( ($(date +%s) - epoch) / 86400 ))
 			[ "$age" -lt 30 ] && {
 				CACHE_URL=$url
-				color cy "使用${date}缓存"
+				echo -e "$(color cy 使用${date}缓存)"
 			}
 		fi
 	fi
