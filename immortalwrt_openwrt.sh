@@ -395,7 +395,7 @@ deploy_cache() {
 	echo "CACHE_NAME=$REPO-${REPO_BRANCH#*-}-$ARCH-$time-$TOOLS_HASH" >> $GITHUB_ENV
 	local CACHE_URL; CACHE_URL=$(grep "$REPO.*$ARCH.*$TOOLS_HASH" <<< "$op_cache")
 
-	if [ -z "$CACHE_URL" ]; then
+	if [ -z "$CACHE_URL" ] && [ -n "$old_cache" ]; then
 		local url date epoch age
 		url=$(grep "$REPO-${REPO_BRANCH#*-}-$ARCH.*" <<< "$op_cache" | tail -n1)
 		if [ -n "$url" ]; then
