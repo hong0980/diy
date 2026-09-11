@@ -473,7 +473,7 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 		create_directory feeds/packages/utils/dockerd/patches
 		wget -qO feeds/packages/utils/dockerd/patches/001-fix-copy-binaries.patch \
 			https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/001-fix-copy-binaries.patch
-		[[ $REPO =~ immortalwrt ]] && clone_dir "$REPO_BRANCH" openwrt/packages rust ruby
+		# [[ $REPO =~ immortalwrt ]] && clone_dir "$REPO_BRANCH" openwrt/packages rust ruby
 	}
 
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy"
@@ -481,8 +481,8 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 fi
 
 del_package "luci-app-filetransfer luci-app-turboacc"
-clone_dir sbwml/openwrt_helloworld chinadns-ng \
-		  xray-core simple-obfs kcptun shadowsocks-rust
+# clone_dir sbwml/openwrt_helloworld kcptun
+
 clone_dir dev vernesong/OpenClash luci-app-openclash
 
 clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
@@ -490,7 +490,8 @@ clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
 
 clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
 clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
-clone_dir Openwrt-Passwall/openwrt-passwall-packages geoview
+clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview xray-core simple-obfs \
+		  shadowsocks-rust sing-box
 # clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb
 
 [[ $REPO_BRANCH =~ master|25 ]] || {
