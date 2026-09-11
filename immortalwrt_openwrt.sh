@@ -322,7 +322,7 @@ set_config (){
 			export DEVICE_NAME="$D_NAME"
 			echo "FIRMWARE_TYPE=sysupgrade" >> $GITHUB_ENV
 			# add_busybox "pkill lsof"
-			add_package "luci-app-mesh-node libustream-mbedtls luci-app-nikki luci-app-fchomo luci-i18n-clashoo-zh-cn luci-app-mesh11sd"
+			add_package "luci-app-mesh-node libustream-mbedtls luci-app-nikki luci-app-fchomo luci-i18n-clashoo-zh-cn luci-app-clashoo luci-app-mesh11sd"
 			del_package "wpad-basic-mbedtls wpad-openssl libustream-openssl libustream-wolfssl"
 			;;
 		newifi-d2)
@@ -381,7 +381,7 @@ set_config (){
 		luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-nikki \
 		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter luci-app-ddns-go \
 		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2 \
-		luci-app-miaplus luci-app-watchdog luci-app-fchomo luci-i18n-clashoo-zh-cn
+		luci-app-miaplus luci-app-watchdog luci-app-fchomo luci-i18n-clashoo-zh-cn luci-app-clashoo
 
 	add_package autocore luci-app-arpbind luci-app-ssr-plus luci-app-passwall \
 				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard luci-app-tinynote-js \
