@@ -481,7 +481,7 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 fi
 
 del_package "luci-app-filetransfer luci-app-turboacc"
-clone_dir sbwml/openwrt_helloworld kcptun xray-core
+clone_dir sbwml/openwrt_helloworld kcptun
 
 clone_dir dev vernesong/OpenClash luci-app-openclash
 
@@ -491,7 +491,7 @@ clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
 clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
 clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
 clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview simple-obfs \
-		  shadowsocks-rust sing-box
+		  shadowsocks-rust sing-box xray-core
 # clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb
 
 [[ $REPO_BRANCH =~ master|25 ]] || {
