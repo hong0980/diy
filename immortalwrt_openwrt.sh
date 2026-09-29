@@ -494,10 +494,8 @@ clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview simple-
 		  shadowsocks-rust sing-box xray-core
 # clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb
 
-[[ $REPO_BRANCH =~ master|25 ]] || {
-	rm -rf feeds/packages/lang/golang
-	git clone -q https://github.com/sbwml/packages_lang_golang -b 26.x feeds/packages/lang/golang
-}
+rm -rf feeds/packages/lang/golang
+git clone -q https://github.com/sbwml/packages_lang_golang -b 27.x feeds/packages/lang/golang
 
 color cy "自定义设置.... "
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
