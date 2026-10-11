@@ -436,8 +436,10 @@ begin_time=$(date '+%H:%M:%S')
 git clone -q -b $REPO_BRANCH $REPO_URL openwrt # --depth 1
 [[ -d openwrt ]] && cd openwrt || exit
 status
+
 hash=$(git rev-parse HEAD)
-[[ $REPO =~ immortalwrt && $REPO_BRANCH =~ 25 && $hash =~ ^ce35a9e ]] && git reset --hard 89dfac4
+[[ $hash =~ ^ce35a9e ]] && git reset --hard 89dfac4
+
 echo -e "$(color cy '更新软件....')\c"
 begin_time=$(date '+%H:%M:%S')
 ./scripts/feeds update -a 1>/dev/null 2>&1
@@ -482,7 +484,7 @@ clone_dir sbwml/openwrt_helloworld kcptun
 clone_dir dev vernesong/OpenClash luci-app-openclash
 
 clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
-		shadow-tls shadowsocksr-libev trojan dns2socks dns2tcp mosdns xray-core mihomo
+		shadow-tls shadowsocksr-libev trojan dns2socks dns2tcp mosdns xray-core
 
 clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
 clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
@@ -490,7 +492,7 @@ clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview simple-
 		  shadowsocks-rust sing-box
 # clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb
 
-clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo
+clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
 clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
 # clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 
