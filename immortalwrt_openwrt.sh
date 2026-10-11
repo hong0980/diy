@@ -168,7 +168,7 @@ clone_dir() {
 		return 1
 	}
 
-	# [[ $repo_url =~ nikkinikki-org ]] && (cd "$temp_dir" && git reset --hard cd3a9ec)
+	[[ $repo_url =~ nikkinikki-org ]] && (cd "$temp_dir" && git reset --hard cd3a9ec)
 
 	[[ $REPO_BRANCH =~ master && $repo_url =~ hong0980/build ]] && set -- "$@" python-chardet
 
@@ -480,20 +480,16 @@ fi
 
 del_package "luci-app-filetransfer luci-app-turboacc"
 clone_dir sbwml/openwrt_helloworld kcptun
-
 clone_dir dev vernesong/OpenClash luci-app-openclash
-
 clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
-		shadow-tls shadowsocksr-libev trojan dns2socks dns2tcp mosdns xray-core
-
+		shadow-tls shadowsocksr-libev trojan dns2socks dns2tcp mosdns
 clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
 clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
 clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview simple-obfs \
-		  shadowsocks-rust sing-box
-# clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb
-
+		  shadowsocks-rust sing-box xray-core
 clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
 clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
+# clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb
 # clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 
 rm -rf feeds/packages/lang/golang
