@@ -446,10 +446,6 @@ status
 create_directory "package/A"
 set_config
 
-clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
-clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
-# clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
-
 clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi libtorrent-rasterbar \
 		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
@@ -486,13 +482,17 @@ clone_dir sbwml/openwrt_helloworld kcptun
 clone_dir dev vernesong/OpenClash luci-app-openclash
 
 clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
-		shadow-tls shadowsocksr-libev trojan dns2socks dns2tcp mosdns
+		shadow-tls shadowsocksr-libev trojan dns2socks dns2tcp mosdns xray-core mihomo
 
 clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
 clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
 clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview simple-obfs \
-		  shadowsocks-rust sing-box xray-core
+		  shadowsocks-rust sing-box
 # clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb
+
+clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo
+clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
+# clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 
 rm -rf feeds/packages/lang/golang
 git clone -q https://github.com/sbwml/packages_lang_golang -b 27.x feeds/packages/lang/golang
