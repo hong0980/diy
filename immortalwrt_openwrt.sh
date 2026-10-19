@@ -438,7 +438,7 @@ git clone -q -b $REPO_BRANCH $REPO_URL openwrt # --depth 1
 status
 
 hash=$(git rev-parse HEAD)
-[[ $hash =~ ^89dfac4 ]] || git reset --hard 89dfac4
+[[ $REPO =~ immortalwrt && $REPO_BRANCH =~ 25 && ! $hash =~ ^89dfac4 ]] && git reset --hard 89dfac4
 
 echo -e "$(color cy '更新软件....')\c"
 begin_time=$(date '+%H:%M:%S')
