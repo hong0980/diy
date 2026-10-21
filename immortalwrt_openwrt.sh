@@ -466,6 +466,8 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal r8152
 	else
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
+		rm -rf feeds/luci/applications/luci-app-homeproxy && \
+		git clone -q https://github.com/immortalwrt/homeproxy feeds/luci/applications/luci-app-homeproxy
 	fi
 	[[ $REPO_BRANCH =~ master|25 ]] && {
 		create_directory feeds/packages/utils/dockerd/patches

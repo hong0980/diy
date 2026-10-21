@@ -916,7 +916,7 @@ table inet filter {
 }
 ```
 
-### 11.2 透明代理完整示例（类似 hijack.ut.js）
+### 11.2 透明代理完整示例（类似 hijack.ut）
 
 ```nft
 #!/usr/sbin/nft -f
