@@ -455,7 +455,7 @@ clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi libtorrent-rasterbar \
 		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
 		python-pyasn1 python-pyxdg python-rencode python-setproctitle luci-app-mesh11sd \
 		transmission qBittorrent-static luci-app-diskman-js luci-app-tinynote-js \
-		luci-app-mesh-node luci-app-nikki mihomo
+		luci-app-mesh-node luci-app-nikki #mihomo
 
 if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
@@ -489,7 +489,9 @@ clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
 clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
 clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview simple-obfs \
 		  shadowsocks-rust sing-box xray-core
-clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo
+clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
+[ -f "package/A/mihomo/Makefile" ] && \
+	sed -Ei 's/(PKG_VERSION:=).*/\11.19.33/' package/A/mihomo/Makefile
 clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
 # clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb
 # clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
