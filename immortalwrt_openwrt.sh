@@ -491,8 +491,8 @@ clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview simple-
 		  shadowsocks-rust sing-box xray-core
 clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
 [ -f "package/A/mihomo/Makefile" ] && \
-	sed -Ei 's/(PKG_VERSION:=).*/\11.19.33/' package/A/mihomo/Makefile
-clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
+	sed -Ei 's/(PKG_HASH:=).*/\1e7c596b37ff27ec487d19b1920f73e0c97a78067ea35766530ee9659ade72711/; s/(PKG_VERSION:=).*/\11.19.33/' package/A/mihomo/Makefile
+# clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
 # clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb
 # clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 
@@ -567,7 +567,7 @@ done
 sed -Ei '{
 	s|../../lang/|$(TOPDIR)/feeds/packages/lang/|;
 	s|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|;
-	s/(^(PKG_HASH|PKG_MD5SUM|HASH):=).*/\1skip/;
+	s/(^(PKG_HASH|PKG_MD5SUM|HASH|PKG_MIRROR_HASH):=).*/\1skip/;
 	s|include ../py(.*).mk|include $(TOPDIR)/feeds/packages/lang/python/py\1.mk|
 }' package/A/*/Makefile 2>/dev/null
 
