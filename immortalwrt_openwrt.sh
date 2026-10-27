@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 # irm https://x.ai/cli/install.ps1 | iex
 rm -rf openwrt
+sudo -E apt-get -qq install -y jq
 TOKEN=()
 [[ -n $GH_TOKEN ]] && TOKEN=(-H "Authorization: token $GH_TOKEN")
-qb_version=$(curl -sL "${TOKEN[@]}" https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases | grep -oP '(?<="browser_download_url": ").*?release-\K(.*?)(?=/)' | sort -Vr | uniq | awk 'NR==1')
+qb_version=$(curl -sL "${TOKEN[@]}" https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases \
+	| jq -r '.[].tag_name | ltrimstr("release-") | select(contains("_v1."))' \
+	| grep -E '_v1\.[0-9]+' \
+	| sort -Vr | uniq | head -n1
+)
 
 op_cache=$(
 	page=1
