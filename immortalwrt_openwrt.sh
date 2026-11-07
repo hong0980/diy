@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # irm https://x.ai/cli/install.ps1 | iex
 rm -rf openwrt
-sudo -E apt-get -qq install -y jq
+# sudo -E apt-get -qq install -y jq &
 TOKEN=()
 [[ -n $GH_TOKEN ]] && TOKEN=(-H "Authorization: token $GH_TOKEN")
 qb_version=$(curl -sL "${TOKEN[@]}" https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases \
