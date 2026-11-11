@@ -1,0 +1,81 @@
+include $(TOPDIR)/rules.mk
+
+PKG_NAME:=clashoo
+
+include $(INCLUDE_DIR)/package.mk
+
+define Package/clashoo
+  SECTION:=net
+  CATEGORY:=Network
+  TITLE:=Clashoo (Mihomo)
+endef
+
+define Package/clashoo/description
+  Mihomo proxy core with runtime environment for Clashoo.
+endef
+
+define Package/clashoo/conffiles
+/etc/config/clashoo
+endef
+
+define Package/clashoo/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	ln -sf /usr/bin/mihomo $(1)/usr/bin/clash-meta
+
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_DIR) $(1)/etc/config
+	$(INSTALL_DIR) $(1)/etc/clashoo
+	$(INSTALL_DIR) $(1)/etc/clashoo/provider
+	$(INSTALL_DIR) $(1)/etc/clashoo/proxyprovider
+	$(INSTALL_DIR) $(1)/etc/clashoo/ruleprovider
+	$(INSTALL_DIR) $(1)/usr/share/clashoo
+	$(INSTALL_DIR) $(1)/usr/share/clashbackup
+	$(INSTALL_DIR) $(1)/usr/share/clashoo/config
+	$(INSTALL_DIR) $(1)/usr/share/clashoo/config/sub
+	$(INSTALL_DIR) $(1)/usr/share/clashoo/config/upload
+	$(INSTALL_DIR) $(1)/usr/share/clashoo/config/custom
+
+	$(INSTALL_BIN)  $(CURDIR)/files/etc/init.d/clashoo $(1)/etc/init.d/clashoo
+	$(INSTALL_CONF) $(CURDIR)/files/etc/config/clashoo $(1)/etc/config/clashoo
+	$(INSTALL_DATA) $(CURDIR)/files/etc/config/clashoo $(1)/usr/share/clashoo/clashoo.default
+	$(CP) $(CURDIR)/files/usr/share/clashoo/* $(1)/usr/share/clashoo/
+	$(INSTALL_BIN) $(CURDIR)/files/usr/share/clashoo/migrate_lan_acl.sh $(1)/usr/share/clashoo/migrate_lan_acl.sh
+	$(INSTALL_BIN) $(CURDIR)/files/usr/share/clashoo/migrate_fake_ip_filter.sh $(1)/usr/share/clashoo/migrate_fake_ip_filter.sh
+	$(INSTALL_BIN) $(CURDIR)/files/usr/share/clashoo/detect_core_arch.sh $(1)/usr/share/clashoo/detect_core_arch.sh
+	$(INSTALL_BIN) $(CURDIR)/files/usr/share/clashoo/diagnose_bypass.sh $(1)/usr/share/clashoo/diagnose_bypass.sh
+
+	$(RM) $(1)/usr/share/clashoo/dashboard
+	$(RM) $(1)/usr/share/clashoo/yacd
+	$(RM) $(1)/usr/share/clashoo/update.log
+	$(RM) $(1)/usr/share/clashoo/geoip.log
+	$(RM) $(1)/usr/share/clashoo/core_down_complete
+endef
+
+define Package/clashoo/postinst
+#!/bin/sh
+if [ -z "$${IPKG_INSTROOT}" ]; then
+	[ -x /usr/bin/mihomo ] && [ ! -x /usr/bin/clash-meta ] && ln -sf /usr/bin/mihomo /usr/bin/clash-meta
+	rm -f /usr/share/clashoo/check_luci_version.sh /usr/share/clashoo/check_clash_meta_version.sh /usr/share/clashoo/check_mihomo_core_version.sh
+	rm -f /usr/share/clashoo/cuslist.sh /usr/share/clashoo/groups.sh /usr/share/clashoo/load_groups.sh /usr/share/clashoo/panel_diag.sh
+	rm -f /usr/share/clashoo/rmlist.sh /usr/share/clashoo/uplist.sh /usr/share/clashoo/rpc_restart_async.sh /usr/share/clashoo/rpc_update_china_ip_async.sh
+	rm -rf /usr/share/clashoo/create
+	/usr/share/clashoo/migrate_lan_acl.sh >/dev/null 2>&1 || true
+	/usr/share/clashoo/migrate_fake_ip_filter.sh >/dev/null 2>&1 || true
+	/usr/share/clashoo/detect_core_arch.sh >/dev/null 2>&1 || true
+	if [ "$$(uci -q get clashoo.config.enable 2>/dev/null)" = "1" ]; then
+		/etc/init.d/clashoo enable 2>/dev/null || true
+	else
+		/etc/init.d/clashoo disable 2>/dev/null || true
+	fi
+fi
+exit 0
+endef
+
+define Build/Prepare
+	$(Build/Prepare/Default)
+endef
+
+define Build/Compile
+endef
+
+$(eval $(call BuildPackage,clashoo))
