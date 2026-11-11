@@ -478,9 +478,6 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 		wget -qO feeds/packages/utils/dockerd/patches/001-fix-copy-binaries.patch \
 			https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/001-fix-copy-binaries.patch
 		# [[ $REPO =~ immortalwrt ]] && clone_dir "$REPO_BRANCH" openwrt/packages rust ruby
-	else
-		rm -rf feeds/packages/lang/golang
-		git clone -q https://github.com/sbwml/packages_lang_golang -b 27.x feeds/packages/lang/golang
 	fi
 
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy"
@@ -505,6 +502,9 @@ clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
 
 color cy "自定义设置.... "
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
+
+rm -rf feeds/packages/lang/golang
+git clone -q https://github.com/sbwml/packages_lang_golang -b 27.x feeds/packages/lang/golang
 
 [ -f 'feeds/packages/lang/python/python-typing-extensions/Makefile' ] && \
 sed -Ei 's/(PKG_HASH:=).*/\1dc983d19a509c94dba722ee6abd33940f7c05a89e243c47e907eb4db6f1a43e5/; s/(PKG_VERSION:=).*/\14.16.0/' feeds/packages/lang/python/python-typing-extensions/Makefile
