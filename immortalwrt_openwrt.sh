@@ -496,7 +496,7 @@ clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview simple-
 clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
 [ -f "package/A/mihomo/Makefile" ] && \
 	sed -Ei 's/(PKG_HASH:=).*/\1e3284a44f1052f1c454c90d418faa244516c2470bf232b455ea18fc4f5fa6028/; s/(PKG_VERSION:=).*/\11.19.34/' package/A/mihomo/Makefile
-clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
+# clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
 # clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb
 # clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 
