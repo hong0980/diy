@@ -473,12 +473,15 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 		rm -rf feeds/luci/applications/luci-app-homeproxy && \
 		git clone -q https://github.com/immortalwrt/homeproxy feeds/luci/applications/luci-app-homeproxy
 	fi
-	[[ $REPO_BRANCH =~ master|25 ]] && {
+	if [[ $REPO_BRANCH =~ master|25 ]]; then
 		create_directory feeds/packages/utils/dockerd/patches
 		wget -qO feeds/packages/utils/dockerd/patches/001-fix-copy-binaries.patch \
 			https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/001-fix-copy-binaries.patch
 		# [[ $REPO =~ immortalwrt ]] && clone_dir "$REPO_BRANCH" openwrt/packages rust ruby
-	}
+	else
+		rm -rf feeds/packages/lang/golang
+		git clone -q https://github.com/sbwml/packages_lang_golang -b 27.x feeds/packages/lang/golang
+	fi
 
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy"
 	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
@@ -499,9 +502,6 @@ clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
 clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
 # clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb
 # clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
-
-rm -rf feeds/packages/lang/golang
-git clone -q https://github.com/sbwml/packages_lang_golang -b 27.x feeds/packages/lang/golang
 
 color cy "自定义设置.... "
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
