@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # irm https://x.ai/cli/install.ps1 | iex
 rm -rf openwrt
-# sudo -E apt-get -qq install -y jq &
 TOKEN=()
 [[ -n $GH_TOKEN ]] && TOKEN=(-H "Authorization: token $GH_TOKEN")
 qb_version=$(curl -sL "${TOKEN[@]}" https://api.github.com/repos/userdocs/qbittorrent-nox-static/releases \
@@ -496,7 +495,7 @@ clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview simple-
 		  shadowsocks-rust sing-box xray-core
 clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
 [ -f "package/A/mihomo/Makefile" ] && \
-	sed -Ei 's/(PKG_HASH:=).*/\1e7c596b37ff27ec487d19b1920f73e0c97a78067ea35766530ee9659ade72711/; s/(PKG_VERSION:=).*/\11.19.33/' package/A/mihomo/Makefile
+	sed -Ei 's/(PKG_HASH:=).*/\1e3284a44f1052f1c454c90d418faa244516c2470bf232b455ea18fc4f5fa6028/; s/(PKG_VERSION:=).*/\11.19.34/' package/A/mihomo/Makefile
 # clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
 # clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb
 # clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
