@@ -477,6 +477,10 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 		create_directory feeds/packages/utils/dockerd/patches
 		wget -qO feeds/packages/utils/dockerd/patches/001-fix-copy-binaries.patch \
 			https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/001-fix-copy-binaries.patch
+		sed -Ei 's/(GO_DEFAULT_VERSION:=).*/\11.27/' feeds/packages/lang/golang/golang-values.mk
+	else
+		rm -rf feeds/packages/lang/golang
+		git clone -q https://github.com/sbwml/packages_lang_golang -b 27.x feeds/packages/lang/golang
 	fi
 
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy"
@@ -546,9 +550,6 @@ done
 	rm -rf package/A/clashoo/patches
 }
 # sed -i "/VERSION_NUMBER/ s/if.*/if \$(VERSION_NUMBER),\$(VERSION_NUMBER),${REPO_BRANCH#*-}-SNAPSHOT)/" include/version.mk || true
-
-rm -rf feeds/packages/lang/golang
-git clone -q https://github.com/sbwml/packages_lang_golang -b 27.x feeds/packages/lang/golang
 
 xc=$(find_first_dir "package/A feeds" "qBittorrent-static")
 pkg_version=$(echo $qb_version | cut -d'_' -f1 )
