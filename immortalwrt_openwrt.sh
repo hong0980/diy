@@ -477,9 +477,6 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 		create_directory feeds/packages/utils/dockerd/patches
 		wget -qO feeds/packages/utils/dockerd/patches/001-fix-copy-binaries.patch \
 			https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/001-fix-copy-binaries.patch
-	else
-		rm -rf feeds/packages/lang/golang
-		git clone -q https://github.com/sbwml/packages_lang_golang -b 27.x feeds/packages/lang/golang
 	fi
 
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy"
@@ -496,48 +493,11 @@ clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
 clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview simple-obfs \
 		  shadowsocks-rust sing-box xray-core
 clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
-[ -f "package/A/mihomo/Makefile" ] && \
-	sed -Ei 's/(PKG_HASH:=).*/\1e3284a44f1052f1c454c90d418faa244516c2470bf232b455ea18fc4f5fa6028/; s/(PKG_VERSION:=).*/\11.19.34/' package/A/mihomo/Makefile
 clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
 # clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb
 # clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 
-[ -f "feeds/packages/lang/rust/Makefile" ] && \
-	sed -i 's/download-ci-llvm=true/download-ci-llvm=false/g' feeds/packages/lang/rust/Makefile
-
 color cy "自定义设置.... "
-wget -qO package/base-files/files/etc/banner git.io/JoNK8
-
-[ -f 'feeds/packages/lang/python/python-typing-extensions/Makefile' ] && \
-sed -Ei 's/(PKG_HASH:=).*/\1dc983d19a509c94dba722ee6abd33940f7c05a89e243c47e907eb4db6f1a43e5/; s/(PKG_VERSION:=).*/\14.16.0/' feeds/packages/lang/python/python-typing-extensions/Makefile
-
-[ -f 'feeds/packages/lang/python/python-mako/Makefile' ] && \
-sed -Ei '{
-	/ONLY/ s/^/#/g
-	/HOST_BUILD_DEPENDS/i\PYTHON3_PKG_WHEEL_NAME:=mako
-}' feeds/packages/lang/python/python-mako/Makefile
-
-profile='package/base-files/files/etc/profile.d/apk-cheatsheet.sh'
-[ -e "$profile" ] && \
-grep -Fq '[ -x /usr/bin/apk ]' "$profile" && sed -i 's|\[ -x /usr/bin/apk \]|false|' "$profile"
-
-for d in package/A/luci-app-openclash  feeds/luci/applications/luci-app-openclash; do
-	[ -d "$d" ] || continue
-	[ -f "$d/root/etc/init.d/openclash" ] && sed -i "/procd_open_instance \"openclash\"/i\\   command -v yq &>/dev/null && yq -i '.' \"\$CONFIG_FILE\"" "$d/root/etc/init.d/openclash"
-	[ -f "$d/root/etc/uci-defaults/luci-openclash" ] && sed -Ei "/exit 0/i [ -x /usr/bin/mihomo ] && ln -sf /usr/bin/mihomo /etc/openclash/core/clash_meta\n[ -x /usr/bin/sing-box ] && [ ! -x /usr/bin/sing-box-stable ] && ln -sf /usr/bin/sing-box /usr/bin/sing-box-stable" "$d/root/etc/uci-defaults/luci-openclash"
-done
-
-[ -f "package/A/clashoo/Makefile" ] && {
-	wget -qO package/A/clashoo/Makefile https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/clashoo_Makefile
-	rm -rf package/A/clashoo/patches
-}
-
-sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
-sed -i 's|/bin/login|/bin/login -f root|' feeds/packages/utils/ttyd/files/ttyd.config
-REPLACEMENT=$([[ $REPO == openwrt ]] && echo "" || echo "${REPO}/")
-sed -i "s|^\(OPENWRT_RELEASE.*%C\)\(.*\)|\1 ${REPLACEMENT}$(TZ=UTC-8 date +%m月%d日)\2|" package/*/*/*/lib/os-release || true
-# sed -i "/VERSION_NUMBER/ s/if.*/if \$(VERSION_NUMBER),\$(VERSION_NUMBER),${REPO_BRANCH#*-}-SNAPSHOT)/" include/version.mk || true
-
 settings="
 uci -q set upnpd.config.enabled='0'
 uci -q set system.@system[0].hostname='OpenWrt'
@@ -549,6 +509,46 @@ exit 0
 "
 sed -i '/^exit/d' package/emortal/default-settings/files/99-default-settings-chinese
 echo -e "$settings" >> package/emortal/default-settings/files/99-default-settings-chinese
+wget -qO package/base-files/files/etc/banner git.io/JoNK8
+
+profile='package/base-files/files/etc/profile.d/apk-cheatsheet.sh'
+[ -e "$profile" ] && \
+grep -Fq '[ -x /usr/bin/apk ]' "$profile" && sed -i 's|\[ -x /usr/bin/apk \]|false|' "$profile"
+
+sed -i "/listen_https/ {s/^/#/g}" package/*/*/*/files/uhttpd.config
+sed -i 's|/bin/login|/bin/login -f root|' feeds/packages/utils/ttyd/files/ttyd.config
+REPLACEMENT=$([[ $REPO == openwrt ]] && echo "" || echo "${REPO}/")
+sed -i "s|^\(OPENWRT_RELEASE.*%C\)\(.*\)|\1 ${REPLACEMENT}$(TZ=UTC-8 date +%m月%d日)\2|" package/*/*/*/lib/os-release || true
+
+[ -f "package/A/mihomo/Makefile" ] && \
+	sed -Ei 's/(PKG_HASH:=).*/\1e3284a44f1052f1c454c90d418faa244516c2470bf232b455ea18fc4f5fa6028/; s/(PKG_VERSION:=).*/\11.19.34/' package/A/mihomo/Makefile
+
+[ -f "feeds/packages/lang/rust/Makefile" ] && \
+	sed -i 's/download-ci-llvm=true/download-ci-llvm=false/g' feeds/packages/lang/rust/Makefile
+
+[ -f 'feeds/packages/lang/python/python-typing-extensions/Makefile' ] && \
+sed -Ei 's/(PKG_HASH:=).*/\1dc983d19a509c94dba722ee6abd33940f7c05a89e243c47e907eb4db6f1a43e5/; s/(PKG_VERSION:=).*/\14.16.0/' feeds/packages/lang/python/python-typing-extensions/Makefile
+
+[ -f 'feeds/packages/lang/python/python-mako/Makefile' ] && \
+sed -Ei '{
+	/ONLY/ s/^/#/g
+	/HOST_BUILD_DEPENDS/i\PYTHON3_PKG_WHEEL_NAME:=mako
+}' feeds/packages/lang/python/python-mako/Makefile
+
+for d in package/A/luci-app-openclash  feeds/luci/applications/luci-app-openclash; do
+	[ -d "$d" ] || continue
+	[ -f "$d/root/etc/init.d/openclash" ] && sed -i "/procd_open_instance \"openclash\"/i\\   command -v yq &>/dev/null && yq -i '.' \"\$CONFIG_FILE\"" "$d/root/etc/init.d/openclash"
+	[ -f "$d/root/etc/uci-defaults/luci-openclash" ] && sed -Ei "/exit 0/i [ -x /usr/bin/mihomo ] && ln -sf /usr/bin/mihomo /etc/openclash/core/clash_meta\n[ -x /usr/bin/sing-box ] && [ ! -x /usr/bin/sing-box-stable ] && ln -sf /usr/bin/sing-box /usr/bin/sing-box-stable" "$d/root/etc/uci-defaults/luci-openclash"
+done
+
+[ -f "package/A/clashoo/Makefile" ] && {
+	wget -qO package/A/clashoo/Makefile https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/clashoo_Makefile
+	rm -rf package/A/clashoo/patches
+}
+# sed -i "/VERSION_NUMBER/ s/if.*/if \$(VERSION_NUMBER),\$(VERSION_NUMBER),${REPO_BRANCH#*-}-SNAPSHOT)/" include/version.mk || true
+
+rm -rf feeds/packages/lang/golang
+git clone -q https://github.com/sbwml/packages_lang_golang -b 27.x feeds/packages/lang/golang
 
 xc=$(find_first_dir "package/A feeds" "qBittorrent-static")
 pkg_version=$(echo $qb_version | cut -d'_' -f1 )
