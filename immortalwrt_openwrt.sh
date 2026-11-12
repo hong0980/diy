@@ -502,11 +502,8 @@ clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
 # clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb
 # clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 
-[ -f "feeds/packages/lang/rust/Makefile" ] && {
-	# sed -i 's/download-ci-llvm=true/download-ci-llvm=false/g' feeds/packages/lang/rust/Makefile
-	sed -i 's/--set=llvm\.download-ci-llvm=true/--set=llvm.download-ci-llvm="if-unchanged"/g' feeds/packages/lang/rust/Makefile
-}
-
+[ -f "feeds/packages/lang/rust/Makefile" ] && \
+	sed -i 's/download-ci-llvm=true/download-ci-llvm=false/g' feeds/packages/lang/rust/Makefile
 
 color cy "自定义设置.... "
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
