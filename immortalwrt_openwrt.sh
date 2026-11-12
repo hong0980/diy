@@ -477,7 +477,9 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 		create_directory feeds/packages/utils/dockerd/patches
 		wget -qO feeds/packages/utils/dockerd/patches/001-fix-copy-binaries.patch \
 			https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/001-fix-copy-binaries.patch
-		# [[ $REPO =~ immortalwrt ]] && clone_dir "$REPO_BRANCH" openwrt/packages rust ruby
+	else
+		rm -rf feeds/packages/lang/golang
+		git clone -q https://github.com/sbwml/packages_lang_golang -b 27.x feeds/packages/lang/golang
 	fi
 
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy"
@@ -500,11 +502,14 @@ clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
 # clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb
 # clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 
+[ -f "feeds/packages/lang/rust/Makefile" ] && {
+	# sed -i 's/download-ci-llvm=true/download-ci-llvm=false/g' feeds/packages/lang/rust/Makefile
+	sed -i 's/--set=llvm\.download-ci-llvm=true/--set=llvm.download-ci-llvm="if-unchanged"/g' feeds/packages/lang/rust/Makefile
+}
+
+
 color cy "自定义设置.... "
 wget -qO package/base-files/files/etc/banner git.io/JoNK8
-
-rm -rf feeds/packages/lang/golang
-git clone -q https://github.com/sbwml/packages_lang_golang -b 27.x feeds/packages/lang/golang
 
 [ -f 'feeds/packages/lang/python/python-typing-extensions/Makefile' ] && \
 sed -Ei 's/(PKG_HASH:=).*/\1dc983d19a509c94dba722ee6abd33940f7c05a89e243c47e907eb4db6f1a43e5/; s/(PKG_VERSION:=).*/\14.16.0/' feeds/packages/lang/python/python-typing-extensions/Makefile
@@ -514,9 +519,6 @@ sed -Ei '{
 	/ONLY/ s/^/#/g
 	/HOST_BUILD_DEPENDS/i\PYTHON3_PKG_WHEEL_NAME:=mako
 }' feeds/packages/lang/python/python-mako/Makefile
-
-# [[ $REPO_BRANCH =~ 24 ]] && sed -i \
-# 's/rasterbar +boost-python3/rasterbar +boost +boost-python3/' feeds/packages/libs/libtorrent-rasterbar/Makefile
 
 profile='package/base-files/files/etc/profile.d/apk-cheatsheet.sh'
 [ -e "$profile" ] && \
