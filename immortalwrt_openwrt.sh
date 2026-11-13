@@ -527,7 +527,7 @@ sed -i "s|^\(OPENWRT_RELEASE.*%C\)\(.*\)|\1 ${REPLACEMENT}$(TZ=UTC-8 date +%m月
 	sed -Ei 's/(PKG_HASH:=).*/\1e3284a44f1052f1c454c90d418faa244516c2470bf232b455ea18fc4f5fa6028/; s/(PKG_VERSION:=).*/\11.19.34/' package/A/mihomo/Makefile
 
 [ -f "feeds/packages/lang/rust/Makefile" ] && \
-	sed -i 's/download-ci-llvm=true/download-ci-llvm=if-available/g' feeds/packages/lang/rust/Makefile
+	sed -i 's/download-ci-llvm=true/download-ci-llvm=false/g' feeds/packages/lang/rust/Makefile
 
 [ -f 'feeds/packages/lang/python/python-typing-extensions/Makefile' ] && \
 	sed -Ei 's/(PKG_HASH:=).*/\1dc983d19a509c94dba722ee6abd33940f7c05a89e243c47e907eb4db6f1a43e5/; s/(PKG_VERSION:=).*/\14.16.0/' feeds/packages/lang/python/python-typing-extensions/Makefile

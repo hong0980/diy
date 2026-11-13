@@ -386,7 +386,7 @@ set_config (){
 deploy_cache() {
 	TOOLS_HASH=$(git log --pretty=tformat:"%h" -n1 tools toolchain)
 	time=$(TZ=UTC-8 date +%m-%d)
-	echo "CACHE_NAME=$SOURCE_NAME-$REPO_BRANCH-$ARCH-$time-$TOOLS_HASH" >> $GITHUB_ENV
+	echo "CACHE_NAME=$SOURCE_NAME-$ARCH-$time-$TOOLS_HASH" >> $GITHUB_ENV
 
 	local CACHE_URL; CACHE_URL=$(grep -m 1 "$ARCH.*$TOOLS_HASH" <<< "$op_cache")
 	if [ -n "$CACHE_URL" ]; then
@@ -467,8 +467,8 @@ done
 	sed -i '/BuildPackage/i\define Build/Compile\nendef' package/A/clashoo/Makefile
 }
 
-REPO_BRANCH=$(sed -En 's/^src-git luci.*;(.*)/\1/p' feeds.conf.default)
-REPO_BRANCH=${REPO_BRANCH:-18.06}
+# REPO_BRANCH=$(sed -En 's/^src-git luci.*;(.*)/\1/p' feeds.conf.default)
+# REPO_BRANCH=${REPO_BRANCH:-18.06}
 # https://github.com/userdocs/qbittorrent-nox-static/releases
 xc=$(find_first_dir "package/A feeds" "qBittorrent-static")
 pkg_version=$(echo $qb_version | cut -d'_' -f1 )
