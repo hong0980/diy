@@ -415,13 +415,8 @@ git_clone() {
 	[[ -d openwrt ]] && cd openwrt || exit
 	echo -e "$(color cy '更新软件....')\c"
 	begin_time=$(date '+%H:%M:%S')
-	cat > feeds.conf.default <<-EOF
-		src-git packages https://github.com/coolsnowwolf/packages
-		src-git routing https://github.com/coolsnowwolf/routing
-		src-git telephony https://github.com/coolsnowwolf/telephony.git
-		src-git helloworld https://github.com/fw876/helloworld.git
-		src-git luci https://github.com/coolsnowwolf/luci$([[ "$REPO_BRANCH" != master ]] && echo ".git;${REPO_BRANCH}")
-	EOF
+	sed -i '/luci/d' feeds.conf.default
+	echo "src-git luci https://github.com/coolsnowwolf/luci.git;$REPO_BRANCH" >> feeds.conf.default
 	./scripts/feeds update -a 1>/dev/null 2>&1
 	./scripts/feeds install -a 1>/dev/null 2>&1
 	status
@@ -441,8 +436,8 @@ clone_dir dev vernesong/OpenClash luci-app-openclash
 clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
 clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
 # clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview trojan-plus
-# clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
-clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
+clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
+# clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
 
 clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
 		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
