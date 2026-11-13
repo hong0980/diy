@@ -452,6 +452,7 @@ status
 create_directory "package/A"
 set_config
 
+del_package "luci-app-filetransfer luci-app-turboacc"
 clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi libtorrent-rasterbar \
 		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
@@ -461,17 +462,27 @@ clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi libtorrent-rasterbar \
 		transmission qBittorrent-static luci-app-diskman-js luci-app-tinynote-js \
 		luci-app-mesh-node luci-app-nikki #mihomo
 
+clone_dir sbwml/openwrt_helloworld kcptun
+clone_dir dev vernesong/OpenClash luci-app-openclash
+clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
+		  shadow-tls shadowsocksr-libev trojan dns2socks dns2tcp mosdns
+clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
+clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
+clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview simple-obfs \
+		  shadowsocks-rust sing-box xray-core
+clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
+clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
+# clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb
+# clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
+
 if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 	if [[ $REPO =~ openwrt ]]; then
 		del_package "dnsmasq"
 		create_directory "package/emortal"
-		git clone -q https://github.com/immortalwrt/homeproxy package/A/luci-app-homeproxy
 		clone_dir immortalwrt/packages transmission-web-control
 		clone_dir "$REPO_BRANCH" immortalwrt/immortalwrt emortal r8152
 	else
 		sed -i "s/ImmortalWrt/OpenWrt/g" {$config_generate,include/version.mk} || true
-		rm -rf feeds/luci/applications/luci-app-homeproxy && \
-		git clone -q https://github.com/immortalwrt/homeproxy feeds/luci/applications/luci-app-homeproxy
 	fi
 	if [[ $REPO_BRANCH =~ master|25 ]]; then
 		create_directory feeds/packages/utils/dockerd/patches
@@ -482,24 +493,12 @@ if [[ $REPO_BRANCH =~ master|23|24|25 ]]; then
 		rm -rf feeds/packages/lang/golang
 		git clone -q https://github.com/sbwml/packages_lang_golang -b 27.x feeds/packages/lang/golang
 	fi
+	rm -rf feeds/luci/applications/luci-app-homeproxy 2>/dev/null
+	git clone -q https://github.com/immortalwrt/homeproxy feeds/luci/applications/luci-app-homeproxy
 
 	[[ $TARGET_DEVICE =~ k2p|d2 ]] || add_package "luci-app-homeproxy"
 	# git_diff "feeds/luci/collections/luci-lib-docker" "feeds/luci/applications/luci-app-dockerman"
 fi
-
-del_package "luci-app-filetransfer luci-app-turboacc"
-clone_dir sbwml/openwrt_helloworld kcptun
-clone_dir dev vernesong/OpenClash luci-app-openclash
-clone_dir fw876/helloworld dns2socks-rust lua-neturl luci-app-ssr-plus \
-		shadow-tls shadowsocksr-libev trojan dns2socks dns2tcp mosdns
-clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
-clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
-clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview simple-obfs \
-		  shadowsocks-rust sing-box xray-core
-clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
-clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
-# clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb
-# clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 
 color cy "自定义设置.... "
 settings="
@@ -528,21 +527,21 @@ sed -i "s|^\(OPENWRT_RELEASE.*%C\)\(.*\)|\1 ${REPLACEMENT}$(TZ=UTC-8 date +%m月
 	sed -Ei 's/(PKG_HASH:=).*/\1e3284a44f1052f1c454c90d418faa244516c2470bf232b455ea18fc4f5fa6028/; s/(PKG_VERSION:=).*/\11.19.34/' package/A/mihomo/Makefile
 
 [ -f "feeds/packages/lang/rust/Makefile" ] && \
-	sed -i 's/download-ci-llvm=true/download-ci-llvm=false/g' feeds/packages/lang/rust/Makefile
+	sed -i 's/download-ci-llvm=true/download-ci-llvm=if-available/g' feeds/packages/lang/rust/Makefile
 
 [ -f 'feeds/packages/lang/python/python-typing-extensions/Makefile' ] && \
-sed -Ei 's/(PKG_HASH:=).*/\1dc983d19a509c94dba722ee6abd33940f7c05a89e243c47e907eb4db6f1a43e5/; s/(PKG_VERSION:=).*/\14.16.0/' feeds/packages/lang/python/python-typing-extensions/Makefile
+	sed -Ei 's/(PKG_HASH:=).*/\1dc983d19a509c94dba722ee6abd33940f7c05a89e243c47e907eb4db6f1a43e5/; s/(PKG_VERSION:=).*/\14.16.0/' feeds/packages/lang/python/python-typing-extensions/Makefile
 
 [ -f 'feeds/packages/lang/python/python-mako/Makefile' ] && \
-sed -Ei '{
-	/ONLY/ s/^/#/g
-	/HOST_BUILD_DEPENDS/i\PYTHON3_PKG_WHEEL_NAME:=mako
-}' feeds/packages/lang/python/python-mako/Makefile
+	sed -Ei '{
+		/ONLY/ s/^/#/g
+		/HOST_BUILD_DEPENDS/i\PYTHON3_PKG_WHEEL_NAME:=mako
+	}' feeds/packages/lang/python/python-mako/Makefile
 
 for d in package/A/luci-app-openclash  feeds/luci/applications/luci-app-openclash; do
 	[ -d "$d" ] || continue
-	[ -f "$d/root/etc/init.d/openclash" ] && sed -i "/procd_open_instance \"openclash\"/i\\   command -v yq &>/dev/null && yq -i '.' \"\$CONFIG_FILE\"" "$d/root/etc/init.d/openclash"
-	[ -f "$d/root/etc/uci-defaults/luci-openclash" ] && sed -Ei "/exit 0/i [ -x /usr/bin/mihomo ] && ln -sf /usr/bin/mihomo /etc/openclash/core/clash_meta\n[ -x /usr/bin/sing-box ] && [ ! -x /usr/bin/sing-box-stable ] && ln -sf /usr/bin/sing-box /usr/bin/sing-box-stable" "$d/root/etc/uci-defaults/luci-openclash"
+	sed -i "/procd_open_instance \"openclash\"/i\\   command -v yq &>/dev/null && yq -i '.' \"\$CONFIG_FILE\"" "$d/root/etc/init.d/openclash" || true
+	sed -Ei "/exit 0/i [ -x /usr/bin/mihomo ] && ln -sf /usr/bin/mihomo /etc/openclash/core/clash_meta\n[ -x /usr/bin/sing-box ] && [ ! -x /usr/bin/sing-box-stable ] && ln -sf /usr/bin/sing-box /usr/bin/sing-box-stable" "$d/root/etc/uci-defaults/luci-openclash" || true
 done
 
 [ -f "package/A/clashoo/Makefile" ] && {
@@ -579,6 +578,7 @@ sed -Ei '{
 [ -f feeds/luci/applications/luci-app-transmission/Makefile ] && \
 	sed -i 's/transmission-daemon/transmission-daemon +transmission-web-control/' feeds/luci/applications/luci-app-transmission/Makefile
 
+chmod +x feeds/packages/utils/dockerd/git-short-commit.sh 1>/dev/null 2>&1
 [[ "$TARGET_DEVICE" =~ armvirt ]] && sed -i '/qbittorrent/d' .config
 
 # [[ $REPO_BRANCH =~ master ]] && sed -i \
@@ -599,10 +599,9 @@ sed -Ei '{
 # 	done
 # }
 
-[[ "$VERSION" == 'slim' ]] && \
+[[ "$VERSION" == 'slim' ]] && [[ "$TARGET_DEVICE" != 'x86_64' ]] && \
 	sed -Ei '/dockerman|deluge|aria2|transmission|qbittorrent|softwarecenter|watchdog|ddns|diskman/d' .config
 
-chmod +x feeds/packages/utils/dockerd/git-short-commit.sh 1>/dev/null 2>&1
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
 make defconfig 1>/dev/null 2>&1
