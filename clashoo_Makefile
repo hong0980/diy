@@ -1,11 +1,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=clashoo
-PKG_SHORT_SHA:=f295ba6
-PKG_COMMIT_DATE:=2026.08.23
-
-PKG_VERSION:=$(PKG_COMMIT_DATE)~$(PKG_SHORT_SHA)
-PKG_RELEASE:=4
+PKG_VERSION:=1.19.35
+PKG_RELEASE:=1
 PKG_LICENSE:=GPL3.0+
 PKG_MAINTAINER:=kenzok8
 
@@ -15,6 +12,7 @@ define Package/clashoo
   SECTION:=net
   CATEGORY:=Network
   TITLE:=Clashoo (Mihomo)
+  DEPENDS:=+ca-bundle +yq +firewall4 +ip-full +coreutils-nohup +coreutils-timeout +kmod-inet-diag +kmod-nft-socket +kmod-nft-tproxy +kmod-tun +kmod-dummy +unzip
 endef
 
 define Package/clashoo/description
@@ -26,10 +24,6 @@ define Package/clashoo/conffiles
 endef
 
 define Package/clashoo/install
-
-	$(INSTALL_DIR) $(1)/usr/bin
-	ln -sf /usr/bin/mihomo $(1)/usr/bin/clash-meta
-
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_DIR) $(1)/etc/clashoo
@@ -85,4 +79,5 @@ endef
 
 define Build/Compile
 endef
+
 $(eval $(call BuildPackage,clashoo))

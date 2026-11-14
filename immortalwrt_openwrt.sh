@@ -460,7 +460,7 @@ clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi libtorrent-rasterbar \
 		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
 		python-pyasn1 python-pyxdg python-rencode python-setproctitle luci-app-mesh11sd \
 		transmission qBittorrent-static luci-app-diskman-js luci-app-tinynote-js \
-		luci-app-mesh-node luci-app-nikki #mihomo
+		luci-app-mesh-node luci-app-nikki
 
 clone_dir sbwml/openwrt_helloworld kcptun
 clone_dir dev vernesong/OpenClash luci-app-openclash
@@ -532,22 +532,31 @@ sed -i "s|^\(OPENWRT_RELEASE.*%C\)\(.*\)|\1 ${REPLACEMENT}$(TZ=UTC-8 date +%m月
 [ -f 'feeds/packages/lang/python/python-typing-extensions/Makefile' ] && \
 	sed -Ei 's/(PKG_HASH:=).*/\1dc983d19a509c94dba722ee6abd33940f7c05a89e243c47e907eb4db6f1a43e5/; s/(PKG_VERSION:=).*/\14.16.0/' feeds/packages/lang/python/python-typing-extensions/Makefile
 
+[ -f feeds/packages/net/ariang/Makefile ] && \
+	sed -Ei 's/(PKG_HASH:=).*/\1skip/; s/(PKG_VERSION:=).*/\11.3.14/' feeds/packages/net/ariang/Makefile
+
+[ -f feeds/luci/applications/luci-app-transmission/Makefile ] && \
+	sed -i 's/transmission-daemon/transmission-daemon +transmission-web-control/' feeds/luci/applications/luci-app-transmission/Makefile
+
 [ -f 'feeds/packages/lang/python/python-mako/Makefile' ] && \
 	sed -Ei '{
 		/ONLY/ s/^/#/g
 		/HOST_BUILD_DEPENDS/i\PYTHON3_PKG_WHEEL_NAME:=mako
 	}' feeds/packages/lang/python/python-mako/Makefile
 
+[ -f "package/A/clashoo/Makefile" ] && {
+	new_version="$(sed -nr 's/PKG_UPSTREAM_VERSION:=(.*)/\1/p' package/A/clashoo/Makefile)"
+	wget -qO package/A/clashoo/Makefile https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/clashoo_Makefile
+	[ -n "$new_version" ] && \
+		sed -Ei "s/(PKG_VERSION:=).*/\1${new_version}/" package/A/clashoo/Makefile || true
+	rm -rf package/A/clashoo/patches
+}
+
 for d in package/A/luci-app-openclash  feeds/luci/applications/luci-app-openclash; do
 	[ -d "$d" ] || continue
 	sed -i "/procd_open_instance \"openclash\"/i\\   command -v yq &>/dev/null && yq -i '.' \"\$CONFIG_FILE\"" "$d/root/etc/init.d/openclash" || true
 	sed -Ei "/exit 0/i [ -x /usr/bin/mihomo ] && ln -sf /usr/bin/mihomo /etc/openclash/core/clash_meta\n[ -x /usr/bin/sing-box ] && [ ! -x /usr/bin/sing-box-stable ] && ln -sf /usr/bin/sing-box /usr/bin/sing-box-stable" "$d/root/etc/uci-defaults/luci-openclash" || true
 done
-
-[ -f "package/A/clashoo/Makefile" ] && {
-	wget -qO package/A/clashoo/Makefile https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/clashoo_Makefile
-	rm -rf package/A/clashoo/patches
-}
 # sed -i "/VERSION_NUMBER/ s/if.*/if \$(VERSION_NUMBER),\$(VERSION_NUMBER),${REPO_BRANCH#*-}-SNAPSHOT)/" include/version.mk || true
 
 xc=$(find_first_dir "package/A feeds" "qBittorrent-static")
@@ -572,12 +581,6 @@ sed -Ei '{
 	s|include ../py(.*).mk|include $(TOPDIR)/feeds/packages/lang/python/py\1.mk|
 }' package/A/*/Makefile 2>/dev/null
 
-[ -f feeds/packages/net/ariang/Makefile ] && \
-	sed -Ei 's/(PKG_HASH:=).*/\1skip/; s/(PKG_VERSION:=).*/\11.3.14/' feeds/packages/net/ariang/Makefile
-
-[ -f feeds/luci/applications/luci-app-transmission/Makefile ] && \
-	sed -i 's/transmission-daemon/transmission-daemon +transmission-web-control/' feeds/luci/applications/luci-app-transmission/Makefile
-
 chmod +x feeds/packages/utils/dockerd/git-short-commit.sh 1>/dev/null 2>&1
 [[ "$TARGET_DEVICE" =~ armvirt ]] && sed -i '/qbittorrent/d' .config
 
@@ -599,8 +602,9 @@ chmod +x feeds/packages/utils/dockerd/git-short-commit.sh 1>/dev/null 2>&1
 # 	done
 # }
 
-[[ "$VERSION" == 'slim' ]] && [[ "$TARGET_DEVICE" != 'x86_64' ]] && \
+if [[ "$VERSION" == 'slim' ]] || [[ "$TARGET_DEVICE" != 'x86_64' ]]; then
 	sed -Ei '/dockerman|deluge|aria2|transmission|qbittorrent|softwarecenter|watchdog|ddns|diskman/d' .config
+fi
 
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
