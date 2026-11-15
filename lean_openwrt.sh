@@ -429,15 +429,8 @@ git_clone() {
 REPO_URL="https://github.com/coolsnowwolf/lede"
 SOURCE_NAME=$(basename $(dirname $REPO_URL))
 git_clone
-
 # git diff ./ >> ../output/t.patch || true
 # clone_dir immortalwrt/packages libdeflate libdht libutp libb64
-clone_dir dev vernesong/OpenClash luci-app-openclash
-clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
-clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
-# clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview trojan-plus
-clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
-# clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
 
 clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
 		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
@@ -448,12 +441,18 @@ clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
 		sunpanel qBittorrent-static luci-app-diskman-js luci-app-tinynote-js \
 		luci-app-mesh-node luci-app-nikki
 
+clone_dir dev vernesong/OpenClash luci-app-openclash
+clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
+clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
+# clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview trojan-plus
+clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
+clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
+
 [ -f 'feeds/packages/lang/python/python-mako/Makefile' ] && \
-sed -Ei '{
-	/ONLY/ s/^/#/g
-	/include \.\.\/python3-package\.mk/a\
-	PYTHON3_PKG_WHEEL_NAME:=Mako
-}' feeds/packages/lang/python/python-mako/Makefile
+	sed -Ei '{
+		/ONLY/ s/^/#/g
+		/HOST_BUILD_DEPENDS/i\PYTHON3_PKG_WHEEL_NAME:=mako
+	}' feeds/packages/lang/python/python-mako/Makefile
 
 for d in package/A/luci-app-openclash  feeds/luci/applications/luci-app-openclash; do
 	[ -d "$d" ] || continue
@@ -462,9 +461,11 @@ for d in package/A/luci-app-openclash  feeds/luci/applications/luci-app-openclas
 done
 
 [ -f "package/A/clashoo/Makefile" ] && {
-	sed -r -i '/(golang|PROVIDES|logic_test|GO_PKG|PKG_SOURCE|PKG_HASH|PKG_BUILD_|GoPackage|GoBinPackage|DEPENDS)/d' \
-	package/A/clashoo/Makefile
-	sed -i '/BuildPackage/i\define Build/Compile\nendef' package/A/clashoo/Makefile
+	new_version="$(sed -nr 's/PKG_UPSTREAM_VERSION:=(.*)/\1/p' package/A/clashoo/Makefile)"
+	wget -qO package/A/clashoo/Makefile https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/clashoo_Makefile
+	[ -n "$new_version" ] && \
+		sed -Ei "s/(PKG_VERSION:=).*/\1${new_version}/" package/A/clashoo/Makefile || true
+	rm -rf package/A/clashoo/patches
 }
 
 # REPO_BRANCH=$(sed -En 's/^src-git luci.*;(.*)/\1/p' feeds.conf.default)
@@ -490,7 +491,10 @@ sed -i "{
 	}" package/lean/*/*/*default-settings
 # git_apply "https://raw.githubusercontent.com/sbwml/openwrt_helloworld/refs/heads/v5/patch-luci-app-ssr-plus.patch" "feeds/helloworld"
 # git_apply "https://raw.githubusercontent.com/sbwml/openwrt_helloworld/refs/heads/v5/patch-luci-app-passwall.patch" "feeds/luci/applications"
-sed -i "/ONLY/ s/^/#/g" feeds/packages/lang/python/python-mako/Makefile
+
+[ -f 'feeds/packages/lang/python/python-typing-extensions/Makefile' ] && \
+	sed -Ei 's/(PKG_HASH:=).*/\1dc983d19a509c94dba722ee6abd33940f7c05a89e243c47e907eb4db6f1a43e5/; s/(PKG_VERSION:=).*/\14.16.0/' feeds/packages/lang/python/python-typing-extensions/Makefile
+
 sed -Ei '{
 	s|../../lang/|$(TOPDIR)/feeds/packages/lang/|;
 	s|../../luci.mk|$(TOPDIR)/feeds/luci/luci.mk|;
@@ -505,6 +509,10 @@ find {package/A,feeds/luci/applications}/luci-app*/po -type d 2>/dev/null | whil
 		ln -s zh_Hans "$p/zh-cn" 2>/dev/null
 	fi
 done
+
+if [[ "$VERSION" == 'slim' ]] || [[ "$TARGET_DEVICE" != 'x86_64' ]]; then
+	sed -Ei '/dockerman|deluge|aria2|transmission|qbittorrent|softwarecenter|watchdog|ddns|diskman/d' .config
+fi
 
 echo -e "$(color cy '更新配置....')\c"
 begin_time=$(date '+%H:%M:%S')
