@@ -544,18 +544,23 @@ sed -i "s|^\(OPENWRT_RELEASE.*%C\)\(.*\)|\1 ${REPLACEMENT}$(TZ=UTC-8 date +%m月
 		/HOST_BUILD_DEPENDS/i\PYTHON3_PKG_WHEEL_NAME:=mako
 	}' feeds/packages/lang/python/python-mako/Makefile
 
-[ -f "package/A/clashoo/Makefile" ] && {
-	new_version="$(sed -nr 's/PKG_UPSTREAM_VERSION:=(.*)/\1/p' package/A/clashoo/Makefile)"
-	wget -qO package/A/clashoo/Makefile https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/clashoo_Makefile
-	[ -n "$new_version" ] && \
-		sed -Ei "s/(PKG_VERSION:=).*/\1${new_version}/" package/A/clashoo/Makefile || true
+clashoo_Makefile="package/A/clashoo/Makefile"
+[ -f "$clashoo_Makefile" ] && {
+	new_release="$(sed -nr 's/PKG_RELEASE:=(.*)/\1/p' $clashoo_Makefile)"
+	new_version="$(sed -nr 's/PKG_VERSION:=(.*)\$.*/\1/p' $clashoo_Makefile)"
+	new_upstream="$(sed -nr 's/PKG_UPSTREAM_VERSION:=(.*)/\1/p' $clashoo_Makefile)"
+	wget -qO $clashoo_Makefile https://raw.githubusercontent.com/hong0980/diy/refs/heads/master/clashoo_Makefile
+	[ -n "$new_release" ] && \
+		sed -Ei "s/(PKG_RELEASE:=).*/\1${new_release}/" $clashoo_Makefile || true
+	[ -n "$new_version" ] && [ -n "$new_upstream" ] && \
+		sed -Ei "s/(PKG_VERSION:=).*/\1${new_version}${new_upstream}/" $clashoo_Makefile || true
 	rm -rf package/A/clashoo/patches
 }
 
 for d in package/A/luci-app-openclash  feeds/luci/applications/luci-app-openclash; do
 	[ -d "$d" ] || continue
 	sed -i "/procd_open_instance \"openclash\"/i\\   command -v yq &>/dev/null && yq -i '.' \"\$CONFIG_FILE\"" "$d/root/etc/init.d/openclash" || true
-	sed -Ei "/exit 0/i [ -x /usr/bin/mihomo ] && ln -sf /usr/bin/mihomo /etc/openclash/core/clash_meta\n[ -x /usr/bin/sing-box ] && [ ! -x /usr/bin/sing-box-stable ] && ln -sf /usr/bin/sing-box /usr/bin/sing-box-stable" "$d/root/etc/uci-defaults/luci-openclash" || true
+	sed -Ei "/exit 0/i [ -x /usr/bin/mihomo ] && ln -sf /usr/bin/mihomo /etc/openclash/core/clash_meta && ln -sf /usr/bin/mihomo /usr/share/clashoo/bin/mihomo-stable\n[ -x /usr/bin/sing-box ] && ln -sf /usr/bin/sing-box /usr/share/clashoo/bin/sing-box-stable" "$d/root/etc/uci-defaults/luci-openclash" || true
 done
 # sed -i "/VERSION_NUMBER/ s/if.*/if \$(VERSION_NUMBER),\$(VERSION_NUMBER),${REPO_BRANCH#*-}-SNAPSHOT)/" include/version.mk || true
 

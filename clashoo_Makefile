@@ -56,7 +56,7 @@ endef
 define Package/clashoo/postinst
 #!/bin/sh
 if [ -z "$${IPKG_INSTROOT}" ]; then
-	[ -x /usr/bin/mihomo ] && [ ! -x /usr/bin/clash-meta ] && ln -sf /usr/bin/mihomo /usr/bin/clash-meta
+	mkdir -p /usr/share/clashoo/bin
 	rm -f /usr/share/clashoo/check_luci_version.sh /usr/share/clashoo/check_clash_meta_version.sh /usr/share/clashoo/check_mihomo_core_version.sh
 	rm -f /usr/share/clashoo/cuslist.sh /usr/share/clashoo/groups.sh /usr/share/clashoo/load_groups.sh /usr/share/clashoo/panel_diag.sh
 	rm -f /usr/share/clashoo/rmlist.sh /usr/share/clashoo/uplist.sh /usr/share/clashoo/rpc_restart_async.sh /usr/share/clashoo/rpc_update_china_ip_async.sh
