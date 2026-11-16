@@ -23,6 +23,13 @@ define Package/clashoo/conffiles
 /etc/config/clashoo
 endef
 
+define Build/Prepare
+	$(Build/Prepare/Default)
+endef
+
+define Build/Compile
+endef
+
 define Package/clashoo/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_DIR) $(1)/etc/config
