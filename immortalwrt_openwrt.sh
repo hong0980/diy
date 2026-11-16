@@ -455,13 +455,13 @@ set_config
 del_package "luci-app-filetransfer luci-app-turboacc"
 clone_dir coolsnowwolf/packages ruby rust
 clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi libtorrent-rasterbar \
-		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
-		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
-		luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
-		luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
-		python-pyasn1 python-pyxdg python-rencode python-setproctitle luci-app-mesh11sd \
-		transmission qBittorrent-static luci-app-diskman-js luci-app-tinynote-js \
-		luci-app-mesh-node luci-app-nikki
+		  luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
+		  luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
+		  luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
+		  luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
+		  python-pyasn1 python-pyxdg python-rencode python-setproctitle luci-app-mesh11sd \
+		  transmission qBittorrent-static luci-app-diskman-js luci-app-tinynote-js \
+		  luci-app-mesh-node luci-app-nikki
 
 clone_dir sbwml/openwrt_helloworld kcptun
 clone_dir dev vernesong/OpenClash luci-app-openclash
@@ -561,7 +561,7 @@ clashoo_Makefile="package/A/clashoo/Makefile"
 for d in package/A/luci-app-openclash  feeds/luci/applications/luci-app-openclash; do
 	[ -d "$d" ] || continue
 	sed -i "/procd_open_instance \"openclash\"/i\\   command -v yq &>/dev/null && yq -i '.' \"\$CONFIG_FILE\"" "$d/root/etc/init.d/openclash" || true
-	sed -Ei "/exit 0/i [ -x /usr/bin/mihomo ] && ln -sf /usr/bin/mihomo /etc/openclash/core/clash_meta && ln -sf /usr/bin/mihomo /usr/share/clashoo/bin/mihomo-stable\n[ -x /usr/bin/sing-box ] && ln -sf /usr/bin/sing-box /usr/share/clashoo/bin/sing-box-stable" "$d/root/etc/uci-defaults/luci-openclash" || true
+	sed -Ei "/exit 0/i mkdir -p /usr/share/clashoo/bin\n[ -x /usr/bin/mihomo ] && ln -sf /usr/bin/mihomo /etc/openclash/core/clash_meta && ln -sf /usr/bin/mihomo /usr/share/clashoo/bin/mihomo-stable\n[ -x /usr/bin/sing-box ] && ln -sf /usr/bin/sing-box /usr/share/clashoo/bin/sing-box-stable" "$d/root/etc/uci-defaults/luci-openclash" || true
 done
 # sed -i "/VERSION_NUMBER/ s/if.*/if \$(VERSION_NUMBER),\$(VERSION_NUMBER),${REPO_BRANCH#*-}-SNAPSHOT)/" include/version.mk || true
 
