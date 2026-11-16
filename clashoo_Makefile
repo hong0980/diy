@@ -9,14 +9,14 @@ PKG_MAINTAINER:=kenzok8
 include $(INCLUDE_DIR)/package.mk
 
 define Package/clashoo
-  SECTION:=net
-  CATEGORY:=Network
-  TITLE:=Clashoo (Mihomo)
-  DEPENDS:=+ca-bundle +yq +firewall4 +ip-full +coreutils-nohup +coreutils-timeout +kmod-inet-diag +kmod-nft-socket +kmod-nft-tproxy +kmod-tun +kmod-dummy +unzip
+	SECTION:=net
+	CATEGORY:=Network
+	TITLE:=Clashoo (Mihomo)
+	DEPENDS:=+ca-bundle +yq +firewall4 +ip-full +coreutils-nohup +coreutils-timeout +kmod-inet-diag +kmod-nft-socket +kmod-nft-tproxy +kmod-tun +kmod-dummy +unzip +mihomo +sing-box
 endef
 
 define Package/clashoo/description
-  Mihomo proxy core with runtime environment for Clashoo.
+	Mihomo proxy core with runtime environment for Clashoo.
 endef
 
 define Package/clashoo/conffiles
@@ -30,54 +30,25 @@ define Package/clashoo/install
 	$(INSTALL_DIR) $(1)/etc/clashoo/provider
 	$(INSTALL_DIR) $(1)/etc/clashoo/proxyprovider
 	$(INSTALL_DIR) $(1)/etc/clashoo/ruleprovider
-	$(INSTALL_DIR) $(1)/usr/share/clashoo
+	$(INSTALL_DIR) $(1)/usr/share/clashoo/bin
 	$(INSTALL_DIR) $(1)/usr/share/clashbackup
 	$(INSTALL_DIR) $(1)/usr/share/clashoo/config
 	$(INSTALL_DIR) $(1)/usr/share/clashoo/config/sub
 	$(INSTALL_DIR) $(1)/usr/share/clashoo/config/upload
 	$(INSTALL_DIR) $(1)/usr/share/clashoo/config/custom
 
-	$(INSTALL_BIN) $(CURDIR)/files/etc/init.d/clashoo $(1)/etc/init.d/clashoo
-	$(INSTALL_CONF) $(CURDIR)/files/etc/config/clashoo $(1)/etc/config/clashoo
-	$(INSTALL_DATA) $(CURDIR)/files/etc/config/clashoo $(1)/usr/share/clashoo/clashoo.default
-	$(CP) $(CURDIR)/files/usr/share/clashoo/* $(1)/usr/share/clashoo/
-	$(INSTALL_BIN) $(CURDIR)/files/usr/share/clashoo/migrate_lan_acl.sh $(1)/usr/share/clashoo/migrate_lan_acl.sh
-	$(INSTALL_BIN) $(CURDIR)/files/usr/share/clashoo/migrate_fake_ip_filter.sh $(1)/usr/share/clashoo/migrate_fake_ip_filter.sh
-	$(INSTALL_BIN) $(CURDIR)/files/usr/share/clashoo/detect_core_arch.sh $(1)/usr/share/clashoo/detect_core_arch.sh
-	$(INSTALL_BIN) $(CURDIR)/files/usr/share/clashoo/diagnose_bypass.sh $(1)/usr/share/clashoo/diagnose_bypass.sh
+	$(LN) /usr/bin/mihomo $(1)/usr/share/clashoo/bin/mihomo-stable
+	$(LN) /usr/bin/sing-box $(1)/usr/share/clashoo/bin/sing-box-stable
 
-	$(RM) $(1)/usr/share/clashoo/dashboard
-	$(RM) $(1)/usr/share/clashoo/yacd
-	$(RM) $(1)/usr/share/clashoo/update.log
-	$(RM) $(1)/usr/share/clashoo/geoip.log
-	$(RM) $(1)/usr/share/clashoo/core_down_complete
-endef
+	$(INSTALL_BIN) ./files/etc/init.d/clashoo $(1)/etc/init.d/clashoo
+	$(INSTALL_CONF) ./files/etc/config/clashoo $(1)/etc/config/clashoo
+	$(INSTALL_DATA) ./files/etc/config/clashoo $(1)/usr/share/clashoo/clashoo.default
 
-define Package/clashoo/postinst
-#!/bin/sh
-if [ -z "$${IPKG_INSTROOT}" ]; then
-	mkdir -p /usr/share/clashoo/bin
-	rm -f /usr/share/clashoo/check_luci_version.sh /usr/share/clashoo/check_clash_meta_version.sh /usr/share/clashoo/check_mihomo_core_version.sh
-	rm -f /usr/share/clashoo/cuslist.sh /usr/share/clashoo/groups.sh /usr/share/clashoo/load_groups.sh /usr/share/clashoo/panel_diag.sh
-	rm -f /usr/share/clashoo/rmlist.sh /usr/share/clashoo/uplist.sh /usr/share/clashoo/rpc_restart_async.sh /usr/share/clashoo/rpc_update_china_ip_async.sh
-	rm -rf /usr/share/clashoo/create
-	/usr/share/clashoo/migrate_lan_acl.sh >/dev/null 2>&1 || true
-	/usr/share/clashoo/migrate_fake_ip_filter.sh >/dev/null 2>&1 || true
-	/usr/share/clashoo/detect_core_arch.sh >/dev/null 2>&1 || true
-	if [ "$$(uci -q get clashoo.config.enable 2>/dev/null)" = "1" ]; then
-		/etc/init.d/clashoo enable 2>/dev/null || true
-	else
-		/etc/init.d/clashoo disable 2>/dev/null || true
-	fi
-fi
-exit 0
-endef
-
-define Build/Prepare
-	$(Build/Prepare/Default)
-endef
-
-define Build/Compile
+	$(CP) ./files/usr/share/clashoo/* $(1)/usr/share/clashoo/
+	chmod +x $(1)/usr/share/clashoo/migrate_lan_acl.sh
+	chmod +x $(1)/usr/share/clashoo/migrate_fake_ip_filter.sh
+	chmod +x $(1)/usr/share/clashoo/detect_core_arch.sh
+	chmod +x $(1)/usr/share/clashoo/diagnose_bypass.sh
 endef
 
 $(eval $(call BuildPackage,clashoo))

@@ -561,7 +561,7 @@ clashoo_Makefile="package/A/clashoo/Makefile"
 for d in package/A/luci-app-openclash  feeds/luci/applications/luci-app-openclash; do
 	[ -d "$d" ] || continue
 	sed -i "/procd_open_instance \"openclash\"/i\\   command -v yq &>/dev/null && yq -i '.' \"\$CONFIG_FILE\"" "$d/root/etc/init.d/openclash" || true
-	sed -Ei "/exit 0/i mkdir -p /usr/share/clashoo/bin\n[ -x /usr/bin/mihomo ] && ln -sf /usr/bin/mihomo /etc/openclash/core/clash_meta && ln -sf /usr/bin/mihomo /usr/share/clashoo/bin/mihomo-stable\n[ -x /usr/bin/sing-box ] && ln -sf /usr/bin/sing-box /usr/share/clashoo/bin/sing-box-stable" "$d/root/etc/uci-defaults/luci-openclash" || true
+	sed -Ei "/exit 0/i [ -x /usr/bin/mihomo ] && ln -sf /usr/bin/mihomo /etc/openclash/core/clash_meta" "$d/root/etc/uci-defaults/luci-openclash" || true
 done
 # sed -i "/VERSION_NUMBER/ s/if.*/if \$(VERSION_NUMBER),\$(VERSION_NUMBER),${REPO_BRANCH#*-}-SNAPSHOT)/" include/version.mk || true
 
