@@ -431,7 +431,7 @@ SOURCE_NAME=$(basename $(dirname $REPO_URL))
 git_clone
 # git diff ./ >> ../output/t.patch || true
 # clone_dir immortalwrt/packages libdeflate libdht libutp libb64
-
+clone_dir immortalwrt/immortalwrt gettext-full
 clone_dir hong0980/build aria2 axel ddnsto deluge libtorrent-rasterbar lsscsi \
 		luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \

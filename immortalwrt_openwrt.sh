@@ -530,6 +530,10 @@ sed -i "s|^\(OPENWRT_RELEASE.*%C\)\(.*\)|\1 ${REPLACEMENT}$(TZ=UTC-8 date +%m月
 # [ -f "feeds/packages/lang/rust/Makefile" ] && \
 # 	sed -i 's/download-ci-llvm=true/download-ci-llvm=false/g' feeds/packages/lang/rust/Makefile
 
+wget -qO package/utils/ucode/Makefile \
+	https://raw.githubusercontent.com/openwrt/openwrt/refs/heads/master/package/utils/ucode/Makefile && \
+	rm -rf package/utils/ucode/patches 2>/dev/null
+
 [ -f 'feeds/packages/lang/python/python-typing-extensions/Makefile' ] && \
 	sed -Ei 's/(PKG_HASH:=).*/\1dc983d19a509c94dba722ee6abd33940f7c05a89e243c47e907eb4db6f1a43e5/; s/(PKG_VERSION:=).*/\14.16.0/' feeds/packages/lang/python/python-typing-extensions/Makefile
 
