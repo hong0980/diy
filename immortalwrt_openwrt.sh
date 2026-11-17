@@ -384,12 +384,13 @@ set_config (){
 		axel automount autosamba diffutils patch luci-app-diskman luci-app-poweroff luci-app-diskman-js \
 		luci-app-nlbwmon luci-app-bypass luci-app-openclash luci-app-passwall2 luci-app-tinynote luci-app-nikki \
 		luci-app-uhttpd luci-app-usb-printer luci-app-dockerman luci-app-softwarecenter luci-app-ddns-go \
-		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2 \
+		luci-app-qbittorrent luci-app-deluge luci-app-transmission luci-app-aria2 webui-aria2 luci-app-lucky \
 		luci-app-miaplus luci-app-watchdog luci-app-fchomo luci-i18n-clashoo-zh-cn luci-app-clashoo
 
 	add_package autocore luci-app-arpbind luci-app-ssr-plus luci-app-passwall \
 				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard luci-app-tinynote-js \
-				default-settings-chn luci-app-package-manager luci-app-filebrowser #luci-app-ddnsto
+				default-settings-chn luci-app-package-manager luci-app-filebrowser \
+				luci-app-natmap #luci-app-ddnsto
 
 }
 
@@ -473,6 +474,7 @@ clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview simple-
 		  shadowsocks-rust sing-box xray-core
 clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
 clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
+clone_dir gdy666/luci-app-lucky lucky luci-app-lucky
 # clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb
 # clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 
