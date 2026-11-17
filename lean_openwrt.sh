@@ -432,7 +432,7 @@ git_clone
 # git diff ./ >> ../output/t.patch || true
 
 # clone_dir immortalwrt/immortalwrt hardware-support #gettext-full
-clone_dir immortalwrt/packages libdrm
+# clone_dir immortalwrt/packages libdrm
 clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi libtorrent-rasterbar \
 		  luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		  luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
