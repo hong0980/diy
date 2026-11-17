@@ -415,8 +415,18 @@ git_clone() {
 	[[ -d openwrt ]] && cd openwrt || exit
 	echo -e "$(color cy '更新软件....')\c"
 	begin_time=$(date '+%H:%M:%S')
-	sed -i '/luci/d' feeds.conf.default
-	echo "src-git luci https://github.com/coolsnowwolf/luci.git;$REPO_BRANCH" >> feeds.conf.default
+	cat >feeds.conf.default<<-EOF
+		src-git luci https://github.com/coolsnowwolf/luci.git;$REPO_BRANCH"
+		src-git packages https://github.com/coolsnowwolf/packages.git
+		src-git routing https://github.com/coolsnowwolf/routing.git
+		src-git telephony https://github.com/coolsnowwolf/telephony.git
+		src-git helloworld https://github.com/fw876/helloworld.git
+		#src-git qmodem https://github.com/FUjr/modem_feeds.git
+		#src-git video https://github.com/coolsnowwolf/video
+		#src-git targets https://github.com/openwrt/targets.git
+		#src-git oldpackages http://git.openwrt.org/packages.git
+		#src-link custom /usr/src/openwrt/custom-feed
+	EOF
 	./scripts/feeds update -a 1>/dev/null 2>&1
 	./scripts/feeds install -a 1>/dev/null 2>&1
 	status
