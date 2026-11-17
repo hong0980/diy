@@ -431,16 +431,14 @@ SOURCE_NAME=$(basename $(dirname $REPO_URL))
 git_clone
 # git diff ./ >> ../output/t.patch || true
 
-# clone_dir immortalwrt/immortalwrt hardware-support #gettext-full
-# clone_dir immortalwrt/packages libdrm
 clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi libtorrent-rasterbar \
 		  luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		  luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
 		  luci-app-qbittorrent luci-app-softwarecenter luci-app-taskplan luci-app-timedtask \
 		  luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
 		  python-pyasn1 python-pyxdg python-rencode python-setproctitle luci-app-mesh11sd \
-		  transmission qBittorrent-static luci-app-diskman-js luci-app-tinynote-js \
-		  luci-app-mesh-node luci-app-nikki
+		  qBittorrent-static luci-app-diskman-js luci-app-tinynote-js \
+		  luci-app-mesh-node luci-app-nikki #transmission
 
 clone_dir dev vernesong/OpenClash luci-app-openclash
 clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
