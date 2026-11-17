@@ -431,8 +431,8 @@ SOURCE_NAME=$(basename $(dirname $REPO_URL))
 git_clone
 # git diff ./ >> ../output/t.patch || true
 
-clone_dir immortalwrt/immortalwrt gettext-full
-clone_dir immortalwrt/packages libdrm hardware-support
+clone_dir immortalwrt/immortalwrt hardware-support #gettext-full
+clone_dir immortalwrt/packages libdrm
 clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi libtorrent-rasterbar \
 		  luci-app-aria2 luci-app-ddnsto luci-app-deluge luci-app-diskman luci-app-dockerman \
 		  luci-app-easymesh luci-app-filebrowser luci-app-miaplus luci-app-poweroff \
@@ -457,8 +457,8 @@ clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
 
 for d in package/A/luci-app-openclash  feeds/luci/applications/luci-app-openclash; do
 	[ -d "$d" ] || continue
-	[ -f "$d/root/etc/init.d/openclash" ] && sed -i "/procd_open_instance \"openclash\"/i\\   command -v yq &>/dev/null && yq -i '.' \"\$CONFIG_FILE\"" "$d/root/etc/init.d/openclash"
-	[ -f "$d/root/etc/uci-defaults/luci-openclash" ] && sed -Ei "/exit 0/i [ -x /usr/bin/mihomo ] && ln -sf /usr/bin/mihomo /etc/openclash/core/clash_meta\n[ -x /usr/bin/sing-box ] && [ ! -x /usr/bin/sing-box-stable ] && ln -sf /usr/bin/sing-box /usr/bin/sing-box-stable" "$d/root/etc/uci-defaults/luci-openclash"
+	sed -i "/procd_open_instance \"openclash\"/i\\   command -v yq &>/dev/null && yq -i '.' \"\$CONFIG_FILE\"" "$d/root/etc/init.d/openclash" || true
+	sed -Ei "/exit 0/i [ -x /usr/bin/mihomo ] && ln -sf /usr/bin/mihomo /etc/openclash/core/clash_meta" "$d/root/etc/uci-defaults/luci-openclash" || true
 done
 
 [ -f "package/A/clashoo/Makefile" ] && {
