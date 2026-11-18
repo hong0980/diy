@@ -390,7 +390,7 @@ set_config (){
 	add_package autocore luci-app-arpbind luci-app-ssr-plus luci-app-passwall \
 				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard luci-app-tinynote-js \
 				default-settings-chn luci-app-package-manager luci-app-filebrowser \
-				luci-app-natmapt #luci-app-ddnsto
+				luci-app-natmap #luci-app-natmapt luci-app-ddnsto
 
 }
 
@@ -472,13 +472,14 @@ clone_dir Openwrt-Passwall/openwrt-passwall luci-app-passwall
 clone_dir Openwrt-Passwall/openwrt-passwall2 luci-app-passwall2
 clone_dir Openwrt-Passwall/openwrt-passwall-packages chinadns-ng geoview simple-obfs \
 		  shadowsocks-rust sing-box xray-core
-clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
+# clone_dir gdy666/luci-app-lucky lucky luci-app-lucky
 clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
-clone_dir gdy666/luci-app-lucky lucky luci-app-lucky
 
-git clone -q https://github.com/muink/openwrt-natmapt  package/A/natmapt
+clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
 git clone -q https://github.com/muink/openwrt-stuntman package/A/stuntman
-git clone -q https://github.com/muink/luci-app-natmapt package/A/luci-app-natmapt
+# git clone -q https://github.com/muink/openwrt-natmapt  package/A/natmapt
+# git clone -q https://github.com/muink/luci-app-natmapt package/A/luci-app-natmapt
+
 # clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb
 # clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
 
@@ -539,8 +540,8 @@ sed -i "s|^\(OPENWRT_RELEASE.*%C\)\(.*\)|\1 ${REPLACEMENT}$(TZ=UTC-8 date +%m月
 [ -f package/A/lucky/files/luckyuci ] && \
 	sed -i '/enabled/s/1/0/' package/A/lucky/files/luckyuci
 
-[ -f package/A/luci-app-natmapt/Makefile ] && \
-	sed -i '/LUCI_DEPENDS/s/$/ +stuntman-client/' package/A/luci-app-natmapt/Makefile
+[ -f package/A/luci-app-fchomo/Makefile ] && \
+	sed -i 's/+mihomo/+mihomo +stuntman-client/' package/A/luci-app-fchomo/Makefile
 
 # wget -qO package/utils/ucode/Makefile \
 # 	https://raw.githubusercontent.com/openwrt/openwrt/refs/heads/master/package/utils/ucode/Makefile && \
