@@ -390,7 +390,7 @@ set_config (){
 	add_package autocore luci-app-arpbind luci-app-ssr-plus luci-app-passwall \
 				luci-app-upnp luci-app-ttyd luci-app-taskplan luci-app-wizard luci-app-tinynote-js \
 				default-settings-chn luci-app-package-manager luci-app-filebrowser \
-				luci-app-natmap luci-app-natmapt #luci-app-ddnsto
+				luci-app-natmapt #luci-app-ddnsto
 
 }
 
