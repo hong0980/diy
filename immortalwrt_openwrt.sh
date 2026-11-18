@@ -476,7 +476,8 @@ clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
 clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
 clone_dir gdy666/luci-app-lucky lucky luci-app-lucky
 
-git clone -q https://github.com/muink/openwrt-natmapt package/A/natmapt
+git clone -q https://github.com/muink/openwrt-natmapt  package/A/natmapt
+git clone -q https://github.com/muink/openwrt-stuntman package/A/stuntman
 git clone -q https://github.com/muink/luci-app-natmapt package/A/luci-app-natmapt
 # clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb
 # clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
@@ -534,6 +535,12 @@ sed -i "s|^\(OPENWRT_RELEASE.*%C\)\(.*\)|\1 ${REPLACEMENT}$(TZ=UTC-8 date +%m月
 
 [ -f "feeds/packages/lang/rust/Makefile" ] && \
 	sed -i 's/download-ci-llvm=true/download-ci-llvm=false/g' feeds/packages/lang/rust/Makefile
+
+[ -f package/A/lucky/files/luckyuci ] && \
+	sed -i '/enabled/s/1/0/' package/A/lucky/files/luckyuci
+
+[ -f package/A/luci-app-natmapt/Makefile ] && \
+	sed -i '/LUCI_DEPENDS/s/$/ +stuntman-client/' package/A/luci-app-natmapt/Makefile
 
 # wget -qO package/utils/ucode/Makefile \
 # 	https://raw.githubusercontent.com/openwrt/openwrt/refs/heads/master/package/utils/ucode/Makefile && \
