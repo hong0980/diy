@@ -540,11 +540,11 @@ sed -i "s|^\(OPENWRT_RELEASE.*%C\)\(.*\)|\1 ${REPLACEMENT}$(TZ=UTC-8 date +%m月
 [ -f package/A/lucky/files/luckyuci ] && \
 	sed -i '/enabled/s/1/0/' package/A/lucky/files/luckyuci
 
-[ -f package/A/luci-app-fchomo/Makefile ] && \
-	sed -i 's/+mihomo/+mihomo +stuntman-client/' package/A/luci-app-fchomo/Makefile
+[ -f package/A/luci-app-natmapt/Makefile ] && \
+	sed -i '/LUCI_DEPENDS/ s/$/ +stuntman-client +natmapt-client-script-transmission +natmapt-client-script-deluge +natmapt-notify-script-pushbullet/' package/A/luci-app-natmapt/Makefile
 
 [ -f package/A/natmapt/Makefile ] && \
-	sed -i '/PROVIDES/a\  USERID:=natmapt=761:natmapt=761' package/A/natmapt/Makefile
+	sed -Ei '/PROVIDES/a\  USERID:=natmap=761:natmap=761' package/A/natmapt/Makefile
 
 [ -f 'feeds/packages/lang/python/python-typing-extensions/Makefile' ] && \
 	sed -Ei 's/(PKG_HASH:=).*/\1dc983d19a509c94dba722ee6abd33940f7c05a89e243c47e907eb4db6f1a43e5/; s/(PKG_VERSION:=).*/\14.16.0/' feeds/packages/lang/python/python-typing-extensions/Makefile
