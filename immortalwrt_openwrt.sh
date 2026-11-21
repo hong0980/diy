@@ -462,7 +462,7 @@ clone_dir hong0980/build aria2 axel ddnsto deluge lsscsi libtorrent-rasterbar \
 		  luci-app-tinynote luci-app-transmission luci-app-watchdog luci-app-wizard luci-lib-docker \
 		  python-pyasn1 python-pyxdg python-rencode python-setproctitle luci-app-mesh11sd \
 		  transmission qBittorrent-static luci-app-diskman-js luci-app-tinynote-js \
-		  luci-app-mesh-node luci-app-nikki
+		  luci-app-mesh-node luci-app-nikki luci-app-natmap natmap
 
 clone_dir sbwml/openwrt_helloworld kcptun
 clone_dir dev vernesong/OpenClash luci-app-openclash
@@ -477,8 +477,8 @@ clone_dir kenzok8/openwrt-clashoo clashoo luci-app-clashoo
 
 clone_dir fcshark-org/openwrt-fchomo luci-app-fchomo mihomo
 git clone -q https://github.com/muink/openwrt-stuntman package/A/stuntman
-git clone -q https://github.com/muink/openwrt-natmapt  package/A/natmapt
-git clone -q https://github.com/muink/luci-app-natmapt package/A/luci-app-natmapt
+# git clone -q https://github.com/muink/openwrt-natmapt  package/A/natmapt
+# git clone -q https://github.com/muink/luci-app-natmapt package/A/luci-app-natmapt
 
 # clone_dir kiddin9/kwrt-packages ddns-go gecoosac lua-maxminddb
 # clone_dir nikkinikki-org/OpenWrt-nikki nikki luci-app-nikki mihomo-alpha mihomo-meta
@@ -540,11 +540,11 @@ sed -i "s|^\(OPENWRT_RELEASE.*%C\)\(.*\)|\1 ${REPLACEMENT}$(TZ=UTC-8 date +%m月
 [ -f package/A/lucky/files/luckyuci ] && \
 	sed -i '/enabled/s/1/0/' package/A/lucky/files/luckyuci
 
-[ -f package/A/luci-app-natmapt/Makefile ] && \
-	sed -i '/LUCI_DEPENDS/ s/$/ +stuntman-client +natmapt-client-script-transmission +natmapt-client-script-deluge +natmapt-notify-script-pushbullet/' package/A/luci-app-natmapt/Makefile
+# [ -f package/A/luci-app-natmapt/Makefile ] && \
+# 	sed -i '/LUCI_DEPENDS/ s/$/ +stuntman-client +natmapt-client-script-transmission +natmapt-client-script-deluge +natmapt-notify-script-pushbullet/' package/A/luci-app-natmapt/Makefile
 
-[ -f package/A/natmapt/Makefile ] && \
-	sed -Ei '/PROVIDES/a\  USERID:=natmap=761:natmap=761' package/A/natmapt/Makefile
+# [ -f package/A/natmapt/Makefile ] && \
+# 	sed -Ei '/PROVIDES/a\  USERID:=natmap=761:natmap=761' package/A/natmapt/Makefile
 
 [ -f 'feeds/packages/lang/python/python-typing-extensions/Makefile' ] && \
 	sed -Ei 's/(PKG_HASH:=).*/\1dc983d19a509c94dba722ee6abd33940f7c05a89e243c47e907eb4db6f1a43e5/; s/(PKG_VERSION:=).*/\14.16.0/' feeds/packages/lang/python/python-typing-extensions/Makefile
